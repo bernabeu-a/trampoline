@@ -48,6 +48,10 @@
 #include "tpl_sequence_kernel.h"
 #endif
 
+#if WITH_RESURRECT == YES
+#include "tpl_resurrect_kernel.h"
+#endif
+
 extern FUNC(void, OS_CODE) tpl_restart_os(void);
 
 #define OS_START_SEC_VAR_NON_VOLATILE_16BIT
@@ -109,7 +113,7 @@ void tpl_RTC_init()
     RTCDOW = 0x00;
     RTCHOUR = 0x0;
     RTCMIN = 0x00;
-    RTCSEC = 0x00;
+    RTCSEC = 40;
     // reset all register alarm because they are in undefined state when reset
     RTCAHOUR &= ~(0x80);
     RTCADOW &= ~(0x80);
@@ -119,6 +123,7 @@ void tpl_RTC_init()
     RTCAMIN = (PERIOD_WAKE_UP | (1<<7));
     // Interrupt from alarm                     						
     RTCCTL0_L = RTCAIE;
+    // RTCCTL0_H = 0x0;
     // start rtc
     RTCCTL1 &= ~(RTCHOLD);
 }
@@ -134,16 +139,17 @@ void tpl_lpm_hibernate()
   /* Disable TIMER3_A0 interrupt 
      in LPM3, ACLK is still active
    */
-	TA3CCTL0 &= ~CCIE;
+	// TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
   __bis_SR_register(LPM3_bits + GIE);
   /* remove interrupts (we are in kernel mode) */
 	__bic_SR_register(GIE);
  	/* Restore TIMER3_A0 interrupt */
-  TA3CCTL0 |= CCIE;
+  // TA3CCTL0 |= CCIE;
 }
 
 FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
+  // P1OUT |= BIT4;
   sint16 l_buffer;
   l_buffer = (tpl_checkpoint_buffer + 1) % 2;
   // tpl_save_checkpoint();
@@ -153,6 +159,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
   uint16_t waiting_loop = 1;
   init_adc();
   while(waiting_loop){
+    P1OUT |= BIT4;
     tpl_RTC_init(); //startRTC => interrupt next 1 min
     if(tpl_ADC_read() > RESUME_FROM_HIBERNATE_THRESHOLD){
       tpl_RTC_stop();
@@ -160,6 +167,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
 	  } else {
       tpl_lpm_hibernate();
 	  }
+    P1OUT &= ~BIT4;
   }
 }
 
@@ -203,7 +211,6 @@ FUNC(void, OS_CODE) tpl_hibernate_os_service(void)
 
   /*  unlock the kernel  */
   UNLOCK_KERNEL()
-
   tpl_chkpt_hibernate();
   PROCESS_ERROR(result)
 }
@@ -226,6 +233,8 @@ void __attribute__((interrupt(RTC_VECTOR))) tpl_direct_irq_handler_RTC_VECTOR()
 
 FUNC(void, OS_CODE) tpl_restart_os_service(void)
 {
+
+  P1OUT &= ~BIT5;
   GET_CURRENT_CORE_ID(core_id)
 
     //#if (WITH_ERROR_HOOK == YES) || (WITH_OS_EXTENDED == YES) | (WITH_ORTI == YES)
@@ -276,11 +285,20 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
      * Call tpl_start_scheduling to elect the highest priority task
      * if such a task exists.
      */
-
+  
+  P1OUT |= BIT5;
   // tpl_load_checkpoint();
   tpl_load_checkpoint_dma(tpl_checkpoint_buffer);
+  P1OUT &= ~BIT5;
   #if WITH_SEQUENCING == YES
     tpl_choose_next_sequence();
+    tpl_start(CORE_ID_OR_NOTHING(core_id));
+  #endif
+
+  #if WITH_RESURRECT == YES
+    P1OUT &= ~BIT5;
+    tpl_choose_next_step();
+    // tpl_start(CORE_ID_OR_NOTHING(core_id));
     tpl_start(CORE_ID_OR_NOTHING(core_id));
     SWITCH_CONTEXT_NOSAVE(CORE_ID_OR_NOTHING(core_id))
   #endif

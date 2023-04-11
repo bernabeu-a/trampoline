@@ -41,6 +41,13 @@ if OS::SEQUENCING then
  end write
 end if
 
+if OS::RESURRECT then
+  write to PROJECT+"/tpl_resurrect.c":
+   let EXTENSIONRESURRECT := "c"
+   template tpl_resurrect in code
+  end write
+#  template resurrect_task_descriptors in code
+end if
 #if exists OS::CHECKPOINTING then
 #  if OS::CHECKPOINTING_S::MODE == "PERIODIC" then
 #    write to PROJECT+"/tpl_checkpointing.c":

@@ -47,8 +47,8 @@ struct TPL_SEQUENCE
   CONST(uint8, TYPEDEF) to_state;
   CONST(uint8, TYPEDEF) from_state;
   CONST(uint8, TYPEDEF) nb_task;
-  VAR(uint8, TYPEDEF) mask_seq_terminate;
-  CONST(uint8, TYPEDEF) vec_seq_terminate;
+  VAR(uint16, TYPEDEF) mask_seq_terminate;
+  CONST(uint16, TYPEDEF) vec_seq_terminate;
   CONST(uint8, TYPEDEF) * seqTaskTab;
   CONST(uint8, TYPEDEF) nb_alarm;
   VAR(tpl_sequence_alarm, TYPEDEF) * seqAlarmTab;

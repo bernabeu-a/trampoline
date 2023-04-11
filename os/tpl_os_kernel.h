@@ -168,9 +168,11 @@ struct TPL_PROC_STATIC {
     context;            /**<  context(s) of the task/isr                     */
   VAR(tpl_stack, TYPEDEF)
     stack;              /**<  stack(s) of the  task/isr                      */
+  #if WITH_RESURRECT == NO
   CONST(tpl_proc_function, TYPEDEF)
     entry;              /**<  function that is the entry point
                               of the task/isr                                */
+  #endif /* WITH_RESURRECT*/
   CONSTP2VAR(tpl_internal_resource, TYPEDEF, OS_APPL_DATA)
     internal_resource;  /**<  pointer to an internal resource. NULL if the
                               task does not have an internal resource        */
@@ -231,6 +233,11 @@ struct TPL_PROC {
     priority;           /**< current priority                     */
   VAR(tpl_proc_state, TYPEDEF)
     state;              /**< state (READY, RUNNING, ...)*/
+  #if WITH_RESURRECT == YES
+  VAR(tpl_proc_function, TYPEDEF)
+    entry;              /**<  function that is the entry point
+                              of the task/isr                                */  
+  #endif /* WITH_RESURRECT */
 };
 
 /**

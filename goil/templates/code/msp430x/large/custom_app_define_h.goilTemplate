@@ -56,6 +56,11 @@ end if
  * If YES, use sequence with the msp430
  */
  #define WITH_SEQUENCING    % ! yesNo(OS::SEQUENCING) %
+ 
+ /*
+ * If YES, use RESURRECT with the msp430
+ */
+ #define WITH_RESURRECT     % ! yesNo(OS::RESURRECT) %
 %
 let SEQUENCE := exists SEQUENCE default (@())
 let STATE := exists STATE default (@())
@@ -78,4 +83,22 @@ if OS::SEQUENCING then%
 #define ENERGY_LEVEL_COUNT    % !OS::SEQUENCING_S::ENERGY_LEVEL%
 %
 end if
+
+let RESURRECT_STATE := exists RESURRECT_STATE default (@())
+let RESURRECT_TRANSITION := exists RESURRECT_TRANSITION default (@())
+
+%
+/*
+ * Number of Resurrect State
+ */
+#define RESURRECT_STATE_COUNT    % ![RESURRECT_STATE length]% 
+#define RESURRECT_TRANSITION_COUNT    % ![RESURRECT_TRANSITION length]%
+
+%
+if OS::RESURRECT then%
+#define ENERGY_LEVEL_COUNT    % !OS::RESURRECT_S::ENERGY_LEVEL%
+#define RESURRECT_TASK_ID 0
+%
+end if
+
 template if exists tpl_library_defines

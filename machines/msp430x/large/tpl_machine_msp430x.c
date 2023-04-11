@@ -91,8 +91,14 @@ FUNC(void, OS_CODE) tpl_init_context(
 	#endif
 #endif
 	//status register. Set the GIE bit (Global interrupt)
+	#if WITH_RESURRECT == NO
 	exception_frame[SR_IDX] = (((uint32)(the_proc->entry) & (0xF0000))  >> 4 )| 0x8;
 	exception_frame[PC_IDX] = (uint16)(the_proc->entry) & 0xffff;
+	#else
+	CONSTP2VAR(tpl_proc, AUTOMATIC, OS_APPL_DATA) the_proc_dyn = tpl_dyn_proc_table[proc_id];
+	exception_frame[SR_IDX] = (((uint32)(the_proc_dyn->entry) & (0xF0000))  >> 4 )| 0x8;
+	exception_frame[PC_IDX] = (uint16)(the_proc_dyn->entry) & 0xffff;
+	#endif
 #pragma GCC diagnostic pop //"-Wpointer-to-int-cast"
 
 #if WITH_AUTOSAR_STACK_MONITORING == YES && WITH_PAINT_STACK == NO

@@ -252,7 +252,7 @@ FUNC(void, OS_CODE) tpl_choose_next_sequence(void){
   tpl_kern_seq.elected->mask_seq_terminate &= ~(1<<TPL_KERN(core_id).s_running->id);
 
   /* test if all task from sequence are terminated */
-  if (tpl_kern_seq.elected->mask_seq_terminate == 0x00)
+  if (tpl_kern_seq.elected->mask_seq_terminate == 0x0000)
   {
     /* reset task_terminate */
     tpl_kern_seq.elected->mask_seq_terminate =
@@ -280,7 +280,7 @@ FUNC(void, OS_CODE) tpl_choose_next_sequence(void){
         voltageInMillis = energy;
       }
       else{
-        voltageInMillis = energy*3/5;
+        voltageInMillis = (energy*3)/5;
       }
 
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)

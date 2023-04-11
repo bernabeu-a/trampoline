@@ -152,6 +152,11 @@ if OS::SEQUENCING then
 %
 sourceList.append("% !PROJECT %/tpl_sequence.c")%
 end if
+
+if OS::RESURRECT then
+%
+sourceList.append("% !PROJECT %/tpl_resurrect.c")%
+end if
 %
 
 rule = makefile.Rule (sourceList, "Compiling OIL file " + oilFile)

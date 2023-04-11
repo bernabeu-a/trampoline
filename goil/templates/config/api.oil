@@ -397,7 +397,29 @@ CPU api {
       CALLABLE_BY_ISR1 = FALSE;
     } : "Terminate the calling task from a sequence";
   };
-
+  
+  
+  /*
+   * RESURRECT 
+   */
+  APICONFIG resurrect {
+   ID_PREFIX = OS;
+   FILE = "tpl_resurrect_kernel";
+   DIRECTORY = "os";
+   SYSCALL StartResurrect {
+     KERNEL = tpl_start_os_resurrect_service;
+     LOCK_KERNEL = FALSE;
+     CALLABLE_BY_ISR1 = FALSE;
+     ARGUMENT mode { KIND = CONST; TYPE = AppModeType; }
+       : "The active application mode";
+   } : "The user can call this system service to start the os with resurrect in a specific mode.";
+   SYSCALL TerminateStepResurrect {
+     KERNEL = tpl_terminate_step_resurrect_service;
+     LOCK_KERNEL = FALSE;
+     CALLABLE_BY_ISR1 = FALSE;
+   } : "Terminate the current activity and start another one if possible.";
+  };
+  
   /*
    * OSEK com
    */

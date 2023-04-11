@@ -44,6 +44,21 @@ IMPLEMENTATION  msp430x {
     ALARM_TYPE ALARM[]; 
   };
 
+  RESURRECT_STATE [] {
+    BOOLEAN [
+      TRUE,
+      FALSE
+      ] INITIAL_STATE = FALSE;
+  };
+  
+  RESURRECT_TRANSITION [] {
+    RESURRECT_STATE_TYPE FROM_STATE;
+    RESURRECT_STATE_TYPE TO_STATE;
+    UINT32 ENERGY;
+    IDENTIFIER ENTRY;
+    IDENTIFIER FUNC[]; 
+  };
+  
   /* Additional OS attributes */
   OS {
     /* CPU frequency */
@@ -88,8 +103,16 @@ IMPLEMENTATION  msp430x {
        UINT32 ENERGY_LEVEL = 1;
       },
       FALSE
-      ]SEQUENCING = FALSE;
-
+    ]SEQUENCING = FALSE;
+    
+    /* RESURRECT Activity */
+    BOOLEAN [
+      TRUE {
+       UINT32 ENERGY_LEVEL = 1;
+      },
+      FALSE
+    ] RESURRECT = FALSE;
+    
     /* trace */
     BOOLEAN [
       TRUE {
@@ -120,6 +143,7 @@ CPU msp430x {
     /* Checkpointing */
     ASFILE = "framtr.S";
     CFILE = "tpl_checkpointing.c";
+    CFILE = "tpl_checkpoint.c";
   };
 
   GENERATED_FILES msp430x {

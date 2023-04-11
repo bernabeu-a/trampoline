@@ -492,6 +492,10 @@ end if
 %
 template idle_task_descriptors
 
+#if OS::RESURRECT then
+#template resurrect_task_descriptors
+#end if
+
 foreach task in TASKS
   before
 %

@@ -425,6 +425,11 @@ if OS::SEQUENCING then
 %
 cSourceList.append(projfile.ProjectFile("% !PROJECT %/tpl_sequence.c"))%
 end if
+if OS::RESURRECT then
+%
+cSourceList.append(projfile.ProjectFile("% !PROJECT %/tpl_resurrect.c"))%
+end if
+
 foreach platform in exists GENERATED_FILES default ( @() ) do
   if not exists platform::CFILE then let platform::CFILE := @() end if
   if not exists platform::ASFILE then let platform::ASFILE := @() end if
