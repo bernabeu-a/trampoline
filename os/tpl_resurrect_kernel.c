@@ -42,6 +42,7 @@
 #include <stdint.h>
 
 #if WITH_RESURRECT == YES
+#include "tpl_resurrect_kernel.h"
 
 #define OS_START_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
@@ -49,11 +50,12 @@ STATIC VAR(tpl_application_mode, OS_VAR) application_mode_step = NOAPPMODE;
 #define OS_STOP_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
-#define OS_START_SEC_CODE
+#define OS_START_SEC_VAR_NON_VOLATILE_16BIT
+#include "tpl_memmap.h"
+VAR(uint16_t, AUTOMATIC) result_adc=0;
+#define OS_STOP_SEC_VAR_NON_VOLATILE_16BIT
 #include "tpl_memmap.h"
 
-#define OS_STOP_SEC_CODE
-#include "tpl_memmap.h"
 
 FUNC(void, OS_CODE)
 tpl_init_resurrect_os(CONST(tpl_application_mode, AUTOMATIC) app_mode)
@@ -188,18 +190,24 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) ptr_step = NULL;
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step = NULL;
 
+    P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
     while (ptr_step == NULL)
     {
+      P1OUT |= BIT2;
       /* Get energy level from ADC */
       bool use1V2Ref = true;
-      tpl_adc_init_simple(use1V2Ref);
+      tpl_adc_init_simple(use1V2Ref, result_adc_adc);
       /* Polling */
-      uint16_t energy = readPowerVoltage_simple();
+      readPowerVoltage_simple();
+      // uint16_t energy = (~result_adc)+1;
+      uint16_t energy = result_adc;
       uint16_t voltageInMillis;
       if(energy == 0x0FFF){
         use1V2Ref = false;
-        tpl_adc_init_simple(use1V2Ref);
-        energy = readPowerVoltage_simple();
+        tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+        readPowerVoltage_simple();
+        // energy = (~result_adc)+1;
+        energy = result_adc;
         voltageInMillis = energy;
       }
       else{
@@ -233,6 +241,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
           #endif /* WITH_RESURRECT_EVENT */
         }
       }
+      P1OUT &= ~BIT2;
       /* Not enough energy to elect next step --> hibernate */
       if (ptr_step == NULL)
       {
@@ -306,6 +315,15 @@ FUNC(void, OS_CODE) tpl_terminate_step_resurrect_service(void){
 }
 
 
+FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMATIC)  alarm_id, VAR(int, AUTOMATIC) set_nb_activation){
+  #if ALARM_COUNT > 0
+    P2VAR(tpl_time_obj, AUTOMATIC, OS_APPL_DATA) alarm;
+    alarm = tpl_alarm_table[alarm_id];
+    alarm->nb_iteration = set_nb_activation;
+  #endif
+
+  return;
+}
 // #if WITH_RESURRECT_EVENT == YES
 // FUNC(void, OS_CODE) tpl_set_event_resurrect_service(
 //   CONST(EventResurrectType, AUTOMATIC) event_resurrect){

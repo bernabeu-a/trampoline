@@ -34,9 +34,14 @@
 #include "tpl_trace.h"
 #include "tpl_os_hooks.h"
 #include "tpl_chkpt_checkpoint_kernel.h"
+#include "tpl_chkpt_adc.h"
 
 #include "msp430.h"
 #include <stdint.h>
+
+#if WITH_RESURRECT == YES
+#include "tpl_resurrect_kernel.h"
+#endif /* WITH_RESURRECT */
 
 #if NUMBER_OF_CORES > 1
 #include "tpl_os_multicore_kernel.h"
@@ -60,11 +65,11 @@ VAR (sint16,OS_VAR) tpl_checkpoint_buffer = -1;
 #define OS_STOP_SEC_VAR_NON_VOLATILE_16BIT
 #include "tpl_memmap.h"
 
+
 #define OS_START_SEC_CODE
 #include "tpl_memmap.h"
 
 void init_adc() {
-
   static uint8_t use1V2Ref = 0;
 
   ADC12CTL0 &= ~ADC12ENC;                     // disable ADC
@@ -149,19 +154,42 @@ void tpl_lpm_hibernate()
 }
 
 FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
+  P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
   // P1OUT |= BIT4;
   sint16 l_buffer;
   l_buffer = (tpl_checkpoint_buffer + 1) % 2;
-  // tpl_save_checkpoint();
-  tpl_save_checkpoint_dma(l_buffer);
+  tpl_save_checkpoint(l_buffer);
+  /* Avoid using DMA with ADC linked to DMA */
+  // tpl_save_checkpoint_dma(l_buffer);
   tpl_checkpoint_buffer = l_buffer;
   
   uint16_t waiting_loop = 1;
-  init_adc();
+
+  // tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+  // init_adc();
   while(waiting_loop){
     P1OUT |= BIT4;
     tpl_RTC_init(); //startRTC => interrupt next 1 min
-    if(tpl_ADC_read() > RESUME_FROM_HIBERNATE_THRESHOLD){
+    /* Get energy level from ADC */
+    bool use1V2Ref = true;
+    tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+    /* Polling */
+    readPowerVoltage_simple();
+    // uint16_t energy = (~result_adc)+1;
+    uint16_t energy = result_adc;
+    uint16_t voltageInMillis;
+    if(energy == 0x0FFF){
+      use1V2Ref = false;
+      tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+      readPowerVoltage_simple();
+      // energy = (~result_adc)+1;
+      energy = result_adc;
+      voltageInMillis = energy;
+    }
+    else{
+      voltageInMillis = energy*3/5;
+    }
+    if(voltageInMillis > RESUME_FROM_HIBERNATE_THRESHOLD){
       tpl_RTC_stop();
 		  waiting_loop = 0;
 	  } else {
@@ -286,17 +314,18 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
      * if such a task exists.
      */
   
-  P1OUT |= BIT5;
-  // tpl_load_checkpoint();
-  tpl_load_checkpoint_dma(tpl_checkpoint_buffer);
-  P1OUT &= ~BIT5;
+  // P1OUT |= BIT5;
+  tpl_load_checkpoint(tpl_checkpoint_buffer);
+  /* Avoid using DMA with ADC linked to DMA */
+  // tpl_load_checkpoint_dma(tpl_checkpoint_buffer);
+  // P1OUT &= ~BIT5;
   #if WITH_SEQUENCING == YES
     tpl_choose_next_sequence();
     tpl_start(CORE_ID_OR_NOTHING(core_id));
   #endif
 
   #if WITH_RESURRECT == YES
-    P1OUT &= ~BIT5;
+    // P1OUT &= ~BIT5;
     tpl_choose_next_step();
     // tpl_start(CORE_ID_OR_NOTHING(core_id));
     tpl_start(CORE_ID_OR_NOTHING(core_id));
