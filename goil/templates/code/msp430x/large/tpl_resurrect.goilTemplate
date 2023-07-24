@@ -86,10 +86,56 @@ extern void % !item %(void);
 %
 end foreach
 
+%
+/* Function for timer, get the time of each activities */
+
+#if WITH_TIMER_ACTIVITY == YES
+uint16_t time_millisec_activity;
+
+uint16_t time_microsec_activity;
+
+void start_timer_activity(){
+
+  /* reset previous measure */
+  time_millisec_activity = 0;
+  time_microsec_activity = 0;
+  /* Set up timer TA2 with ACLK. ACLK is set to LFXTCLK at start : 32.768 kHz */
+  TA2CCR0 = 0;          /* lock the timer */
+  TA2CTL = TASSEL__ACLK /* ACLK */ 
+           | ID__1 /* divide by 1 */ 
+           | MC__UP /* Up count */ 
+           | TACLR /* Clear counter */;
+  TA2CCTL0 |= CCIE;     /* enable the compare interrupt */
+  TA2CCR0 = 32;         /* start with a 1.007 ms period (33/32768) */
+  return;
+}
+
+void stop_timer_activity(){
+  TA2CTL &= ~(MC__UP);  /* stop timer */
+  time_microsec_activity = TA2R<<5; /* multiply by 32 as 1 tick is 1/32768 = 30.5 µs */
+  return;
+}
+
+#define APP_ISR_timer_activity_START_SEC_CODE
+#include "tpl_memmap.h"
+
+ISR(timer_activity)
+{
+  time_millisec_activity += 1;
+}
+
+#define APP_ISR_timer_activity_STOP_SEC_CODE
+#include "tpl_memmap.h"
+
+#endif /* WITH_TIMER_ACTIVITY */
+
+%
 #------------------------------------------------------------------------------*
 %
 #define APP_COMMON_START_SEC_CODE
 #include "tpl_memmap.h"
+
+
 %
 foreach resurrect_transition in RESURRECT_TRANSITION do
  if exists resurrect_transition::FUNC then
@@ -118,8 +164,17 @@ tab(5) %SetRelAlarm(%!al::ALARM%, %!al::ALARMTIME%, %!al::CYCLETIME%);
       end foreach
       end if
       do
+if OS::TIMER_ACTIVITY then
+tab(5)%start_timer_activity();
+%
+end if
 tab(5) !resurrect_transition_func::VALUE%();
 %
+if OS::TIMER_ACTIVITY then
+tab(5)%stop_timer_activity();
+%
+end if
+
       after
       if exists resurrect_transition::ALARM_RESURRECT then
       let listAlResurrect := @[]

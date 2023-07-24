@@ -134,6 +134,12 @@ IMPLEMENTATION  msp430x {
       FALSE
     ] RESURRECT = FALSE;
     
+    /* Timer for activity with RESURRECT */
+    BOOLEAN [
+      TRUE,
+      FALSE
+    ] TIMER_ACTIVITY = FALSE;
+    
     /* trace */
     BOOLEAN [
       TRUE {
