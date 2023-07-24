@@ -61,7 +61,7 @@ FUNC(void, OS_CODE)
 tpl_init_resurrect_os(CONST(tpl_application_mode, AUTOMATIC) app_mode)
 {
   GET_CURRENT_CORE_ID(core_id);
-  VAR(uint16, AUTOMATIC) i;
+  // VAR(uint16, AUTOMATIC) i;
   VAR(tpl_status, AUTOMATIC) result = E_OK;
   /*  Start the idle task */
 #if NUMBER_OF_CORES == 1
@@ -182,7 +182,7 @@ tpl_start_os_resurrect_service(CONST(tpl_application_mode, AUTOMATIC) mode)
 }
 
 FUNC(void, OS_CODE) tpl_choose_next_step(void){
-    VAR(StatusType, AUTOMATIC) result = E_OK;
+    // VAR(StatusType, AUTOMATIC) result = E_OK;
 
     VAR(uint16, AUTOMATIC) i;
     CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)

@@ -10,7 +10,7 @@ extern unsigned __tpl_end_of_checkpointing_zone;
 #define OS_START_SEC_CODE
 #include "tpl_memmap.h"
 
-FUNC(void, OS_CODE) tpl_save_checkpoint(tpl_checkpoint_buffer){
+FUNC(void, OS_CODE) tpl_save_checkpoint(sint16 tpl_checkpoint_buffer){
     if(tpl_checkpoint_buffer == -1){
         return;
     }
@@ -36,7 +36,7 @@ FUNC(void, OS_CODE) tpl_save_checkpoint(tpl_checkpoint_buffer){
     return;
 }
 
-FUNC(void, OS_CODE) tpl_load_checkpoint (tpl_checkpoint_buffer){
+FUNC(void, OS_CODE) tpl_load_checkpoint (sint16 tpl_checkpoint_buffer){
     if(tpl_checkpoint_buffer == -1){
         return;
     }

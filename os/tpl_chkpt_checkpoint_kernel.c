@@ -189,10 +189,31 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
     else{
       voltageInMillis = energy*3/5;
     }
+    #if WITH_RESURRECT == YES
+    P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step = NULL;
+    CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)
+    ptr_state = tpl_step_state[tpl_kern_resurrect.state];
+    uint8_t i;
+    uint32 tmp_step_energy = 0xFFFFFFFF;
+    for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
+      {
+        tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
+        if(tmp_ptr_step->energy < tmp_step_energy){
+          tmp_step_energy = tmp_ptr_step->energy;
+        }
+      }
+    if(voltageInMillis > tmp_step_energy){
+      tpl_RTC_stop();
+		  waiting_loop = 0;
+	  } 
+    #endif /* WITH_RESURRECT == YES */
+    #if WITH_RESURRECT == NO
     if(voltageInMillis > RESUME_FROM_HIBERNATE_THRESHOLD){
       tpl_RTC_stop();
 		  waiting_loop = 0;
-	  } else {
+	  } 
+    #endif /* WITH_RESURRECT == NO */
+    else {
       tpl_lpm_hibernate();
 	  }
     P1OUT &= ~BIT4;
