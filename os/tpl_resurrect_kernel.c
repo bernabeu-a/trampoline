@@ -241,12 +241,33 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
           #endif /* WITH_RESURRECT_EVENT */
         }
       }
+
       P1OUT &= ~BIT2;
       /* Not enough energy to elect next step --> hibernate */
       if (ptr_step == NULL)
       {
+        /* Before Hibernate we compute harvested enegy if using TIMER_ACTIVITY */
+        #if WITH_TIMER_ACTIVITY
+        uint8_t k;
+        uint32_t voltage_harvested;
+        uint32_t voltage_worst_case = tpl_kern_resurrect.energy_at_start;
+        uint32_t voltage_consumed = tpl_kern_resurrect.energy_at_start;
+
+        for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
+          voltage_worst_case -= tpl_kern_resurrect.elected->activity->slope[k] * tpl_kern_resurrect.elected->activity->time_activity[k];
+          voltage_consumed -= tpl_kern_resurrect.elected->activity->slope[k] * tpl_kern_resurrect.elected->activity->current_time_activity[k];
+        }
+        voltage_harvested = voltageInMillis - voltage_worst_case + voltage_consumed;
+        // voltage_harvested = voltageInMillis - 
+        
+        #endif /* WITH_TIMER_ACTIVITY */
         tpl_chkpt_hibernate();
+        
       }
+      /* Save Energy at start if starting a step */
+      #if WITH_TIMER_ACTIVITY
+      tpl_kern_resurrect.energy_at_start = voltageInMillis;
+      #endif /* WITH_TIMER_ACTIVITY */
     }
 
     /* Point the entry point of a the task to the right function */

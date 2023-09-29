@@ -153,7 +153,7 @@ void tpl_lpm_hibernate()
   // TA3CCTL0 |= CCIE;
 }
 
-FUNC(void, OS_CODE) tpl_chkpt_hibernate(void){
+FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
   // P1OUT |= BIT4;
   sint16 l_buffer;

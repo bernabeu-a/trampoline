@@ -27,6 +27,7 @@
 #ifndef TPL_OS_CHECKPOINT_H
 #define TPL_OS_CHECKPOINT_H
 
+#include <stdint.h>
 #include "tpl_os_kernel.h"
 
 extern void tpl_save_checkpoint_dma(const uint16 buffer);
@@ -54,7 +55,7 @@ FUNC(void, OS_CODE) tpl_hibernate_os_service(void);
 
 FUNC(void, OS_CODE) tpl_restart_os_service(void);
 
-FUNC(void, OS_CODE) tpl_chkpt_hibernate(void);
+FUNC(void, OS_CODE) tpl_chkpt_hibernate();
 
 #define OS_STOP_SEC_CODE
 #include "tpl_memmap.h"

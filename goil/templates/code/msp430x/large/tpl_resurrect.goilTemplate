@@ -86,10 +86,18 @@ extern void % !item %(void);
 %
 end foreach
 
+if OS::TIMER_ACTIVITY then
 %
 /* Function for timer, get the time of each activities */
 
 #if WITH_TIMER_ACTIVITY == YES
+
+P2VAR(uint16_t, AUTOMATIC, OS_VAR) ptr_current_time = NULL;
+
+void init_ptr_current_time(){
+  ptr_current_time = tpl_kern_resurrect.elected->activity->current_time_activity;
+  return;
+}
 uint16_t time_millisec_activity;
 
 uint16_t time_microsec_activity;
@@ -113,6 +121,8 @@ void start_timer_activity(){
 void stop_timer_activity(){
   TA2CTL &= ~(MC__UP);  /* stop timer */
   time_microsec_activity = TA2R<<5; /* multiply by 32 as 1 tick is 1/32768 = 30.5 µs */
+  *ptr_current_time = time_millisec_activity;
+  ptr_current_time++;
   return;
 }
 
@@ -127,9 +137,32 @@ ISR(timer_activity)
 #define APP_ISR_timer_activity_STOP_SEC_CODE
 #include "tpl_memmap.h"
 
-#endif /* WITH_TIMER_ACTIVITY */
-
+/*
+ * Current time measured for activities
+ */
+ 
 %
+foreach resurrect_transition in RESURRECT_TRANSITION 
+ do
+  if exists resurrect_transition::FUNC then
+  let nb_activity:= [resurrect_transition::FUNC length]
+%
+VAR(uint16_t, AUTOMATIC) current_time_slope_step_% !resurrect_transition::NAME% [%!nb_activity%]= {%
+loop a from 1 to nb_activity step 1
+do 
+%0%
+between
+%,%
+after
+%};
+%
+end loop
+end if
+end foreach
+%
+#endif /* WITH_TIMER_ACTIVITY */
+%
+end if
 #------------------------------------------------------------------------------*
 %
 #define APP_COMMON_START_SEC_CODE
@@ -146,6 +179,10 @@ foreach resurrect_transition in RESURRECT_TRANSITION do
 %
 FUNC(void, OS_APPL_CODE) % !item% (void){   
 %
+if OS::TIMER_ACTIVITY then
+tab(5) %init_ptr_current_time();
+%
+end if
 tab(5) % //initMicrophone();
 %
       if exists resurrect_transition::ALARM_RESURRECT then
@@ -281,6 +318,77 @@ let RESURRECT_EVENT := exists RESURRECT_EVENT default (@())
 #define OS_START_SEC_CONST_UNSPECIFIED
 #include "tpl_memmap.h"
 %
+if OS::TIMER_ACTIVITY then
+let list_slope := @! !
+foreach slope_res in RESURRECT_SLOPE do
+  if [list_slope contains: slope_res::NAME] then
+  
+  else
+  let list_slope := list_slope + slope_res::NAME
+  %CONST (uint16_t, AUTOMATIC) %!slope_res::NAME% = %!slope_res::VALUE%;
+ %
+  end if
+end foreach
+
+let list_slope_time := @! !
+foreach slope_time_res in RESURRECT_TIME_SLOPE do
+  if [list_slope_time contains: slope_time_res::NAME] then
+  
+  else
+  let list_slope_time := list_slope_time + slope_time_res::NAME
+  %CONST (uint16_t, AUTOMATIC) %!slope_time_res::NAME% = %!slope_time_res::VALUE%;
+ %
+  end if
+end foreach
+
+foreach resurrect_transition in RESURRECT_TRANSITION 
+  do
+  if exists resurrect_transition::SLOPE then
+    let nb_activity:= [resurrect_transition::FUNC length]
+   %CONST(uint16_t, AUTOMATIC) slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
+  %
+  foreach slope in resurrect_transition::SLOPE do
+  %%!slope::VALUE
+  between 
+  %,
+  %
+  end foreach
+  %
+};
+%
+  end if
+  if exists resurrect_transition::TIME_SLOPE then
+    let nb_activity:= [resurrect_transition::FUNC length]
+   %CONST(uint16_t, AUTOMATIC) time_slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
+  %
+  foreach time_slope in resurrect_transition::TIME_SLOPE do
+  %%!time_slope::VALUE
+  between 
+  %,
+  %
+  end foreach
+  %
+};
+%
+  end if
+  
+end foreach
+foreach resurrect_transition in RESURRECT_TRANSITION 
+ do
+  if exists resurrect_transition::FUNC then
+  let nb_activity:= [resurrect_transition::FUNC length]
+ %CONST(tpl_activity, AUTOMATIC) activity_step_% !resurrect_transition::NAME% = {
+  .nb_activity = %!nb_activity%
+, .slope = slope_step_%!resurrect_transition::NAME%
+, .time_activity = time_slope_step_%!resurrect_transition::NAME%
+, .current_time_activity = current_time_slope_step_%!resurrect_transition::NAME%
+};
+
+%
+ end if
+end foreach
+end if
+
 foreach resurrect_transition in RESURRECT_TRANSITION 
   do
   %
@@ -313,6 +421,11 @@ if OS::RESURRECT_S::EVENT then%
   end foreach
   end if
   end if
+if OS::TIMER_ACTIVITY then
+ %
+, .activity = &activity_step_% !resurrect_transition::NAME%
+%
+end if
 %
 };
 %
@@ -351,6 +464,10 @@ VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
   if OS::RESURRECT_S::EVENT then
   %
   0,                        /* Events for choice of next step */%
+  end if
+  if OS::TIMER_ACTIVITY then
+  %
+  0,                        /* Energy measured when starting the step */%
   end if
 %  
 };

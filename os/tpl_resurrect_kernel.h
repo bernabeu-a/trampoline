@@ -43,6 +43,16 @@ typedef tpl_event_resurrect  EventResurrectType;
 
 typedef int NumberActivationType;
 
+struct TPL_ACTIVITY
+{
+  CONST(uint8_t, TYPEDEF) nb_activity;
+  P2CONST(uint16_t, TYPEDEF, OS_VAR) slope;
+  P2CONST(uint16_t, TYPEDEF, OS_VAR) time_activity;
+  P2VAR(uint16_t, TYPEDEF, OS_VAR) current_time_activity;
+};
+
+typedef struct TPL_ACTIVITY tpl_activity;
+
 struct TPL_STEP
 {
   CONST(uint32, TYPEDEF) energy;
@@ -52,6 +62,9 @@ struct TPL_STEP
   #if WITH_RESURRECT_EVENT == YES
   CONST(EventResurrectType, TYPEDEF) resurrect_event[RESURRECT_EVENT_COUNT];
   #endif /* WITH_RESURRECT_EVENT */
+  #if WITH_TIMER_ACTIVITY == YES
+  CONSTP2VAR(tpl_activity,TYPEDEF, OS_VAR) activity;
+  #endif /* WITH_TIMER_ACTIVITY */
 };
 
 typedef struct TPL_STEP tpl_step;
@@ -64,6 +77,9 @@ typedef struct
   #if WITH_RESURRECT_EVENT == YES
   VAR(uint16, TYPEDEF) state_event;
   #endif /* WITH_RESURRECT_EVENT */
+  #if WITH_TIMER_ACTIVITY
+  VAR(uint16, TYPEDEF) energy_at_start;
+  #endif /* WITH_TIMER_ACTIVITY */
 } tpl_kern_resurrect_state;
 
 #define OS_START_SEC_VAR_UNSPECIFIED
