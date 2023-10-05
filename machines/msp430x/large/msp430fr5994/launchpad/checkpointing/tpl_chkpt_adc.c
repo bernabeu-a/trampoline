@@ -156,6 +156,10 @@ void readPowerVoltage_simple(void)
   ADC12CTL0 |= ADC12ENC | ADC12SC;        // enable ADC and start conversion
   // while(ADC12CTL1 & ADC12BUSY);
   __bis_SR_register(CPUOFF + GIE);
+  __bic_SR_register(GIE);
+  // while((DMA2CTL & DMAIFG) == 0);
+  // DMA2CTL &= ~DMAIFG;
+  // DMAIV &= ~BIT2;                         // reset DMAIV interrupt
   adc_conv_ready = 0;
   DMA2CTL &= ~DMAEN;
   ADC12CTL0 &= ~(ADC12ENC);
