@@ -465,7 +465,8 @@ SECTIONS {
    appvars : {
 %
 foreach app in APPLICATIONS do
-%    /* . = ALIGN(__SEG_ALIGN_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) TODO: check alignment */
+#%    /* . = ALIGN(__SEG_ALIGN_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) TODO: check alignment */
+%
     __SEG_START_OS_APP_% !app::NAME %_VAR_RGN = .;
   /* --- Initialized variables section of OS_APP % !app::NAME % */
 %
@@ -477,14 +478,6 @@ foreach app in APPLICATIONS do
   end foreach
 %    . = ALIGN(4);
     __SEG_END_OS_APP_% !app::NAME %_VAR_RGN = .;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 4K ? 4K : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 1K ? 1K : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 512 ? 512 : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 256 ? 256 : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 128 ? 128 : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 64 ? 64 : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = (__SEG_END_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN - __SEG_START_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN) < 32 ? 32 : __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
-    __SEG_ALIGN_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN = __SEG_SIZE_OS_APP_% !proc::KIND %_% !proc::NAME %_VAR_RGN;
 %
 end foreach
 % 

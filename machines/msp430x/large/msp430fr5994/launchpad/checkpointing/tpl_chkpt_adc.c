@@ -19,26 +19,7 @@ FUNC(void, OS_APPL_CODE) tpl_adc_init_simple(bool use1V2Ref, uint16_t *ptr_resul
   // static bool use1V2Ref = true;
   // #if USE_DMA_ADC
   // uint16_t result_adc;
-  	// For safety, protect RMW Cpu instructions
-	DMACTL4 |= DMARMWDIS;
-
-	DMACTL1 &= ~DMA2TSEL;			//reinit trigger src for DMA2
-	DMACTL1 |= DMA2TSEL__ADC12IFG;	// and set trigger Source (26 = ADC end of conversion)
-
-    // Initialize the DMA. Using DMA channel 0.
-  DMA2CTL = DMADT_0      |	//single transfer
-		    DMADSTBYTE__WORD |	//src is word
-			  DMADSTBYTE__WORD |	//dst is word
-			  DMALEVEL__EDGE   |	//trigger on rising edge
-			  DMASRCINCR_0     |	//src is unchanged
-			  DMADSTINCR_0     ;	//dst is incremented
-  DMA2SZ = 1;			// Define DMA transfer size
-
-  DMA2SA = &ADC12MEM0;			// Set src address
-  DMA2DA = ptr_result_adc;				// Set dst address
-  DMA2CTL &= ~DMAIFG;
-  DMA2CTL |= DMAIE;				// Enable DMA interrupt 
-  // #endif /* USE_DMA_ADC */
+	DMA0CTL &= ~DMAEN__ENABLE;
 
   ADC12CTL0 &= ~ADC12ENC;                     // disable ADC
   ADC12CTL0 = ADC12ON | ADC12SHT0_4;          // turn ADC ON; sample + hold @ 64 × ADC12CLKs
@@ -47,7 +28,30 @@ FUNC(void, OS_APPL_CODE) tpl_adc_init_simple(bool use1V2Ref, uint16_t *ptr_resul
   ADC12CTL1 |= ADC12SHP;                      // ADCCLK = MODOSC; sampling timer
   ADC12CTL2 |= ADC12RES_2;                    // 12-bit resolution
   // ADC12CTL2 |= ADC12DF;
-  // ADC12IFGR0 = 0;                             // Clear Flags
+  ADC12CTL2 &= ~ADC12DF;
+  ADC12IFGR0 = 0;                             // Clear Flags
+
+  // 	// For safety, protect RMW Cpu instructions
+	// DMACTL4 |= DMARMWDIS;
+
+	// DMACTL1 &= ~DMA2TSEL;			//reinit trigger src for DMA2
+	// DMACTL1 |= DMA2TSEL__ADC12IFG;	// and set trigger Source (26 = ADC end of conversion)
+
+  // // Initialize the DMA. Using DMA channel 2.
+  // DMA2CTL = DMADT_0      |	//single transfer
+	// 	    DMADSTBYTE__WORD |	//src is word
+	// 		  DMADSTBYTE__WORD |	//dst is word
+	// 		  DMALEVEL__LEVEL  |	//trigger on rising edge
+	// 		  DMASRCINCR_0     |	//src is unchanged
+	// 		  DMADSTINCR_0     ;	//dst is incremented
+  // DMA2SZ = 1;			// Define DMA transfer size
+
+  // DMA2SA = &ADC12MEM0;			// Set src address
+  // DMA2DA = ptr_result_adc;				// Set dst address
+  // DMA2CTL &= ~DMAIFG;
+  // DMA2CTL |= DMAIE;				// Enable DMA interrupt 
+  // #endif /* USE_DMA_ADC */
+
   // ADC12IER0 |= ADC12IE0;                      // Enable interrupts
   while (REFCTL0 & REFGENBUSY);               // If ref generator busy, WAIT
   if (use1V2Ref) {
@@ -149,23 +153,36 @@ uint16_t readPowerVoltage(void)
   return ADC12_B_getResults(ADC12_B_BASE, ADC12_B_MEMORY_0);
 }
 
-void readPowerVoltage_simple(void)
+uint16_t readPowerVoltage_simple(void)
 {
-  DMA2CTL |= DMAEN;
-  // ADC12CTL0 |= ADC12ON;
-  ADC12CTL0 |= ADC12ENC | ADC12SC;        // enable ADC and start conversion
-  // while(ADC12CTL1 & ADC12BUSY);
-  __bis_SR_register(CPUOFF + GIE);
-  __bic_SR_register(GIE);
+  // DMA2CTL |= DMAEN;
+  // // ADC12CTL0 |= ADC12ON;
+  // // __bis_SR_register(GIE);
+  // ADC12CTL0 |= ADC12ENC | ADC12SC;        // enable ADC and start conversion
+  // // while(ADC12CTL1 & ADC12BUSY);
+  // // __bis_SR_register(CPUOFF);
+  // // __bic_SR_register(GIE);
   // while((DMA2CTL & DMAIFG) == 0);
   // DMA2CTL &= ~DMAIFG;
   // DMAIV &= ~BIT2;                         // reset DMAIV interrupt
-  adc_conv_ready = 0;
-  DMA2CTL &= ~DMAEN;
-  ADC12CTL0 &= ~(ADC12ENC);
-  ADC12CTL0 &= ~(ADC12ON);
+  // adc_conv_ready = 0;
+
+  // DMA2CTL &= ~DMAEN;
+  // ADC12CTL0 &= ~(ADC12ENC);
+  // ADC12CTL0 &= ~(ADC12ON);
+  // REFCTL0 &= ~REFON;
+
+
+  ADC12IFGR0 = 0;
+	ADC12CTL0 |= ADC12ON;
+	ADC12CTL0 &= ~ADC12ENC;
+	ADC12CTL0 |= ADC12ENC | ADC12SC;
+	while ( !ADC12IFGR0 ) {}
+	uint16_t adcResult = ADC12MEM0;
+	ADC12CTL0 &= ~ADC12ENC;
+	ADC12CTL0 &= ~ADC12ON;
   REFCTL0 &= ~REFON;
-  return;
+	return adcResult;
 }
 
 #define APP_COMMON_STOP_SEC_CODE

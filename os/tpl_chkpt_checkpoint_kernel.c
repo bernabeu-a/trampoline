@@ -165,23 +165,19 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   
   uint16_t waiting_loop = 1;
 
-  // tpl_adc_init_simple(use1V2Ref, result_adc_adc);
-  // init_adc();
   while(waiting_loop){
-    P1OUT |= BIT4;
-    tpl_RTC_init(); //startRTC => interrupt next 1 min
     /* Get energy level from ADC */
     bool use1V2Ref = true;
     tpl_adc_init_simple(use1V2Ref, result_adc_adc);
     /* Polling */
-    readPowerVoltage_simple();
+    result_adc = readPowerVoltage_simple();
     // uint16_t energy = (~result_adc)+1;
     uint16_t energy = result_adc;
     uint16_t voltageInMillis;
     if(energy == 0x0FFF){
       use1V2Ref = false;
       tpl_adc_init_simple(use1V2Ref, result_adc_adc);
-      readPowerVoltage_simple();
+      result_adc = readPowerVoltage_simple();
       // energy = (~result_adc)+1;
       energy = result_adc;
       voltageInMillis = energy;
@@ -214,9 +210,10 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
 	  } 
     #endif /* WITH_RESURRECT == NO */
     else {
+      tpl_RTC_init(); //startRTC => interrupt next 1 min
       tpl_lpm_hibernate();
 	  }
-    P1OUT &= ~BIT4;
+    setModeIdle();
   }
 }
 
@@ -283,7 +280,7 @@ void __attribute__((interrupt(RTC_VECTOR))) tpl_direct_irq_handler_RTC_VECTOR()
 FUNC(void, OS_CODE) tpl_restart_os_service(void)
 {
 
-  P1OUT &= ~BIT5;
+  // P1OUT &= ~BIT5;
   GET_CURRENT_CORE_ID(core_id)
 
     //#if (WITH_ERROR_HOOK == YES) || (WITH_OS_EXTENDED == YES) | (WITH_ORTI == YES)

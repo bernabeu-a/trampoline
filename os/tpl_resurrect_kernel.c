@@ -193,19 +193,20 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
     while (ptr_step == NULL)
     {
-      P1OUT |= BIT2;
+      // P1OUT |= BIT2;
       /* Get energy level from ADC */
       bool use1V2Ref = true;
       tpl_adc_init_simple(use1V2Ref, result_adc_adc);
       /* Polling */
-      readPowerVoltage_simple();
+      result_adc = readPowerVoltage_simple();
+
       // uint16_t energy = (~result_adc)+1;
       uint16_t energy = result_adc;
       uint16_t voltageInMillis;
       if(energy == 0x0FFF){
         use1V2Ref = false;
         tpl_adc_init_simple(use1V2Ref, result_adc_adc);
-        readPowerVoltage_simple();
+        result_adc = readPowerVoltage_simple();
         // energy = (~result_adc)+1;
         energy = result_adc;
         voltageInMillis = energy;
@@ -213,7 +214,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       else{
         voltageInMillis = energy*3/5;
       }
-
+      // voltageInMillis = 3300; // debug
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
@@ -242,7 +243,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         }
       }
 
-      P1OUT &= ~BIT2;
+      // P1OUT &= ~BIT2;
       /* Not enough energy to elect next step --> hibernate */
       if (ptr_step == NULL)
       {
@@ -261,6 +262,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         // voltage_harvested = voltageInMillis - 
         
         #endif /* WITH_TIMER_ACTIVITY */
+
         tpl_chkpt_hibernate();
         
       }

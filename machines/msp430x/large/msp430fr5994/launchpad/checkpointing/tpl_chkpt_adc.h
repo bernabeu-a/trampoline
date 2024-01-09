@@ -13,6 +13,6 @@ FUNC(void, OS_APPL_CODE) tpl_adc_init(void);
 
 uint16_t readPowerVoltage(void);
 
-void readPowerVoltage_simple(void);
+uint16_t readPowerVoltage_simple(void);
 
 #endif

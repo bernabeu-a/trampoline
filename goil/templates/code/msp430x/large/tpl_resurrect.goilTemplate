@@ -177,13 +177,13 @@ foreach resurrect_transition in RESURRECT_TRANSITION do
     foreach resurrect_transition_func in resurrect_transition::FUNC
       before
 %
-FUNC(void, OS_APPL_CODE) % !item% (void){   
+FUNC(void, OS_APPL_CODE) % !item% (void){ 
 %
 if OS::TIMER_ACTIVITY then
 tab(5) %init_ptr_current_time();
 %
 end if
-tab(5) % initMicrophone();
+tab(5) % //initMicrophone();
 %
       if exists resurrect_transition::ALARM_RESURRECT then
       foreach resurrect_transition_alarm in resurrect_transition::ALARM_RESURRECT
