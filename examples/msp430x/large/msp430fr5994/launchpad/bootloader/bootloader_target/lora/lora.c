@@ -60,6 +60,7 @@ void readBurstRegister(uint8_t reg, uint8_t* dest, uint8_t len){
 	P3OUT |= BIT0;
 	return;
 }
+
 uint8_t readRegister(uint8_t address)
 {
     return singleTransfer(address & 0x7f,0x00);
