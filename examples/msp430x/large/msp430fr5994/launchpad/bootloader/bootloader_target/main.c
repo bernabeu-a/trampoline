@@ -4,6 +4,20 @@
 
 #include "lora/lora.h"
 
+extern uint16_t _Appl_End;                  /* Application End Address */
+extern uint32_t _Appl_Start2;
+extern uint32_t _Appl_End2;
+extern uint16_t _Appl_checksum;             /*! Application Checksum Address */
+
+/*! Application start address (from linker file) */
+#define APP_START_ADDR          ((uint32_t )&_Appl_checksum)
+/*! Application end address (from linker file) */
+#define APP_END_ADDR            ((uint32_t )&_Appl_End)
+/*! App2 area start address (from linker file) */
+#define APP2_START_ADDR          ((uint32_t )&_Appl_Start2)
+/*! App2 end address (from linker file) */
+#define APP2_END_ADDR            ((uint32_t )&_Appl_End2)
+
 // #define __fram __attribute__((section(".persistent")))
 // #define blink_app1_red_SIZE   10005
 
@@ -12,6 +26,7 @@
 #define RESPONSE_ERROR 0x99
 #define COMM_ERROR 0x99
 #define COMM_OK 0x00
+
 // __fram uint8_t blink_app1_red_0[blink_app1_red_SIZE] = {0};
 
 /* Global Variable */
@@ -24,18 +39,20 @@ static uint8_t counter;
 uint8_t TxByte;
 
 uint16_t crc16MakeBitwise(uint8_t *pmsg, uint32_t msg_size);
+uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr);
 
 // __asm__ volatile(
 //     "\t.global _reset_vector                \n"
 //     "\t.section .init, \"ax\", @progbits    \n"
 //     "\t.type _start_bootloader, %function   \n"
 //     "\t _start_bootloader:                  \n"
-//     "calla #_start_bootloader               \n"
+//     "calla #main_boot                       \n"
 // );
 
 void __attribute__ ((interrupt(RESET_VECTOR))) _start_bootloader (void){
+    // Des choses a faire avant le main_boot ? 
+    // init des variable etc ... ?
     main_boot();
-
 }
 
 void rxProcess(uint8_t data){
@@ -109,14 +126,14 @@ uint8_t WriteByte(uint32_t addr, uint8_t data){
     return RESPONSE_OK;
 }
 
-void rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
+uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
     uint8_t ii;
     uint8_t i;    
     switch (RxData[0]){
         case 0xAA:
 
             for(i = 0; i < RxLen-4; i++){
-                if(WriteByte((uint32_t)RxData[1]+((uint32_t)RxData[2]<<8)+(((uint32_t)RxData[3] & 0x0F)<<16), &RxData[4+i]) != RESPONSE_OK){
+                if(WriteByte(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual((uint32_t)RxData[1]+((uint32_t)RxData[2]<<8)+(((uint32_t)RxData[3] & 0x0F)<<16)), &RxData[4+i]) != RESPONSE_OK){
                     *TxData = RESPONSE_ERROR;
                 }
             }
@@ -178,10 +195,15 @@ int main_boot( void ) {
         }
         /* Now interpret it */
         if(CommStatus == COMM_OK){
-                rxIntepreter(RxPacket, Len, &TxByte);
-                P1OUT ^= BIT1;
+            ret = rxIntepreter(RxPacket, Len, &TxByte);
+            P1OUT ^= BIT1;
         }
 
+        if (ret == RET_JUMP_TO_APP)
+        {
+            // If Packet indicates a jump to App
+            TI_MSPBoot_AppMgr_JumpToApp();
+        }
     /**/
     // uint16_t i;
     // uint8_t *ptr_array = blink_app1_red_0;
@@ -207,4 +229,97 @@ uint16_t crc16MakeBitwise(uint8_t *pmsg, uint32_t msg_size)
         CRCDIRB_L = *pmsg++;
     }
     return(CRCINIRES);
+}
+
+/* Verify Application in Download area */
+
+static bool Verify_App_Down(void){
+    extern uint32_t _Download_start_memory;
+    extern uint32_t _Download_checksum;
+    extern uint32_t _Download_CRC_size;
+    
+    static uint16_t result = 0;
+    uint32_t i;
+    uint8_t* data_ptr;
+
+    CRCINIRES = 0xFFFF;                                                             /* Init seed */
+    data_ptr = (uint8_t*) &_Download_start_memory;
+    for(i = 0 ; i < (uint32_t) &_Download_CRC_size ; i++) CRCDIRB_L = *data_ptr++;     /* Add to crc */
+
+    result = CRCINIRES;
+    if (result != __data20_read_short((unsigned long)&_Download_checksum)) return false;
+    else return true;
+}
+
+/******************************************************************************
+ *
+ * @brief   Convert a virtual address of application to a physical address in
+ *          download area
+ *
+ * @param  addr     Address in appplication memory
+ *
+ * @return  Physical address in download area
+ *
+ * @note: the address must be in application area, this function doesn't validate
+ *          the input
+ *****************************************************************************/
+uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr)
+{
+    volatile uint32_t ret;
+    volatile uint32_t address;
+    extern uint32_t _Download_offset_size;			/*! Download Offset Size */
+    extern uint32_t _Download_offset1;				/*! Download Offset 1 */
+    extern uint32_t _Download_offset2;				/*! Download Offset 2 */
+
+    address = addr;
+
+    // If the address-offset fits in 1st app area
+    if (address <=  (uint32_t )&_Download_offset_size)
+	{
+		ret = (addr + (uint32_t )&_Download_offset1);
+	}
+	else    // Else, place it in the 2nd download area
+	{
+		ret = (addr + (uint32_t )&_Download_offset2);
+	}
+
+    return ret;
+}
+
+void TI_MSPBoot_MI_ReplaceApp(void)
+{
+    volatile uint32_t addr;
+
+    for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr++)
+    {
+        WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+        __no_operation();
+    }
+
+    if(APP2_START_ADDR == 0x10000)
+    {
+        for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr++)
+        {
+        	WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+        	__no_operation();
+        }
+    }
+}
+
+void TI_MSPBoot_AppMgr_JumpToApp(void){
+    if(Verify_App_Down()){
+        // Erase current app
+
+        // Switch Download to app
+
+        // Double check current app
+
+        // Erase download 
+
+        // Software reset
+
+    }
+    else{
+        
+    }
 }

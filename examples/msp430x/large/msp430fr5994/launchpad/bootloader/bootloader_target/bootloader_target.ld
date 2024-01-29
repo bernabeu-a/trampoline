@@ -41,15 +41,15 @@ ENTRY(_start_bootloader)
 MEMORY {
   TINYRAM          : ORIGIN = 0xA, LENGTH = 0x0016
   /* BSL              : ORIGIN = 0x1000, LENGTH = 0x0800 */
-  RAM              : ORIGIN = 0x1C00, LENGTH = 0x1000
-  LEARAM           : ORIGIN = 0x2C00, LENGTH = 0x0EC8
-  LEASTACK         : ORIGIN = 0x3AC8, LENGTH = 0x0138
+  RAM              : ORIGIN = 0x1c08, LENGTH = 0x1ff8
+  /* LEARAM           : ORIGIN = 0x2C00, LENGTH = 0x0EC8
+  LEASTACK         : ORIGIN = 0x3AC8, LENGTH = 0x0138 */
   INFOMEM          : ORIGIN = 0x1800, LENGTH = 0x0200
   INFOD            : ORIGIN = 0x1800, LENGTH = 0x0080
   INFOC            : ORIGIN = 0x1880, LENGTH = 0x0080
   INFOB            : ORIGIN = 0x1900, LENGTH = 0x0080
   INFOA            : ORIGIN = 0x1980, LENGTH = 0x0080
-  FRAM (rx)        : ORIGIN = 0xF000, LENGTH = 0x0F70   
+  FRAM (rx)        : ORIGIN = 0xE000, LENGTH = 0x1F70   
   /* FRAM (rx)        : ORIGIN = 0x4000, LENGTH = 0xBF80 END=0xFF7F, size 49024 */
   /* HIFRAM (rxw)     : ORIGIN = 0x00010000, LENGTH = 0x00033FF7 /* Boundaries changed to fix CPU47 */
   JTAGSIGNATURE    : ORIGIN = 0xFF80, LENGTH = 0x0004
@@ -113,9 +113,40 @@ MEMORY {
   RESETVEC         : ORIGIN = 0xFFFE, LENGTH = 0x0002
 }
 
+__RAM_Start = 0x1c00;                           /* RAM Start */
+__RAM_End = 0x3bff;                             /* RAM End */
+/* RAM shared between App and Bootloader, must be reserved */
+PassWd = 0x1c00;                                /* Password sent by App to force boot  mode */
+StatCtrl = 0x1c02;                              /* Status and Control  byte used by Comm */
+CI_State_Machine = 0x1c03;                      /*  State machine variable used by Comm */
+CI_Callback_ptr = 0x1c04;                       /* Pointer to Comm callback structure */
+/* Unreserved RAM used for Bootloader or App purposes */
+_NonReserved_RAM_Start = 0x1c08;                /* Non-reserved RAM */
+
+__Boot_Start = 0xe000;                          /* Boot flash */
+__Boot_Reset = 0xfffe;                          /* Boot reset vector */
+__Boot_VectorTable = 0xff90;                    /* Boot vector table */
+
+_Appl_Start = 0x4000;                           /* Start of Application area */
+_Appl_End = 0xdfff;                             /* End of Application area */
+_Appl_Vector_Start = 0xdf90;                    /* Interrupt table */
+_Appl_Reset_Vector = (__Boot_Start - 2);        /* App reset vector */
+_Appl_Start2 = 0x10000;                         /* Start of Application area 2 */          
+_Appl_End2 = 0x247ff;                           /* End of Application area 2 */
+
+_Download_start = 0x24800;		                /* Download Area */
+_Download_end = 0x43fff;                        /*End of Download Area */
+_Download_checksum = (_Download_start);         
+_Download_checksum_8 = (_Download_start + 2);
+_Download_start_memory = (_Download_start + 3);
+_Download_CRC_size = (_Download_end - _Download_start_memory + 1);
+_Download_offset_size = (__Boot_Start - 1);
+_Download_offset1 = (_Download_start - _Appl_Start);
+_Download_offset2 = (__Boot_Start - _Appl_Start + _Download_start - _Appl_Start2);
+
 SECTIONS
 {
-  .leaRAM             : {} > LEARAM
+  /* .leaRAM             : {} > LEARAM */
   .jtagsignature      : {} > JTAGSIGNATURE
   .bslsignature       : {} > BSLSIGNATURE
   .ipe :

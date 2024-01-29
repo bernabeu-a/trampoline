@@ -53,13 +53,14 @@ set(CMAKE_C_FLAGS_RELEASE "-Os -flto -DNDEBUG" CACHE INTERNAL "c compiler flags 
 #
 # This path contains default linker scripts
 # set(MCU_SPECIFIC_LINKER_FLAGS "-L${TOOLCHAIN_PREFIX}/msp430-elf/sys-include -T/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/bootloader_target.ld")
-set(MCU_SPECIFIC_LINKER_FLAGS "-Wl,-L${TOOLCHAIN_PREFIX}/msp430-elf/sys-include -Wl,-T/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/bootloader_target.ld")
-set(CMAKE_EXE_LINKER_FLAGS "${MCU_SPECIFIC_LINKER_FLAGS} -Wl,--no-undefined -Wl,--gc-sections -Wl,--undefined=__mspabi_mpyi -Wl,-lmul_f5 -Wl,-Map=bootloader.map -Wl,-L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/msp430-elf/lib/large/full-memory-range -Wl,-lc -Wl,-L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/lib/gcc/msp430-elf/9.3.1/large/full-memory-range -Wl,-lgcc" CACHE STRING "")
+# set(MCU_SPECIFIC_LINKER_FLAGS "-Wl,--no-undefined -Wl,--gc-sections -Wl,-Map=bootloader.map -Wl,--undefined=__mspabi_mpyi -lmul_f5")
+# set(CMAKE_EXE_LINKER_FLAGS "${MCU_SPECIFIC_LINKER_FLAGS} -Wl,-L${TOOLCHAIN_PREFIX}/msp430-elf/sys-include -Wl,-T/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/bootloader_target.ld -Wl,-L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/msp430-elf/lib/large/full-memory-range -Wl,-lc -Wl,-L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/lib/gcc/msp430-elf/9.3.1/large/full-memory-range -Wl,-lgcc" CACHE STRING "")
 
-# set(LINKER_SPECIFIC_FLAGS "-L${TOOLCHAIN_PREFIX}/msp430-elf/sys-include -T/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/bootloader_target.ld --no-undefined --gc-sections --undefined=__mspabi_mpyi -lmul_32 -L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/msp430-elf/lib/large/full-memory-range -lc -L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/lib/gcc/msp430-elf/9.3.1/large/full-memory-range -lgcc -Map=bootloader.map")
-# set(CMAKE_C_LINK_EXECUTABLE
-#     "${CMAKE_LINKER} ${LINKER_SPECIFIC_FLAGS} -o bootloader.out /home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/build/CMakeFiles/bootloader.out.dir/main.c.o /home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/build/CMakeFiles/bootloader.out.dir/lora/lora.c.o")
-# set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(LINKER_SPECIFIC_FLAGS "--no-undefined --gc-sections -Map=bootloader.map --undefined=__mspabi_mpyi -lmul_f5 -L${TOOLCHAIN_PREFIX}/msp430-elf/sys-include -T/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/bootloader_target.ld -L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/msp430-elf/lib/large/full-memory-range -lc -L/home/bernabeu-a/Source/msp430-gcc-9.3.1.11_linux64/lib/gcc/msp430-elf/9.3.1/large/full-memory-range -lgcc")
+set(CMAKE_C_LINK_EXECUTABLE
+    "${CMAKE_LINKER} -o bootloader.out /home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/build/CMakeFiles/bootloader.out.dir/main.c.o /home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/bootloader/bootloader_target/build/CMakeFiles/bootloader.out.dir/lora/lora.c.o ${LINKER_SPECIFIC_FLAGS}")
+
+    # set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 # set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 # set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 # set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
