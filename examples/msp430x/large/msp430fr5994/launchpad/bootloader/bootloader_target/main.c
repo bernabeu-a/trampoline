@@ -25,6 +25,19 @@ uint8_t TxByte;
 
 uint16_t crc16MakeBitwise(uint8_t *pmsg, uint32_t msg_size);
 
+// __asm__ volatile(
+//     "\t.global _reset_vector                \n"
+//     "\t.section .init, \"ax\", @progbits    \n"
+//     "\t.type _start_bootloader, %function   \n"
+//     "\t _start_bootloader:                  \n"
+//     "calla #_start_bootloader               \n"
+// );
+
+void __attribute__ ((interrupt(RESET_VECTOR))) _start_bootloader (void){
+    main_boot();
+
+}
+
 void rxProcess(uint8_t data){
     static uint16_t Checksum;
     uint8_t ii;
@@ -118,7 +131,7 @@ void rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
     }
 }
 
-int main( void ) {
+int main_boot( void ) {
     /* Stop the watchdog timer */
     WDTCTL = WDTPW | WDTHOLD;
 
