@@ -1,0 +1,222 @@
+/*
+ * MSP430FR5994 configuration file
+ */
+
+CPU msp430fr5994 {
+
+  COUNTER SystemCounter {
+    SOURCE = TIMER3_A0_VECTOR;
+  };
+
+  /*
+   * Interrupts of MSP430FR5994. See page 58 of 
+   * MSP430FR596x, MSP430FR594x Mixed-Signal Microcontrollers
+   * generated from Energia include file:
+   * -> hardware/tools/msp430/msp430/include/msp430fr5994.h
+   */
+
+  //LIBRARY IO { //pinMode, digitalWrite, .. as in Arduino.
+  //  PATH = "";
+  //};
+  
+  INTERRUPT LEA_VECTOR    {
+   ADDRESS = 0xCFB4;  /* LEA */
+   HANDLER = LEA_Handler;
+  };
+  
+  INTERRUPT PORT8_VECTOR    {
+   ADDRESS = 0xCFB6;  /* Port 8 */
+   HANDLER = PORT8_Handler;
+  };
+  
+  INTERRUPT PORT7_VECTOR    {
+   ADDRESS = 0xCFB8;  /* Port 7 */
+   HANDLER = PORT7_Handler;
+  };
+  
+  INTERRUPT EUSCI_B3_VECTOR    {
+   ADDRESS = 0xCFBA;  /* eUSCI_B3 receive or transmit */
+   HANDLER = EUSCI_B3_Handler;
+  };
+  
+  INTERRUPT EUSCI_B2_VECTOR    {
+   ADDRESS = 0xCFBC;  /* eUSCI_B2 receive or transmit */
+   HANDLER = EUSCI_B2_Handler;
+  };
+  
+  INTERRUPT EUSCI_B1_VECTOR    {
+   ADDRESS = 0xCFBE;  /* eUSCI_B1 receive or transmit */
+   HANDLER = EUSCI_B1_Handler;
+  };
+  
+  INTERRUPT EUSCI_A3_VECTOR    {
+   ADDRESS = 0xCFC0;  /* eUSCI_A3 receive or transmit */
+   HANDLER = EUSCI_A3_Handler;
+  };
+  
+  INTERRUPT EUSCI_A2_VECTOR    {
+   ADDRESS = 0xCFC2;  /* eUSCI_A2 receive or transmit */
+   HANDLER = EUSCI_A2_Handler;
+  };
+  
+  INTERRUPT PORT6_VECTOR    {
+   ADDRESS = 0xCFC4;  /* Port 6 */
+   HANDLER = PORT6_Handler;
+  };
+  
+  INTERRUPT PORT5_VECTOR    {
+   ADDRESS = 0xCFC6;  /* Port 5 */
+   HANDLER = PORT5_Handler;
+  };
+  
+  INTERRUPT TIMER4_A1_VECTOR {
+   ADDRESS = 0xCFC8;  /* Timer4_A2 CC1, TA */
+   HANDLER = TIMER4_A1_Handler;
+  };
+  
+  INTERRUPT TIMER4_A0_VECTOR {
+   ADDRESS = 0xCFCA;  /* Timer4_A2 CC0 */
+   HANDLER = TIMER4_A0_Handler;
+  };
+  
+  INTERRUPT AES256_VECTOR    {
+   ADDRESS = 0xCFCC;  /* AES256 */
+   HANDLER = AES256_Handler;
+  };
+  
+  INTERRUPT RTC_VECTOR       {
+   ADDRESS = 0xCFCE;  /* RTC */
+   HANDLER = RTC_Handler;
+  };
+  
+  INTERRUPT PORT4_VECTOR     {
+   ADDRESS = 0xCFD0;  /* Port 4 */
+   HANDLER = PORT4_Handler;
+  };
+  
+  INTERRUPT PORT3_VECTOR     {
+   ADDRESS = 0xCFD2;  /* Port 3 */
+   HANDLER = PORT3_Handler;
+  };
+  
+  INTERRUPT TIMER3_A1_VECTOR {
+   ADDRESS = 0xCFD4;  /* Timer3_A2 CC1, TA */
+   HANDLER = TIMER3_A1_Handler;
+  };
+  
+  INTERRUPT TIMER3_A0_VECTOR {
+   ADDRESS = 0xCFD6;  /* Timer3_A2 CC0 */
+   HANDLER = TIMER3_A0_Handler;
+  };
+  
+  INTERRUPT PORT2_VECTOR     {
+   ADDRESS = 0xCFD8;  /* Port 2 */
+   HANDLER = PORT2_Handler;
+  };
+  
+  INTERRUPT TIMER2_A1_VECTOR {
+   ADDRESS = 0xCFDA;  /* Timer2_A2 CC1, TA */
+   HANDLER = TIMER2_A1_Handler;
+  };
+  
+  INTERRUPT TIMER2_A0_VECTOR {
+   ADDRESS = 0xCFDC;  /* Timer2_A2 CC0 */
+   HANDLER = TIMER2_A0_Handler;
+  };
+  
+  INTERRUPT PORT1_VECTOR     {
+   ADDRESS = 0xCFDE;  /* Port 1 */
+   HANDLER = PORT1_Handler;
+  };
+  
+  INTERRUPT TIMER1_A1_VECTOR {
+   ADDRESS = 0xCFE0;  /* Timer1_A3 CC1-2, TA */
+   HANDLER = TIMER1_A1_Handler;
+  };
+  
+  INTERRUPT TIMER1_A0_VECTOR {
+   ADDRESS = 0xCFE2;  /* Timer1_A3 CC0 */
+   HANDLER = TIMER1_A0_Handler;
+  };
+  
+  INTERRUPT DMA_VECTOR       {
+   ADDRESS = 0xCFE4;  /* DMA */
+   HANDLER = DMA_Handler;
+  };
+  
+  INTERRUPT USCI_A1_VECTOR   {
+   ADDRESS = 0xCFE6;  /* USCI A1 Receive/Transmit */
+   HANDLER = USCI_A1_Handler;
+  };
+  
+  INTERRUPT TIMER0_A1_VECTOR {
+   ADDRESS = 0xCFE8;  /* Timer0_A3 CC1-2, TA */
+   HANDLER = TIMER0_A1_Handler;
+  };
+  
+  INTERRUPT TIMER0_A0_VECTOR {
+   ADDRESS = 0xCFEA;  /* Timer0_A3 CC0 */
+   HANDLER = TIMER0_A0_Handler;
+  };
+  
+  INTERRUPT ADC12_VECTOR     {
+   ADDRESS = 0xCFEC;  /* ADC */
+   HANDLER = ADC12_Handler;
+  };
+  
+  INTERRUPT USCI_B0_VECTOR   {
+   ADDRESS = 0xCFEE;  /* USCI B0 Receive/Transmit */
+   HANDLER = USCI_B0_Handler;
+  };
+  
+  INTERRUPT USCI_A0_VECTOR   {
+   ADDRESS = 0xCFF0;  /* USCI A0 Receive/Transmit */
+   HANDLER = USCI_A0_Handler;
+  };
+  
+  INTERRUPT WDT_VECTOR       {
+   ADDRESS = 0xCFF2;  /* Watchdog Timer */
+   HANDLER = WDT_Handler;
+  };
+  
+  INTERRUPT TIMER0_B1_VECTOR {
+   ADDRESS = 0xCFF4;  /* Timer0_B7 CC1-6, TB */
+   HANDLER = TIMER0_B1_Handler;
+  };
+  
+  INTERRUPT TIMER0_B0_VECTOR {
+   ADDRESS = 0xCFF6;  /* Timer0_B7 CC0 */
+   HANDLER = TIMER0_B0_Handler;
+  };
+  
+  INTERRUPT COMP_E_VECTOR    {
+   ADDRESS = 0xCFF8;  /* Comparator E */
+   HANDLER = COMP_E_Handler;
+  };
+  
+  INTERRUPT UNMI_VECTOR      {
+   ADDRESS = 0xCFFA;  /* User Non-maskable */
+   HANDLER = UNMI_Handler;
+  };
+  
+  INTERRUPT SYSNMI_VECTOR    {
+   ADDRESS = 0xCFFC;  /* System Non-maskable */
+   HANDLER = SYSNMI_Handler;
+   LINKED = "tpl_MPU_violation";
+  };
+  
+  INTERRUPT RESET_VECTOR     {
+   ADDRESS = 0xCFFE;  /* Reset [Highest Priority] */
+   HANDLER = RESET_Handler;
+   LINKED = "tpl_reset_handler";
+  };
+
+  POSTCOMMAND flash {
+    COMMAND flash {
+      MESSAGE = "Flashing";
+      COMMAND = "DSLite";
+      INPUT = TARGET { EXT = ""; };
+      PREOPTION = "load -c $ARCH_PATH/ccxml/MSP-EXP430FR5994LP.ccxml -f";
+    };
+  };
+};

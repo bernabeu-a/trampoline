@@ -193,6 +193,7 @@ IMPLEMENTATION trampoline_common {
           elxr      { STRING SCRIPT = "script.ld"; },
           cosmic_ld { STRING SCRIPT = "script.lkf"; },
           gnu_ld    { STRING SCRIPT = "script.ld"; },
+          gnu_ld_bsl{ STRING SCRIPT = "script.ld"; },
           mwld      { STRING SCRIPT = "script.mcf"; }
         ] LINKER;
         ENUM [gcc, ghs, mwc, cosmic] COMPILER;
