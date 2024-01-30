@@ -103,6 +103,45 @@ uint8_t BSL_programMemorySegment(uint32_t addr, const uint8_t* data, uint32_t le
     }
 }
 
+uint8_t sendCommand(uint8_t cmd)
+{
+    uint8_t crch, crcl;
+    uint16_t ii;
+
+    tBSLPacket tPacket;
+    tPacket.ui8Header = 0x80;
+    tPacket.tPayload.ui8Command = cmd;
+    tPacket.ui8Length = 1;
+    tPacket.ui16Checksum = crc16MakeBitwise(tPacket);
+    /* Now put data in txBuffer */
+    txBuffer[0] = 0x80;                                         /* Header */
+    txBuffer[1] = tPacket.ui8Length;                            /* Length */
+    txBuffer[2] = tPacket.tPayload.ui8Command;                           /* Command */
+    if(tPacket.ui8Length > 1){
+        txBuffer[3] = tPacket.tPayload.ui8Addr_L;               /* Address */
+        txBuffer[4] = tPacket.tPayload.ui8Addr_M;
+        txBuffer[5] = tPacket.tPayload.ui8Addr_H;
+        for (ii = 0; ii < (tPacket.ui8Length - 4); ii++) {
+            txBuffer[6+ii] = tPacket.tPayload.ui8pData[ii];     /* Data */
+        }
+        crcl = (uint8_t) (tPacket.ui16Checksum & 0xFF);         /* crc */
+        txBuffer[6+ii] = crcl;
+
+        crch = (uint8_t) (tPacket.ui16Checksum >> 8);
+        txBuffer[7+ii] = crch;
+    }
+    else{
+        crcl = (uint8_t) (tPacket.ui16Checksum & 0xFF);
+        txBuffer[3] = crcl;
+
+        crch = (uint8_t) (tPacket.ui16Checksum >> 8);
+        txBuffer[4] = crch;
+    }
+    /* Send Data */
+    send(txBuffer, TX_BUF_SIZE);
+    return 0;
+}
+
 int main(void){
     /* Stop the watchdog timer */
     WDTCTL = WDTPW | WDTHOLD;
@@ -147,6 +186,11 @@ int main(void){
         P1OUT ^= BIT1;
         res = BSL_programMemorySegment(App1_Addr[section], App1_Ptr[section], App1_Size[section]);       
     }
+
+    res = BSL_programMemorySegment(CRC_Addr, (uint8_t *) &CRC_App1, 2);
+
+    /* Jumping to user code */
+    res = sendCommand(0x1C);
     // P1OUT |= BIT0;
 //     /* */
 //     uint16_t i;

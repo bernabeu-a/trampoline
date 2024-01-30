@@ -52,7 +52,7 @@ uint8_t TxByte;
 
 uint16_t crc16MakeBitwise(uint8_t *pmsg, uint32_t msg_size);
 uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr);
-
+static bool Verify_App_Down(void);
 // __asm__ volatile(
 //     "\t.global _reset_vector                \n"
 //     "\t.section .init, \"ax\", @progbits    \n"
@@ -200,6 +200,49 @@ int main_boot( void ) {
     /* LoRa init */
     LoRa_init();
 
+    // Check if application recquired boot mode, and check if application is OK 
+    // if so jump to reset vector application
+    if((*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF)){  
+        ((void (*)()) _Appl_Reset_Vector) ();
+    }
+    // Image invalid, check Download Area
+    else if (Verify_App_Down()){
+        // Erase App Area
+        uint32_t addr;
+        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+            __data20_write_short(addr, 0xFFFF);            
+        }
+		for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+		    __data20_write_short(addr, 0xFFFF);
+        }
+        // Replace the Image in App Area by Download Area
+        /* APP from Download area 1 */
+        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr++){
+            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+            __no_operation();
+        }
+        /* APP from download area 2 */
+        for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr++)
+        {
+            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+            __no_operation();
+        }  
+        // Validate image in App Area
+        if (*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF){
+            // Erase download 
+            for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+                __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+            }
+            for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+                __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+            }
+            // Jump to App 
+            ((void (*)()) _Appl_Reset_Vector) ();
+        }
+    }
+    else{
+        // Boot is forced from app, continue to while
+    }
 
     while(1){
         uint16_t ii;
@@ -371,7 +414,7 @@ void TI_MSPBoot_AppMgr_JumpToApp(void){
         for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
             __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
         }
-        // Software reset -- We are now in application    
+        // Software reset -- Applcation is validate, should enter in application from line 205    
         PMMCTL0 = PMMPW | PMMSWBOR;
     }
     else{
