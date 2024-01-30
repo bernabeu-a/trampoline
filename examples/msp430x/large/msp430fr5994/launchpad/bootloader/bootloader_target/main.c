@@ -8,6 +8,10 @@ extern uint16_t _Appl_End;                  /* Application End Address */
 extern uint32_t _Appl_Start2;
 extern uint32_t _Appl_End2;
 extern uint16_t _Appl_checksum;             /*! Application Checksum Address */
+extern uint16_t _Appl_Vector_Start;         /*! Application Vector Table Start */
+extern uint16_t _Appl_Reset_Vector;         /*! Application Reset vector */
+extern uint16_t __Boot_VectorTable;         /*! Bootloader Vector Table Start */
+extern uint16_t __Boot_Start;				/*! Bootloader Start */
 
 /*! Application start address (from linker file) */
 #define APP_START_ADDR          ((uint32_t )&_Appl_checksum)
@@ -17,6 +21,11 @@ extern uint16_t _Appl_checksum;             /*! Application Checksum Address */
 #define APP2_START_ADDR          ((uint32_t )&_Appl_Start2)
 /*! App2 end address (from linker file) */
 #define APP2_END_ADDR            ((uint32_t )&_Appl_End2)
+/*! Application Vector Table */
+#define APP_VECTOR_TABLE        ((uint32_t) &_Appl_Vector_Start)
+/*! Application Reset Vector */
+#define APP_RESET_VECTOR_ADDR   ((uint32_t) &_Appl_Reset_Vector)
+#define BOOT_VECTOR_TABLE       ((uint32_t) &__Boot_VectorTable)
 
 // #define __fram __attribute__((section(".persistent")))
 // #define blink_app1_red_SIZE   10005
@@ -26,6 +35,9 @@ extern uint16_t _Appl_checksum;             /*! Application Checksum Address */
 #define RESPONSE_ERROR 0x99
 #define COMM_ERROR 0x99
 #define COMM_OK 0x00
+#define RET_JUMP_TO_APP     2
+#define RET_OK              0
+#define RET_ERROR           1
 
 // __fram uint8_t blink_app1_red_0[blink_app1_red_SIZE] = {0};
 
@@ -122,7 +134,15 @@ void rxProcess(uint8_t data){
 }
 
 uint8_t WriteByte(uint32_t addr, uint8_t data){
-    __data20_write_char(addr, data);
+    if ((addr >= APP_VECTOR_TABLE) && (addr < APP_RESET_VECTOR_ADDR - 2))
+    {
+        // If address is an interrupt vector, copy directly to interrupt table
+        addr = (addr - APP_VECTOR_TABLE) + BOOT_VECTOR_TABLE;
+        __data20_write_char(addr, data);    // Write to interrupt table
+    }
+    else{
+        __data20_write_char(addr, data);
+    }
     return RESPONSE_OK;
 }
 
@@ -130,8 +150,8 @@ uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
     uint8_t ii;
     uint8_t i;    
     switch (RxData[0]){
+        // Rx data command
         case 0xAA:
-
             for(i = 0; i < RxLen-4; i++){
                 if(WriteByte(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual((uint32_t)RxData[1]+((uint32_t)RxData[2]<<8)+(((uint32_t)RxData[3] & 0x0F)<<16)), &RxData[4+i]) != RESPONSE_OK){
                     *TxData = RESPONSE_ERROR;
@@ -145,7 +165,12 @@ uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
             txBuffer[0] = TxByte;
             for (ii = 1; ii < rx_length; ii++) txBuffer[ii] = 0;
             send(txBuffer, rx_length);
+            break;
+        // Jump to APP command
+        case 0x1C:
+            return RET_JUMP_TO_APP;
     }
+    return RET_OK;
 }
 
 int main_boot( void ) {
@@ -179,6 +204,7 @@ int main_boot( void ) {
     while(1){
         uint16_t ii;
         uint8_t rx_length = TX_BUF_SIZE;
+        uint8_t ret;
         /* Receive Data */
         recv(txBuffer, rx_length);
         /* Now process it */
@@ -212,7 +238,7 @@ int main_boot( void ) {
     //     P1OUT ^= BIT1;
     //     recv(ptr_array++, 1);
     // }
-    P1OUT |= BIT0;
+        P1OUT |= BIT0;
     }
 }
 
@@ -242,7 +268,7 @@ static bool Verify_App_Down(void){
     uint32_t i;
     uint8_t* data_ptr;
 
-    CRCINIRES = 0xFFFF;                                                             /* Init seed */
+    CRCINIRES = 0xFFFF;                                                                 /* Init seed */
     data_ptr = (uint8_t*) &_Download_start_memory;
     for(i = 0 ; i < (uint32_t) &_Download_CRC_size ; i++) CRCDIRB_L = *data_ptr++;     /* Add to crc */
 
@@ -272,6 +298,14 @@ uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr)
     extern uint32_t _Download_offset2;				/*! Download Offset 2 */
 
     address = addr;
+
+    /* 
+     * There is 2 download areas
+     * For addresses from 0x4000 (start of app1) to 0xdfff (end of app1) --> addr + 0x20800
+     * so download addr is from 0x24800 to 0x2e7ff
+     * For addresses from 0x10000 (start of app2) to 0x247ff (end of app2) --> addr + (0xe000 - 0x4000 + 0x24800 - 0x10000)
+     * so download addr is from 0x2e800 to 0x42fff
+     */
 
     // If the address-offset fits in 1st app area
     if (address <=  (uint32_t )&_Download_offset_size)
@@ -309,15 +343,36 @@ void TI_MSPBoot_MI_ReplaceApp(void)
 void TI_MSPBoot_AppMgr_JumpToApp(void){
     if(Verify_App_Down()){
         // Erase current app
-
+        uint32_t addr;
+        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+            __data20_write_short(addr, 0xFFFF);            
+        }
+		for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+		    __data20_write_short(addr, 0xFFFF);
+        }
         // Switch Download to app
-
+        /* APP from Download area 1 */
+        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr++){
+            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+            __no_operation();
+        }
+        /* APP from download area 2 */
+        for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr++)
+        {
+            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+            __no_operation();
+        }     
         // Double check current app
 
         // Erase download 
-
-        // Software reset
-
+        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+            __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+        }
+        for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+            __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+        }
+        // Software reset -- We are now in application    
+        PMMCTL0 = PMMPW | PMMSWBOR;
     }
     else{
         

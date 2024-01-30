@@ -49,7 +49,7 @@ MEMORY {
   INFOC            : ORIGIN = 0x1880, LENGTH = 0x0080
   INFOB            : ORIGIN = 0x1900, LENGTH = 0x0080
   INFOA            : ORIGIN = 0x1980, LENGTH = 0x0080
-  FRAM (rx)        : ORIGIN = 0xE000, LENGTH = 0x1F70   
+  FRAM (rx)        : ORIGIN = 0xD000, LENGTH = 0x2F70   
   /* FRAM (rx)        : ORIGIN = 0x4000, LENGTH = 0xBF80 END=0xFF7F, size 49024 */
   /* HIFRAM (rxw)     : ORIGIN = 0x00010000, LENGTH = 0x00033FF7 /* Boundaries changed to fix CPU47 */
   JTAGSIGNATURE    : ORIGIN = 0xFF80, LENGTH = 0x0004
@@ -123,16 +123,18 @@ CI_Callback_ptr = 0x1c04;                       /* Pointer to Comm callback stru
 /* Unreserved RAM used for Bootloader or App purposes */
 _NonReserved_RAM_Start = 0x1c08;                /* Non-reserved RAM */
 
-__Boot_Start = 0xe000;                          /* Boot flash */
+__Boot_Start = 0xd000;                          /* Boot flash */
 __Boot_Reset = 0xfffe;                          /* Boot reset vector */
 __Boot_VectorTable = 0xff90;                    /* Boot vector table */
 
 _Appl_Start = 0x4000;                           /* Start of Application area */
-_Appl_End = 0xdfff;                             /* End of Application area */
-_Appl_Vector_Start = 0xdf90;                    /* Interrupt table */
+_Appl_End = 0xcfff;                             /* End of Application area */
+_Appl_Vector_Start = 0xcf90;                    /* Interrupt table */
 _Appl_Reset_Vector = (__Boot_Start - 2);        /* App reset vector */
 _Appl_Start2 = 0x10000;                         /* Start of Application area 2 */          
 _Appl_End2 = 0x247ff;                           /* End of Application area 2 */
+_Appl_checksum = (_Appl_Start);                 /* CRC16 of Application */
+_Appl_checksum_8 = (_Appl_Start + 2);             /* CRC8 of Application */
 
 _Download_start = 0x24800;		                /* Download Area */
 _Download_end = 0x43fff;                        /*End of Download Area */
