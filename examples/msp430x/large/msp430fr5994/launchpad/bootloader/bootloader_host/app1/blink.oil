@@ -40,7 +40,7 @@ CPU blink {
     SYSTEM_CALL = TRUE;
     MEMMAP = TRUE {
       COMPILER = gcc;
-      LINKER = gnu_ld { SCRIPT = "script.ld"; };
+      LINKER = gnu_ld_bsl { SCRIPT = "script.ld"; };
       ASSEMBLER = gnu_as;
       MEMORY_PROTECTION = FALSE;
     };

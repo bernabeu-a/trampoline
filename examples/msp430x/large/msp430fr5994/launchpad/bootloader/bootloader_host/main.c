@@ -4,14 +4,15 @@
 
 #include "lora/lora.h"
 
-#include "blink_app1_red.c"
+// #include "blink_app1_red.c"
+#include "./app1/app1.c"
 
 #define TX_BUF_SIZE 24
 #define RESPONSE_OK 0x00
 
 static uint16_t CRC_Addr = 0x4000;
 static uint16_t App_StartAddress = 0x4003;
-static uint16_t App_EndAddress = 0xEFFF;
+static uint16_t App_EndAddress = 0xCFFF;
 static uint32_t App_StartAddress_Upper = 0x10000;
 static uint32_t App_EndAddress_Upper = 0x43FFF;
 
@@ -171,27 +172,27 @@ int main(void){
     //                         (uint32_t *)&blink_app1_red_Size[0],
     //                         (uint8_t **)&blink_app1_red_Ptr[0],
     //                         sizeof(blink_app1_red_Addr)/ sizeof (blink_app1_red_Addr[0]));
-    CRC_App1 = Calc_App_CRC( (uint32_t *)&App1_Addr[0],
-                              (uint32_t *)&App1_Size[0],
-                              (uint8_t **)&App1_Ptr[0],
-                              sizeof(App1_Addr)/ sizeof (App1_Addr[0]));
+    CRC_App1 = Calc_App_CRC( (uint32_t *)&app1_Addr[0],
+                              (uint32_t *)&app1_Size[0],
+                              (uint8_t **)&app1_Ptr[0],
+                              sizeof(app1_Addr)/ sizeof (app1_Addr[0]));
     /* LoRa init */
     LoRa_init();
 
     uint8_t section;
     uint8_t res;
 
-    for (section = 0; section < (sizeof(App1_Addr)/ sizeof (App1_Addr[0])) ; section++){
+    for (section = 0; section < (sizeof(app1_Addr)/ sizeof (app1_Addr[0])) ; section++){
         /* Sending the segments*/
-        P1OUT ^= BIT1;
-        res = BSL_programMemorySegment(App1_Addr[section], App1_Ptr[section], App1_Size[section]);       
+        P1OUT ^= BIT0;
+        res = BSL_programMemorySegment(app1_Addr[section], app1_Ptr[section], app1_Size[section]);       
     }
 
     res = BSL_programMemorySegment(CRC_Addr, (uint8_t *) &CRC_App1, 2);
 
     /* Jumping to user code */
     res = sendCommand(0x1C);
-    // P1OUT |= BIT0;
+    P1OUT |= BIT1;
 //     /* */
 //     uint16_t i;
 //     uint8_t *ptr_array = blink_app1_red_0;

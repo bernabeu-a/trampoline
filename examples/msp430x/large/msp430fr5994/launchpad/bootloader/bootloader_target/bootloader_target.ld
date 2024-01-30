@@ -146,6 +146,11 @@ _Download_offset_size = (__Boot_Start - 1);
 _Download_offset1 = (_Download_start - _Appl_Start);
 _Download_offset2 = (__Boot_Start - _Appl_Start + _Download_start - _Appl_Start2);
 
+SECTIONS {
+  .isr_vector : {
+    SHORT(_start_bootloader)
+  } >RESETVEC
+}
 SECTIONS
 {
   /* .leaRAM             : {} > LEARAM */
@@ -212,7 +217,7 @@ SECTIONS
   __interrupt_vector_52  : { KEEP (*(__interrupt_vector_52)) KEEP (*(__interrupt_vector_comp_e)) } > VECT52
   __interrupt_vector_53  : { KEEP (*(__interrupt_vector_53)) KEEP (*(__interrupt_vector_unmi)) } > VECT53
   __interrupt_vector_54  : { KEEP (*(__interrupt_vector_54)) KEEP (*(__interrupt_vector_sysnmi)) } > VECT54 */
-  __reset_vector         : { KEEP (*(__interrupt_vector_55)) KEEP (*(__interrupt_vector_reset)) KEEP (*(.resetvec)) } > RESETVEC
+  /* __reset_vector         : { KEEP (*(__interrupt_vector_55)) KEEP (*(__interrupt_vector_reset)) KEEP (*(.resetvec)) } > RESETVEC */
 
   .lower.rodata :
   {

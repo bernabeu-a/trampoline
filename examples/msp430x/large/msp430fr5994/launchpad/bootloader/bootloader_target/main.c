@@ -12,7 +12,7 @@ extern uint16_t _Appl_Vector_Start;         /*! Application Vector Table Start *
 extern uint16_t _Appl_Reset_Vector;         /*! Application Reset vector */
 extern uint16_t __Boot_VectorTable;         /*! Bootloader Vector Table Start */
 extern uint16_t __Boot_Start;				/*! Bootloader Start */
-
+extern uint16_t __RAM_End; 
 /*! Application start address (from linker file) */
 #define APP_START_ADDR          ((uint32_t )&_Appl_checksum)
 /*! Application end address (from linker file) */
@@ -26,6 +26,7 @@ extern uint16_t __Boot_Start;				/*! Bootloader Start */
 /*! Application Reset Vector */
 #define APP_RESET_VECTOR_ADDR   ((uint32_t) &_Appl_Reset_Vector)
 #define BOOT_VECTOR_TABLE       ((uint32_t) &__Boot_VectorTable)
+#define RAM_END               ((uint32_t) &__RAM_End)
 
 // #define __fram __attribute__((section(".persistent")))
 // #define blink_app1_red_SIZE   10005
@@ -61,11 +62,36 @@ static bool Verify_App_Down(void);
 //     "calla #main_boot                       \n"
 // );
 
-void __attribute__ ((interrupt(RESET_VECTOR))) _start_bootloader (void){
-    // Des choses a faire avant le main_boot ? 
-    // init des variable etc ... ?
+void _start_bootloader_continue(void){
+    /* Init .bss section */
+    extern unsigned __bssstart;
+    extern unsigned __bssend;
+    unsigned *p = &__bssstart;
+    while (p != &__bssend) {
+    *p = 0;
+    p++;
+    }
+
+    // __datastart
+
+    // unsigned *pSrc = src;
+    // unsigned *pDest = dst;
+    // unsigned *pDestMax = dst+size;
+    // while (pDest != pDestMax) {
+    // *pDest = *pSrc;
+    // pDest++;
+    // pSrc++;
+    // }
     main_boot();
 }
+
+// void __attribute__ ((interrupt(RESET_VECTOR))) _start_bootloader (void){
+//     // Des choses a faire avant le main_boot ? 
+//     // init des variable etc ... ?
+//     __set_SP_register((RAM_END-2));
+//     // __asm__ volatile ("\t   MOVX.A\t   #RAM_END-2,SP");
+//     main_boot();
+// }
 
 void rxProcess(uint8_t data){
     static uint16_t Checksum;
@@ -249,6 +275,7 @@ int main_boot( void ) {
         uint8_t rx_length = TX_BUF_SIZE;
         uint8_t ret;
         /* Receive Data */
+        P1OUT ^= BIT0;
         recv(txBuffer, rx_length);
         /* Now process it */
         if(txBuffer[0] == 0x80 && txBuffer[1] > 0 && txBuffer[1] <= 20){
@@ -265,11 +292,11 @@ int main_boot( void ) {
         /* Now interpret it */
         if(CommStatus == COMM_OK){
             ret = rxIntepreter(RxPacket, Len, &TxByte);
-            P1OUT ^= BIT1;
         }
 
         if (ret == RET_JUMP_TO_APP)
         {
+            P1OUT ^= BIT1;
             // If Packet indicates a jump to App
             TI_MSPBoot_AppMgr_JumpToApp();
         }
@@ -281,7 +308,6 @@ int main_boot( void ) {
     //     P1OUT ^= BIT1;
     //     recv(ptr_array++, 1);
     // }
-        P1OUT |= BIT0;
     }
 }
 
