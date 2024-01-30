@@ -36,7 +36,7 @@ MEMORY
    ! size % bytes - %
    ! size / 2 % vectors */
   FRAM (rxw)  : ORIGIN = 0x04004, LENGTH = 0x8FFF /* ends at 0xcfff (start of bootloader area) size is 36,863k */
-  FRAM_HIGH (rxw)  : ORIGIN = 0x10000, LENGTH = 0x147FF /* end at 0x247FF (start of download area) size if 83,967k */
+  FRAM_UP (rxw)  : ORIGIN = 0x10000, LENGTH = 0x147FF /* end at 0x247FF (start of download area) size if 83,967k */
 %
 if OS::LEA then
   if OS::LEA_S::LEA_RAM > 4096 then
