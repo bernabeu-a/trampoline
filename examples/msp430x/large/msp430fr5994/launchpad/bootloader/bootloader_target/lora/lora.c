@@ -91,8 +91,8 @@ void setModeRx(){
 }
 
 void setFrequency(float centre){
-	uint32_t frf = 0;
-	frf = (centre * 1000000.0)/RH_RF95_FSTEP;
+	uint32_t frf = 0xD90000;
+	// uint32_t frf = (centre * 1000000.0)/RH_RF95_FSTEP;
 	writeRegister(RH_RF95_REG_06_FRF_MSB, (frf >>16) & 0xff);
 	writeRegister(RH_RF95_REG_07_FRF_MID, (frf >>8) & 0xff);
 	writeRegister(RH_RF95_REG_08_FRF_LSB, frf & 0xff);
@@ -123,12 +123,13 @@ void setTxPower(uint8_t power){
 void waitPacketSent(){
 	while((readRegister(RH_RF95_REG_12_IRQ_FLAGS) != RH_RF95_TX_DONE));
     writeRegister(RH_RF95_REG_12_IRQ_FLAGS, RH_RF95_TX_DONE);
-	setModeIdle();
+	// setModeIdle();
+    setModeRx();
 }
 
 uint8_t send(const uint8_t* data, uint8_t len){
 	if(len>RH_RF95_MAX_MESSAGE_LEN) return 0;
-	while(readRegister(RH_RF95_REG_01_OP_MODE) != (RH_RF95_MODE_TX + RH_RF95_LONG_RANGE_MODE));
+	while(readRegister(RH_RF95_REG_01_OP_MODE) == (RH_RF95_MODE_TX + RH_RF95_LONG_RANGE_MODE));
 	//waitPacketSent();
 	setModeIdle();
 	

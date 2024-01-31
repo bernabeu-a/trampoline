@@ -121,12 +121,13 @@ void setTxPower(uint8_t power){
 void waitPacketSent(){
 	while((readRegister(RH_RF95_REG_12_IRQ_FLAGS) != RH_RF95_TX_DONE));
     writeRegister(RH_RF95_REG_12_IRQ_FLAGS, RH_RF95_TX_DONE);
-	setModeIdle();
+	// setModeIdle();
+    setModeRx();
 }
 
 uint8_t send(const uint8_t* data, uint8_t len){
 	if(len>RH_RF95_MAX_MESSAGE_LEN) return 0;
-	while(readRegister(RH_RF95_REG_01_OP_MODE) != RH_RF95_MODE_TX | RH_RF95_LONG_RANGE_MODE);
+	while(readRegister(RH_RF95_REG_01_OP_MODE) == (RH_RF95_MODE_TX + RH_RF95_LONG_RANGE_MODE));
 	//waitPacketSent();
 	setModeIdle();
 	
