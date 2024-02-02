@@ -121,8 +121,8 @@ void setTxPower(uint8_t power){
 void waitPacketSent(){
 	while((readRegister(RH_RF95_REG_12_IRQ_FLAGS) != RH_RF95_TX_DONE));
     writeRegister(RH_RF95_REG_12_IRQ_FLAGS, RH_RF95_TX_DONE);
-	// setModeIdle();
-    setModeRx();
+	setModeIdle();
+    // set:ModeRx();
 }
 
 uint8_t send(const uint8_t* data, uint8_t len){
@@ -153,8 +153,8 @@ uint8_t send(const uint8_t* data, uint8_t len){
 
 uint8_t recv(uint8_t* buf, uint8_t len){
     setModeRx();
- 	while(readRegister(RH_RF95_REG_01_OP_MODE) != RH_RF95_MODE_RXCONTINUOUS | RH_RF95_LONG_RANGE_MODE);
-    uint8_t tmp_buf[28] = {0};
+ 	while(readRegister(RH_RF95_REG_01_OP_MODE) != (RH_RF95_MODE_RXCONTINUOUS + RH_RF95_LONG_RANGE_MODE));
+    uint8_t tmp_buf[228] = {0};
     // We wait for the packet to arrive
     while((readRegister(RH_RF95_REG_12_IRQ_FLAGS) != (RH_RF95_RX_DONE | RH_RF95_VALID_HEADER)));
 	// Have received a packet

@@ -137,7 +137,7 @@ _Appl_checksum = (_Appl_Start);                 /* CRC16 of Application */
 _Appl_checksum_8 = (_Appl_Start + 2);             /* CRC8 of Application */
 
 _Download_start = 0x24800;		                /* Download Area */
-_Download_end = 0x43fff;                        /*End of Download Area */
+_Download_end = 0x41fff;                        /*End of Download Area */
 _Download_checksum = (_Download_start);         
 _Download_checksum_8 = (_Download_start + 2);
 _Download_start_memory = (_Download_start + 3);

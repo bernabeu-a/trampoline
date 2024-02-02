@@ -66,5 +66,11 @@ CPU blink {
       CYCLETIME = 500;
     };
   };
-
+  ISR buttonS1 {
+    CATEGORY = 1;
+    PRIORITY = 1;
+    SOURCE = PORT5_VECTOR {
+      BIT = 6;
+    }; /* Button S1 is on GPIO port 5, bit 6 */
+  };
 };

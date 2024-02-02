@@ -13,6 +13,14 @@ extern uint16_t _Appl_Reset_Vector;         /*! Application Reset vector */
 extern uint16_t __Boot_VectorTable;         /*! Bootloader Vector Table Start */
 extern uint16_t __Boot_Start;				/*! Bootloader Start */
 extern uint16_t __RAM_End; 
+extern uint32_t _Download_offset_size;			/*! Download Offset Size */
+extern uint32_t _Download_offset1;				/*! Download Offset 1 */
+extern uint32_t _Download_offset2;				/*! Download Offset 2 */
+
+extern uint32_t _Download_start_memory;
+extern uint32_t _Download_checksum;
+extern uint32_t _Download_CRC_size;
+
 /*! Application start address (from linker file) */
 #define APP_START_ADDR          ((uint32_t )&_Appl_checksum)
 /*! Application end address (from linker file) */
@@ -28,13 +36,24 @@ extern uint16_t __RAM_End;
 #define BOOT_VECTOR_TABLE       ((uint32_t) &__Boot_VectorTable)
 #define RAM_END               ((uint32_t) &__RAM_End)
 
+#define DOWNLOAD_OFFSET_SIZE ((uint32_t) &_Download_offset_size)
+#define DOWNLOAD_OFFSET_1 ((uint32_t) &_Download_offset1)
+#define DOWNLOAD_OFFSET_2 ((uint32_t) &_Download_offset2)
+
+#define DOWNLOAD_START_MEMORY ((uint32_t) &_Download_start_memory)
+#define DOWNLOAD_CHECKSUM ((uint32_t) &_Download_checksum)
+#define DOWNLOAD_CRC_SIZE ((uint32_t) &_Download_CRC_size)
+
 // #define __fram __attribute__((section(".persistent")))
 // #define blink_app1_red_SIZE   10005
 
-#define TX_BUF_SIZE 24
+#define TX_BUF_SIZE 224
 #define RESPONSE_OK 0x00
 #define RESPONSE_ERROR 0x99
 #define COMM_ERROR 0x99
+#define CRC_ERROR  0x98
+#define LEN_ERROR  0x97
+#define HEADER_ERROR  0x96
 #define COMM_OK 0x00
 #define RET_JUMP_TO_APP     2
 #define RET_OK              0
@@ -102,7 +121,7 @@ void rxProcess(uint8_t data){
         // Check Header
         if (data != 0x80){
             // Incorrect Header --> Error
-            CommStatus |= COMM_ERROR;
+            CommStatus = HEADER_ERROR;
             TxByte = 0x99;
         }
     }
@@ -112,12 +131,12 @@ void rxProcess(uint8_t data){
         Len = data;
         if(data == 0){
             // Size 0 --> Error
-            CommStatus |= COMM_ERROR;
+            CommStatus = LEN_ERROR;
             TxByte = 0x99;
         }
-        else if (data > 20){
+        else if (data > 220){
             // Size too big --> Error
-            CommStatus |= COMM_ERROR;
+            CommStatus = LEN_ERROR;
             TxByte = 0x99;
         }
     }
@@ -135,20 +154,23 @@ void rxProcess(uint8_t data){
         // Now calculate crc and compare
         if(crc16MakeBitwise(RxPacket, Len) != Checksum){
             // Incorrect checksum --> Error
-            CommStatus |= COMM_ERROR;
+            CommStatus = CRC_ERROR;
             TxByte = 0x99;
         }
         else{
             // Packet OK
-            CommStatus |= COMM_OK;
+            CommStatus = COMM_OK;
             TxByte = 0x00;
         }
     }
-    if(CommStatus & COMM_ERROR){
+    if((CommStatus & CRC_ERROR) || (CommStatus & HEADER_ERROR) || (CommStatus & LEN_ERROR)){
         // An error occured, send ack error
         counter = 0;
         CommStatus = 0;
-        
+        // P1OUT |= BIT1;
+        uint16_t wait;
+        for(wait=0; wait<0xFFFF; wait++);
+        for(wait=0; wait<0xFFFF; wait++);
         uint8_t rx_length = TX_BUF_SIZE;
         txBuffer[0] = TxByte;
         for (ii = 1; ii < rx_length; ii++) txBuffer[ii] = 0;
@@ -160,7 +182,7 @@ void rxProcess(uint8_t data){
 }
 
 uint8_t WriteByte(uint32_t addr, uint8_t data){
-    if ((addr >= APP_VECTOR_TABLE) && (addr < APP_RESET_VECTOR_ADDR - 2))
+    if ((addr >= APP_VECTOR_TABLE) && (addr < (APP_RESET_VECTOR_ADDR - 2)))
     {
         // If address is an interrupt vector, copy directly to interrupt table
         addr = (addr - APP_VECTOR_TABLE) + BOOT_VECTOR_TABLE;
@@ -174,17 +196,22 @@ uint8_t WriteByte(uint32_t addr, uint8_t data){
 
 uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
     uint8_t ii;
-    uint8_t i;    
+    uint8_t i;
+    uint32_t addr;    
     switch (RxData[0]){
         // Rx data command
         case 0xAA:
+            addr = TI_MSPBoot_MI_GetPhysicalAddressFromVirtual((uint32_t)RxData[1]+((uint32_t)RxData[2]<<8)+(((uint32_t)RxData[3] & 0x0F)<<16));
             for(i = 0; i < RxLen-4; i++){
-                if(WriteByte(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual((uint32_t)RxData[1]+((uint32_t)RxData[2]<<8)+(((uint32_t)RxData[3] & 0x0F)<<16)), &RxData[4+i]) != RESPONSE_OK){
+                if(WriteByte(addr++, RxData[4+i]) != RESPONSE_OK){
                     *TxData = RESPONSE_ERROR;
                 }
             }
             *TxData = RESPONSE_OK;
             // Everything OK, send ack OK
+            uint16_t wait;
+            for(wait=0; wait<0xFFFF; wait++);
+            for(wait=0; wait<0xFFFF; wait++);
             counter = 0;
             CommStatus = 0;
             uint8_t rx_length = TX_BUF_SIZE;
@@ -195,6 +222,9 @@ uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
         // Jump to APP command
         case 0x1C:
             return RET_JUMP_TO_APP;
+        default:
+            P1OUT |= BIT1;
+            break;
     }
     return RET_OK;
 }
@@ -210,7 +240,7 @@ int main_boot( void ) {
     CSCTL2 |= SELM__DCOCLK;             /* .. and set correct DCO value)        */
 
     CSCTL3 &= ~(DIVM0 | DIVM1 | DIVM2); /*  clear DIVM Field (source divider)   */
-    CSCTL1 = DCOFSEL_0;                 /* 1 MHz                                */
+    CSCTL1 = DCOFSEL_6;                 /* 1 MHz                                */
     FRCTL0 = FWPW | NWAITS_0;           /* no wait state required               */
 
     /* First: set SMCLK to DCO */
@@ -219,7 +249,8 @@ int main_boot( void ) {
     CSCTL2 |= SELS__DCOCLK;             /* .. and set correct DCO value)        */
     /* then remove the DIVS division */
     CSCTL3 &= ~(DIVS0_L | DIVS1_L | DIVS2_L);
-
+    /* and set divider 8 --> 8Mhz --> 1 MHz */
+    CSCTL3 |= DIVS_3; 
     /* */
     P1DIR |= BIT0 | BIT1;
     P1OUT &= ~(BIT0+BIT1);
@@ -274,11 +305,12 @@ int main_boot( void ) {
         uint16_t ii;
         uint8_t rx_length = TX_BUF_SIZE;
         uint8_t ret;
+        uint8_t ret_process;
         /* Receive Data */
         P1OUT ^= BIT0;
         recv(txBuffer, rx_length);
         /* Now process it */
-        if(txBuffer[0] == 0x80 && txBuffer[1] > 0 && txBuffer[1] <= 20){
+        if(txBuffer[0] == 0x80 && txBuffer[1] > 0 && txBuffer[1] <= 220){
             if (txBuffer[1] == 1){
                 rx_length = 5;                            /* Only crc */
             }
@@ -296,7 +328,7 @@ int main_boot( void ) {
 
         if (ret == RET_JUMP_TO_APP)
         {
-            P1OUT ^= BIT1;
+            // P1OUT ^= BIT1;
             // If Packet indicates a jump to App
             TI_MSPBoot_AppMgr_JumpToApp();
         }
@@ -329,21 +361,23 @@ uint16_t crc16MakeBitwise(uint8_t *pmsg, uint32_t msg_size)
 /* Verify Application in Download area */
 
 static bool Verify_App_Down(void){
-    extern uint32_t _Download_start_memory;
-    extern uint32_t _Download_checksum;
-    extern uint32_t _Download_CRC_size;
     
     static uint16_t result = 0;
     uint32_t i;
-    uint8_t* data_ptr;
+    uint8_t *data_ptr;
 
     CRCINIRES = 0xFFFF;                                                                 /* Init seed */
     data_ptr = (uint8_t*) &_Download_start_memory;
-    for(i = 0 ; i < (uint32_t) &_Download_CRC_size ; i++) CRCDIRB_L = *data_ptr++;     /* Add to crc */
-
+    for(i = 0 ; i < DOWNLOAD_CRC_SIZE ; i++) {
+        CRCDIRB_L = *data_ptr++;     /* Add to crc */
+    }
     result = CRCINIRES;
-    if (result != __data20_read_short((unsigned long)&_Download_checksum)) return false;
-    else return true;
+    if (result != __data20_read_short(DOWNLOAD_CHECKSUM)) {
+        return false;
+    }
+    else{
+        return true;
+    } 
 }
 
 /******************************************************************************
@@ -362,9 +396,7 @@ uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr)
 {
     volatile uint32_t ret;
     volatile uint32_t address;
-    extern uint32_t _Download_offset_size;			/*! Download Offset Size */
-    extern uint32_t _Download_offset1;				/*! Download Offset 1 */
-    extern uint32_t _Download_offset2;				/*! Download Offset 2 */
+
 
     address = addr;
 
@@ -377,13 +409,13 @@ uint32_t TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(uint32_t addr)
      */
 
     // If the address-offset fits in 1st app area
-    if (address <=  (uint32_t )&_Download_offset_size)
+    if (address <= DOWNLOAD_OFFSET_SIZE)
 	{
-		ret = (addr + (uint32_t )&_Download_offset1);
+		ret = (addr + DOWNLOAD_OFFSET_1);
 	}
 	else    // Else, place it in the 2nd download area
 	{
-		ret = (addr + (uint32_t )&_Download_offset2);
+		ret = (addr + DOWNLOAD_OFFSET_2);
 	}
 
     return ret;
