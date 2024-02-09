@@ -21,6 +21,11 @@ extern uint32_t _Download_start_memory;
 extern uint32_t _Download_checksum;
 extern uint32_t _Download_CRC_size;
 
+extern uint16_t  PassWd_boot;
+
+/*! Magic Key sent by Application to force boot mode */
+#define BSL_PASSWORD        (0xC0DE)
+
 /*! Application start address (from linker file) */
 #define APP_START_ADDR          ((uint32_t )&_Appl_checksum)
 /*! Application end address (from linker file) */
@@ -229,6 +234,20 @@ uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
     return RET_OK;
 }
 
+bool check_boot_is_forced(void){
+    bool ret = false;
+
+    if (PassWd_boot == BSL_PASSWORD){
+        ret = true;
+    }
+    else{
+        ret = false;
+    }
+
+    PassWd_boot = 0;
+    return ret;
+}
+
 int main_boot( void ) {
     /* Stop the watchdog timer */
     WDTCTL = WDTPW | WDTHOLD;
@@ -259,47 +278,50 @@ int main_boot( void ) {
 
     // Check if application recquired boot mode, and check if application is OK 
     // if so jump to reset vector application
-    if((*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF)){  
-        ((void (*)()) _Appl_Reset_Vector) ();
-    }
-    // Image invalid, check Download Area
-    else if (Verify_App_Down()){
-        // Erase App Area
-        uint32_t addr;
-        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
-            __data20_write_short(addr, 0xFFFF);            
-        }
-		for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
-		    __data20_write_short(addr, 0xFFFF);
-        }
-        // Replace the Image in App Area by Download Area
-        /* APP from Download area 1 */
-        for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr++){
-            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
-            __no_operation();
-        }
-        /* APP from download area 2 */
-        for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr++)
-        {
-            WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
-            __no_operation();
-        }  
-        // Validate image in App Area
-        if (*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF){
-            // Erase download 
-            for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
-                __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
-            }
-            for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
-                __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
-            }
-            // Jump to App 
+
+    if(check_boot_is_forced() == false){
+        if((*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF)){  
             ((void (*)()) _Appl_Reset_Vector) ();
         }
-    }
-    else{
-        // Boot is forced from app, continue to while
-    }
+        // Image invalid, check Download Area
+        else if (Verify_App_Down()){
+            // Erase App Area
+            uint32_t addr;
+            for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+                __data20_write_short(addr, 0xFFFF);            
+            }
+            for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+                __data20_write_short(addr, 0xFFFF);
+            }
+            // Replace the Image in App Area by Download Area
+            /* APP from Download area 1 */
+            for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr++){
+                WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+                __no_operation();
+            }
+            /* APP from download area 2 */
+            for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr++)
+            {
+                WriteByte(addr, __data20_read_char(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr)));
+                __no_operation();
+            }  
+            // Validate image in App Area
+            if (*(volatile uint16_t *)(&_Appl_Reset_Vector) != 0xFFFF){
+                // Erase download 
+                for (addr = APP_START_ADDR; addr <= APP_END_ADDR; addr+=2){
+                    __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+                }
+                for (addr = APP2_START_ADDR; addr <= APP2_END_ADDR; addr+=2){
+                    __data20_write_short(TI_MSPBoot_MI_GetPhysicalAddressFromVirtual(addr), 0xFFFF);
+                }
+                // Jump to App 
+                ((void (*)()) _Appl_Reset_Vector) ();
+            }
+        }
+        else{
+            // Boot is forced from app, continue to while
+        }
+    }      
 
     while(1){
         uint16_t ii;

@@ -73,4 +73,13 @@ CPU blink {
       BIT = 6;
     }; /* Button S1 is on GPIO port 5, bit 6 */
   };
+
+  ISR buttonS2 {
+    CATEGORY = 1;
+    PRIORITY = 1;
+    SOURCE = PORT5_VECTOR {
+      BIT = 5;
+    }; /* Button S2 is on GPIO port 5, bit 5 */
+  };
+
 };

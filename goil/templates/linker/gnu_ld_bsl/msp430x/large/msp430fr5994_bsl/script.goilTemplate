@@ -43,6 +43,9 @@ _estack = 0x2C00;    /* end of 4K RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
 _Min_Stack_Size = 0x100; /* required amount of stack */
 
+PassWd_boot = 0x1c00;                 /* Password sent by App to force boot  mode */
+StatCtrl_boot = 0x1c02;               /* Status and Control  byte used by Comm */
+
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/

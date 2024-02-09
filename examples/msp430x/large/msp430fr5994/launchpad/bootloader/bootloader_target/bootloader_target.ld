@@ -116,10 +116,9 @@ MEMORY {
 __RAM_Start = 0x1c00;                           /* RAM Start */
 __RAM_End = 0x3bff;                             /* RAM End */
 /* RAM shared between App and Bootloader, must be reserved */
-PassWd = 0x1c00;                                /* Password sent by App to force boot  mode */
-StatCtrl = 0x1c02;                              /* Status and Control  byte used by Comm */
-CI_State_Machine = 0x1c03;                      /*  State machine variable used by Comm */
-CI_Callback_ptr = 0x1c04;                       /* Pointer to Comm callback structure */
+PassWd_boot = 0x1c00;                                /* Password sent by App to force boot  mode */
+StatCtrl_boot = 0x1c02;                              /* Status and Control  byte used by Comm */
+
 /* Unreserved RAM used for Bootloader or App purposes */
 _NonReserved_RAM_Start = 0x1c08;                /* Non-reserved RAM */
 
