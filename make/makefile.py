@@ -611,6 +611,7 @@ class Make:
   #····················································································································*
 
   def makeJob (self, target): # Return a bool indicating wheither the target should be built
+    # self.printRules()
   #--- If there are errors, return immediatly
     if self.mErrorCount != 0:
       return False
@@ -682,6 +683,7 @@ class Make:
   # 4: completed
 
   def runJobs (self, maxConcurrentJobs, showCommand):
+    # self.printRules()
     if self.mErrorCount == 0:
       if len (self.mJobList) == 0:
         print (BOLD_BLUE () + "Nothing to make." + ENDC ())
