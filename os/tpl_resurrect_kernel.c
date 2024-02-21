@@ -190,6 +190,19 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) ptr_step = NULL;
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step = NULL;
 
+    /* We compute energy consumed if using TIMER_ACTIVITY */
+    #if WITH_TIMER_ACTIVITY
+    uint8_t k;
+    uint32_t voltage_harvested = 0;
+    uint32_t voltage_worst_case = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
+    uint32_t voltage_consumed = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
+    /* Slope are in µV per ms and time is in ms*/
+    for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
+      voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
+      voltage_consumed -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k]);
+    }    
+    #endif /* WITH_TIMER_ACTIVITY */
+
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
     while (ptr_step == NULL)
     {
@@ -214,7 +227,12 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       else{
         voltageInMillis = energy*3/5;
       }
-      // voltageInMillis = 3300; // debug
+
+      /* Compute energy harvested (in µV) */
+      #if WITH_TIMER_ACTIVITY
+      voltage_harvested = (((uint32_t)voltageInMillis)*1000 - voltage_worst_case) - (voltage_consumed - voltage_worst_case) ;
+      #endif /* WITH_TIMER_ACTIVITY */
+
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
@@ -232,39 +250,18 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             }
             tpl_kern_resurrect.elected = tmp_ptr_step;
             ptr_step = tmp_ptr_step;
-            // break;
           }
-          // break;
           #else
           tpl_kern_resurrect.elected = tmp_ptr_step;
           ptr_step = tmp_ptr_step;
           break;
           #endif /* WITH_RESURRECT_EVENT */
         }
-      }
-
-      // P1OUT &= ~BIT2;
+      }    
       /* Not enough energy to elect next step --> hibernate */
       if (ptr_step == NULL)
       {
-        /* Before Hibernate we compute harvested enegy if using TIMER_ACTIVITY */
-        #if WITH_TIMER_ACTIVITY
-        uint8_t k;
-        uint32_t voltage_harvested;
-        uint32_t voltage_worst_case = tpl_kern_resurrect.energy_at_start;
-        uint32_t voltage_consumed = tpl_kern_resurrect.energy_at_start;
-
-        for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
-          voltage_worst_case -= tpl_kern_resurrect.elected->activity->slope[k] * tpl_kern_resurrect.elected->activity->time_activity[k];
-          voltage_consumed -= tpl_kern_resurrect.elected->activity->slope[k] * tpl_kern_resurrect.elected->activity->current_time_activity[k];
-        }
-        voltage_harvested = voltageInMillis - voltage_worst_case + voltage_consumed;
-        // voltage_harvested = voltageInMillis - 
-        
-        #endif /* WITH_TIMER_ACTIVITY */
-
-        tpl_chkpt_hibernate();
-        
+        tpl_chkpt_hibernate(); 
       }
       /* Save Energy at start if starting a step */
       #if WITH_TIMER_ACTIVITY

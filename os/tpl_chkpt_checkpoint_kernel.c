@@ -141,6 +141,7 @@ void tpl_RTC_stop()
 
 void tpl_lpm_hibernate()
 {
+  // P1OUT &= ~BIT2;
   /* Disable TIMER3_A0 interrupt 
      in LPM3, ACLK is still active
    */
@@ -210,10 +211,12 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
 	  } 
     #endif /* WITH_RESURRECT == NO */
     else {
+      // setModeSleep();
       tpl_RTC_init(); //startRTC => interrupt next 1 min
       tpl_lpm_hibernate();
 	  }
-    setModeIdle();
+    // setModeIdle();
+    // P1OUT |= BIT2;
   }
 }
 

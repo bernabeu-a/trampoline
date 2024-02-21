@@ -219,59 +219,59 @@ def gen_oil_objects_resurrect(dfa):
                 for line in lines:
                     if line.rstrip() == "dnnmain" and line.rstrip() not in list_slope :
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 37;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 75000;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 75;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "convol1D" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 40;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 1890000;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 1890;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "convol1H" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 43;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 7380000;};\n') 
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 7380;};\n') 
                         list_slope.append(line.rstrip()) 
                     if line.rstrip() == "convol1W" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 43;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 7630000;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 7630;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "relu1" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 43;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 283200;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 283;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "pooling1" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 40;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 1948000;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 1948;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "convol2" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 42;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 10290000;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 10290;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "relu2" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 44;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 162930;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 162;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "pooling2" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 39;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 945930;};\n')  
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 945;};\n')  
                         list_slope.append(line.rstrip())   
                     if line.rstrip() == "fc1h" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 43;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 512640;};\n') 
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 512;};\n') 
                         list_slope.append(line.rstrip())              
                     if line.rstrip() == "fc1w" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 40;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 305020;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 305;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "relu3" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 44;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 12860;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 12;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "fc2" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 38;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 481130;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 481;};\n')
                         list_slope.append(line.rstrip())
                     if line.rstrip() == "prediction" and line.rstrip() not in list_slope:
                         write_file.write('RESURRECT_SLOPE '+line.rstrip()+'_slope{ VALUE = 44;};\n')
-                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 540;};\n')
+                        write_file.write('RESURRECT_TIME_SLOPE '+line.rstrip()+'_time_slope{ VALUE = 1;};\n')
                         list_slope.append(line.rstrip())
 
             for activity_energy, state_end in dfa.get_transitions()[transitions]:
@@ -351,7 +351,8 @@ if __name__ == "__main__":
     if args.filename is None:
         sys.exit("Usage: -f cts_file")
 
-    path_romeo = "/Applications/Romeo.app/Contents/Resources/Scripts/bin/romeo-cli"
+    path_romeo = "/home/bernabeu-a/Source/romeo-3.9.4/bin/romeo-cli"
+    # path_romeo = "/Applications/Romeo.app/Contents/Resources/Scripts/bin/romeo-cli"
     # cts_name = "/romeo_model/jdeds_sec5"
     # cts_name = "/romeo_model/noName"
     cts = os.path.abspath(args.filename)

@@ -103,7 +103,6 @@ uint16_t time_millisec_activity;
 uint16_t time_microsec_activity;
 
 void start_timer_activity(){
-
   /* reset previous measure */
   time_millisec_activity = 0;
   time_microsec_activity = 0;
