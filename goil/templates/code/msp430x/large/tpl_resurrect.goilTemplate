@@ -86,6 +86,32 @@ extern void % !item %(void);
 %
 end foreach
 
+if OS::ENERGY_PREDICTION then
+%
+/* Data structure for previous harvesting and prediction */
+#if ENERGY_PREDICTOR == SMA
+
+#define OS_START_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+
+VAR(tpl_energy_buffer, OS_VAR) struct_buffer_previous_harvesting = {
+/* buffer of %!OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE% previous value */ {0},
+/* index */                      0,
+/* current size */               0
+};
+#define OS_STOP_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+
+#endif /* ENERGY_PREDICTOR == SMA */
+
+VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
+{
+  &struct_buffer_previous_harvesting,
+  0
+};
+%
+end if 
+
 if OS::TIMER_ACTIVITY then
 %
 /* Function for timer, get the time of each activities */

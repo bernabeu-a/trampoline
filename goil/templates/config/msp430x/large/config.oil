@@ -144,6 +144,19 @@ IMPLEMENTATION  msp430x {
       FALSE
     ] RESURRECT = FALSE;
     
+    BOOLEAN [
+     TRUE {
+       ENUM [
+       SMA {
+        UINT32 SIZE = 3;
+       },
+       EWMA{
+       }
+       ] PREDICTOR = SMA;
+     },
+     FALSE
+    ] ENERGY_PREDICTION = FALSE;
+    
     /* Timer for activity with RESURRECT */
     BOOLEAN [
       TRUE,

@@ -73,7 +73,7 @@ void init_adc() {
   static uint8_t use1V2Ref = 0;
 
   ADC12CTL0 &= ~ADC12ENC;                     // disable ADC
-  ADC12CTL0 = ADC12ON | ADC12SHT0_2;          
+  ADC12CTL0 = ADC12ON | ADC12SHT0_2;
   ADC12CTL1 = ADC12SSEL_0 | ADC12DIV_7;       // ADC12OSC as ADC12CLK (~5MHz) / 8
   ADC12CTL3 = ADC12TCMAP | ADC12BATMAP;       // Map Temp and BAT
   ADC12CTL1 |= ADC12SHP;                      // ADCCLK = MODOSC; sampling timer
@@ -126,7 +126,7 @@ void tpl_RTC_init()
     // set alarm in next '1' minutes + enable interrupt
     #define PERIOD_WAKE_UP 0x01
     RTCAMIN = (PERIOD_WAKE_UP | (1<<7));
-    // Interrupt from alarm                     						
+    // Interrupt from alarm
     RTCCTL0_L = RTCAIE;
     // RTCCTL0_H = 0x0;
     // start rtc
@@ -142,7 +142,7 @@ void tpl_RTC_stop()
 void tpl_lpm_hibernate()
 {
   // P1OUT &= ~BIT2;
-  /* Disable TIMER3_A0 interrupt 
+  /* Disable TIMER3_A0 interrupt
      in LPM3, ACLK is still active
    */
 	// TA3CCTL0 &= ~CCIE;
@@ -163,7 +163,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   /* Avoid using DMA with ADC linked to DMA */
   // tpl_save_checkpoint_dma(l_buffer);
   tpl_checkpoint_buffer = l_buffer;
-  
+
   uint16_t waiting_loop = 1;
 
   while(waiting_loop){
@@ -202,13 +202,13 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     if(voltageInMillis > tmp_step_energy){
       tpl_RTC_stop();
 		  waiting_loop = 0;
-	  } 
+	  }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
     if(voltageInMillis > RESUME_FROM_HIBERNATE_THRESHOLD){
       tpl_RTC_stop();
 		  waiting_loop = 0;
-	  } 
+	  }
     #endif /* WITH_RESURRECT == NO */
     else {
       // setModeSleep();
@@ -334,7 +334,7 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
      * Call tpl_start_scheduling to elect the highest priority task
      * if such a task exists.
      */
-  
+
   // P1OUT |= BIT5;
   tpl_load_checkpoint(tpl_checkpoint_buffer);
   /* Avoid using DMA with ADC linked to DMA */

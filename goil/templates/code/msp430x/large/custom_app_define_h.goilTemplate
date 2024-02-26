@@ -120,4 +120,15 @@ end foreach
 end if
 end if
 
+if OS::ENERGY_PREDICTION then%
+#define WITH_ENERGY_PREDICTION %!yesNo(OS::ENERGY_PREDICTION)%
+#define ENERGY_PREDICTOR % !OS::ENERGY_PREDICTION_S::PREDICTOR%
+%
+if OS::ENERGY_PREDICTION_S::PREDICTOR == "SMA" then
+%
+#define SMA_COUNT % !OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE%
+%
+end if
+
+end if
 template if exists tpl_library_defines

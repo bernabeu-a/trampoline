@@ -37,7 +37,7 @@
  * identifies an event for resurrect
  *
  */
-typedef uint16 tpl_event_resurrect;
+typedef uint16_t tpl_event_resurrect;
 
 typedef tpl_event_resurrect  EventResurrectType;
 
@@ -82,9 +82,28 @@ typedef struct
   #endif /* WITH_TIMER_ACTIVITY */
 } tpl_kern_resurrect_state;
 
+#if WITH_ENERGY_PREDICTION == YES
+#if ENERGY_PREDICTOR == SMA
+struct TPL_ENERGY_BUFFER
+{
+    uint32_t buffer[SMA_COUNT];
+    uint16_t index;
+    uint8_t current_size;
+};
+typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
+#endif // ENERGY_PREDICTOR == SMA
+struct TPL_ENERGY
+{
+    P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) previous_harvesting;
+    VAR(uint32_t, TYPEDEF) prediction;
+};
+typedef struct TPL_ENERGY tpl_energy;
+#endif // WITH_ENERGY_PREDICTOR
+
 #define OS_START_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
+extern VAR(tpl_energy, OS_VAR) tpl_resurrect_energy;
 extern VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect;
 
 #define OS_STOP_SEC_VAR_UNSPECIFIED
@@ -117,6 +136,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void);
 
 FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMATIC)  alarm_id, VAR(int, AUTOMATIC) set_nb_activation);
 
+#if WITH_ENERGY_PREDICTION == YES
+#if ENERGY_PREDICTOR == SMA
+FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void);
+#endif // ENERGY_PREDICTOR == "SMA"
+#endif // WITH_ENERGY_PREDICTOR
 #define OS_STOP_SEC_CODE
 #include "tpl_memmap.h"
 

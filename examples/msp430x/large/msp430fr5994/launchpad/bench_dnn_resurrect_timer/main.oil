@@ -4,7 +4,7 @@ IMPLEMENTATION trampoline {
   TASK {
    UINT32 STACKSIZE = 800;
   };
-  
+
   ISR {
     UINT32 STACKSIZE = 100;
     };
@@ -25,8 +25,13 @@ CPU base {
      };
     };
     TIMER_ACTIVITY = TRUE;
+    ENERGY_PREDICTION = TRUE {
+        PREDICTOR = SMA {
+            SIZE=5;
+        };
+    };
     BUILD = TRUE {
-     TRAMPOLINE_BASE_PATH = "/home/bernabeu-a/Code/trampoline";
+     TRAMPOLINE_BASE_PATH = "/Users/bernabeu-a/Code/trampoline";
      APP_SRC = "main.c";
      APP_SRC = "dnn.c";
      APP_SRC = "dnn_calc.c";
@@ -53,30 +58,29 @@ CPU base {
      MEMORY_PROTECTION = FALSE;
     };
    };
-   
+
    APPMODE std {};
-   
+
    TASK resurrect {
     PRIORITY = 3;
     AUTOSTART = FALSE;
     ACTIVATION = 1;
-    SCHEDULE = FULL;     
+    SCHEDULE = FULL;
    };
-   
+
    ISR adc_sampling {
     CATEGORY = 1;
     PRIORITY = 9;
     SOURCE = DMA_VECTOR {BIT=2;};
     EXIT_FROM_LPM = TRUE;
   };
-  
+
    ISR timer_activity {
     CATEGORY = 1;
     PRIORITY = 9;
     SOURCE = TIMER2_A0_VECTOR;
     EXIT_FROM_LPM = TRUE;
   };
-  
+
    #include "state_transition_resurrect.oil"
 };
- 

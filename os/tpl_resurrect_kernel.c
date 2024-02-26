@@ -77,52 +77,7 @@ tpl_init_resurrect_os(CONST(tpl_application_mode, AUTOMATIC) app_mode)
   }
 #endif
 
-//   /* Get energy level from ADC */
-//   bool use1V2Ref = true;
-//   tpl_adc_init_simple(use1V2Ref);
-//   /* Polling */
-//   uint16_t energy = readPowerVoltage_simple();
-//   uint16_t voltageInMillis;
-//   if(energy == 0x0FFF){
-//     use1V2Ref = false;
-//     tpl_adc_init_simple(use1V2Ref);
-//     energy = readPowerVoltage_simple();
-//     voltageInMillis = energy;
-//   }
-//   else{
-//     voltageInMillis = energy*3/5;
-//   }
-//   // end_adc();
-
-//   /* Compare energy level with energy from steps with FROM_STATE =
-//    * tpl_kern_resurrect->state */
-//   CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)
-//   ptr_state = tpl_step_state[tpl_kern_resurrect.state];
-//   for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
-//   {
-//     CONSTP2CONST(tpl_step, AUTOMATIC, OS_VAR) ptr_step = ptr_state[i];
-//     if (voltageInMillis >= ptr_step->energy)
-//     {
-//       tpl_kern_resurrect.elected =
-//           (CONSTP2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_step;
-//       break;
-//     }
-//   }
-
-//   /* Point the entry point of a the task to the right function */
-
-//   CONSTP2VAR(tpl_proc, AUTOMATIC, OS_VAR) resurrect_proc = tpl_dyn_proc_table[RESURRECT_TASK_ID];
-//   resurrect_proc->entry = (tpl_proc_function)tpl_kern_resurrect.elected->entry_point;
-// //   resurrect_proc->entry = ptr_step->entry_point;
-
-//   /* Acitvate the resurrect task */
-//   tpl_activate_task(RESURRECT_TASK_ID);
-
-//   /* Update tpl_kern_resurrect.state with next state from step elected */
-//   tpl_kern_resurrect.state = tpl_kern_resurrect.elected->to_state;
-
   tpl_choose_next_step();
-
 }
 
 FUNC(void, OS_CODE)
@@ -197,10 +152,12 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     uint32_t voltage_worst_case = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
     uint32_t voltage_consumed = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
     /* Slope are in µV per ms and time is in ms*/
-    for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
-      voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
-      voltage_consumed -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k]);
-    }    
+    if(tpl_kern_resurrect.elected != NULL){
+        for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
+        voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
+        voltage_consumed -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k]);
+        }
+    }
     #endif /* WITH_TIMER_ACTIVITY */
 
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
@@ -230,9 +187,24 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
       /* Compute energy harvested (in µV) */
       #if WITH_TIMER_ACTIVITY
-      voltage_harvested = (((uint32_t)voltageInMillis)*1000 - voltage_worst_case) - (voltage_consumed - voltage_worst_case) ;
+      /* Check if startup or not */
+      if(tpl_kern_resurrect.elected != NULL){
+          voltage_harvested = (((uint32_t)voltageInMillis)*1000 - voltage_worst_case) - (voltage_consumed - voltage_worst_case) ;
+      }
       #endif /* WITH_TIMER_ACTIVITY */
-
+      #if WITH_ENERGY_PREDICTION
+      if(tpl_kern_resurrect.elected != NULL){
+        const uint16_t index = (tpl_resurrect_energy.previous_harvesting->index++) % SMA_COUNT;
+        tpl_resurrect_energy.previous_harvesting->buffer[index] = voltage_harvested;
+        if(tpl_resurrect_energy.previous_harvesting->current_size != SMA_COUNT){
+            tpl_resurrect_energy.previous_harvesting->current_size++;
+        }
+        if(tpl_resurrect_energy.previous_harvesting->index == SMA_COUNT){
+            tpl_resurrect_energy.previous_harvesting->index = 0;
+        }
+        tpl_resurrect_energy.prediction = tpl_prediction_sma();
+      }
+      #endif /* WITH_ENERGY_PREDICTION */
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
@@ -257,11 +229,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
           break;
           #endif /* WITH_RESURRECT_EVENT */
         }
-      }    
+      }
       /* Not enough energy to elect next step --> hibernate */
       if (ptr_step == NULL)
       {
-        tpl_chkpt_hibernate(); 
+        tpl_chkpt_hibernate();
       }
       /* Save Energy at start if starting a step */
       #if WITH_TIMER_ACTIVITY
@@ -286,7 +258,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     /* Activate the resurrect task */
     tpl_activate_task(RESURRECT_TASK_ID);
     /* Update tpl_kern_resurrect.state with next state from step elected */
-    tpl_kern_resurrect.state = tpl_kern_resurrect.elected->to_state; 
+    tpl_kern_resurrect.state = tpl_kern_resurrect.elected->to_state;
 }
 
 
@@ -323,7 +295,7 @@ FUNC(void, OS_CODE) tpl_terminate_step_resurrect_service(void){
 
   /* unlock kernel */
   UNLOCK_KERNEL()
-  
+
   tpl_choose_next_step();
 
   /* start the highest priority process */
@@ -354,5 +326,19 @@ FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMAT
 // }
 
 // #endif // WITH_RESURRECT_EVENT
+#if WITH_ENERGY_PREDICTION == YES
+#if ENERGY_PREDICTOR == SMA
+/* Prediction with sliding moving average */
+FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void)
+{
+    uint8_t i;
+    uint32_t result = 0;
+    for(i=0; i<tpl_resurrect_energy.previous_harvesting->current_size; i++){
+        result += tpl_resurrect_energy.previous_harvesting->buffer[i];
+    }
+    return (result/tpl_resurrect_energy.previous_harvesting->current_size);
+}
+#endif // ENERGY_PREDICTOR == "SMA"
+#endif // WITH_ENERGY_PREDICTION
 
 #endif // WITH_RESURRECT
