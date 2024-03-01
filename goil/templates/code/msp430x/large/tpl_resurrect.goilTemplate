@@ -503,7 +503,7 @@ VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
 
 foreach resurrect_state in RESURRECT_STATE do
       %
-CONSTP2VAR(tpl_step, AUTOMATIC, OS_APPL_DATA) step_from_state_%!resurrect_state::NAME% [%!OS::RESURRECT_S::ENERGY_LEVEL%] = {
+CONSTP2CONST(tpl_step, AUTOMATIC, OS_APPL_DATA) step_from_state_%!resurrect_state::NAME% [%!OS::RESURRECT_S::ENERGY_LEVEL%] = {
 %
       let transitionListEnergy := @()
       foreach resurrect_transition in RESURRECT_TRANSITION do

@@ -63,12 +63,12 @@ struct TPL_STEP
   CONST(EventResurrectType, TYPEDEF) resurrect_event[RESURRECT_EVENT_COUNT];
   #endif /* WITH_RESURRECT_EVENT */
   #if WITH_TIMER_ACTIVITY == YES
-  CONSTP2VAR(tpl_activity,TYPEDEF, OS_VAR) activity;
+  CONSTP2CONST(tpl_activity,TYPEDEF, OS_VAR) activity;
   #endif /* WITH_TIMER_ACTIVITY */
 };
 
 typedef struct TPL_STEP tpl_step;
-typedef tpl_step *tpl_step_ref;
+typedef tpl_step const *tpl_step_ref;
 
 typedef struct
 {

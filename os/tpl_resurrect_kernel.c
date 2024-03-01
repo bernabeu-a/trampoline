@@ -208,7 +208,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
+        #if WITH_ENERGY_PREDICTION
+        if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3))
+        #else
         if (voltageInMillis >= tmp_ptr_step->energy)
+        #endif /* WITH_ENERGY_PREDICTION */
         {
           #if WITH_RESURRECT_EVENT == YES
           VAR(uint8, AUTOMATIC) j;
