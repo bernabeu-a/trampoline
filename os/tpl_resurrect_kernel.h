@@ -98,12 +98,14 @@ struct TPL_ENERGY
     VAR(uint32_t, TYPEDEF) prediction;
 };
 typedef struct TPL_ENERGY tpl_energy;
-#endif // WITH_ENERGY_PREDICTOR
+#endif // WITH_ENERGY_PREDICTION
 
 #define OS_START_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
+#if WITH_ENERGY_PREDICTION == YES
 extern VAR(tpl_energy, OS_VAR) tpl_resurrect_energy;
+#endif // WITH_ENERGY_PREDICTION
 extern VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect;
 
 #define OS_STOP_SEC_VAR_UNSPECIFIED
