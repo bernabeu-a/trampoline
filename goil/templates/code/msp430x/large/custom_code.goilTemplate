@@ -42,10 +42,17 @@ if OS::SEQUENCING then
 end if
 
 if OS::RESURRECT then
-  write to PROJECT+"/tpl_resurrect.c":
-   let EXTENSIONRESURRECT := "c"
-   template tpl_resurrect in code
-  end write
+  if OS::RESURRECT_S::SUPER_STEP then
+    write to PROJECT+"/tpl_resurrect.c":
+     let EXTENSIONRESURRECT := "c"
+     template tpl_resurrect_super_step in code
+    end write
+  else
+    write to PROJECT+"/tpl_resurrect.c":
+     let EXTENSIONRESURRECT := "c"
+     template tpl_resurrect in code
+    end write
+  end if
 #  template resurrect_task_descriptors in code
 end if
 #if exists OS::CHECKPOINTING then
