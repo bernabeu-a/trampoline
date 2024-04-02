@@ -143,6 +143,7 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_previous_harvesting = {
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
   &struct_buffer_previous_harvesting,
+  0,
   0
 };
 %
@@ -448,8 +449,19 @@ foreach resurrect_transition in RESURRECT_TRANSITION
 end foreach
 foreach resurrect_transition in RESURRECT_TRANSITION 
  do
-  if exists resurrect_transition::FUNC then
-  let nb_activity:= [resurrect_transition::FUNC length]
+  let nb_activity := 0
+  foreach s_func in resurrect_transition::FUNC 
+    do
+     foreach super_step in RESURRECT_SUPER_STEP 
+      do
+       if s_func::VALUE == super_step::NAME then
+         let nb_activity := nb_activity + [super_step::FUNC length]
+       
+  #if exists resurrect_transition::FUNC then
+  #let nb_activity:= [resurrect_transition::FUNC length]
+       end if
+     end foreach
+   end foreach
  %CONST(tpl_activity, AUTOMATIC) activity_step_% !resurrect_transition::NAME% = {
   .nb_activity = %!nb_activity%
 , .slope = slope_step_%!resurrect_transition::NAME%
@@ -458,7 +470,7 @@ foreach resurrect_transition in RESURRECT_TRANSITION
 };
 
 %
- end if
+ #end if
 end foreach
 end if
 

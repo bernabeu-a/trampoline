@@ -24,22 +24,17 @@
  *
  */
 
-#include "tpl_resurrect_kernel.h"
 #include "tpl_chkpt_checkpoint_kernel.h"
 #include "tpl_machine_interface.h"
-#include "tpl_os_alarm_kernel.h"
 #include "tpl_os_definitions.h"
 #include "tpl_os_error.h"
 #include "tpl_os_hooks.h"
 #include "tpl_os_kernel.h"
 #include "tpl_os_os_kernel.h"
-#include "tpl_trace.h"
 
 #include "msp430.h"
 
 #include "tpl_chkpt_adc.h"
-
-#include <stdint.h>
 
 #if WITH_RESURRECT == YES
 #include "tpl_resurrect_kernel.h"
@@ -148,10 +143,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     /* We compute energy consumed if using TIMER_ACTIVITY */
     #if WITH_TIMER_ACTIVITY
     uint8_t k;
-    uint32_t voltage_harvested = 0;
+    int32_t voltage_harvested = 0;
     uint32_t voltage_worst_case = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
     uint32_t voltage_consumed = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
     /* Slope are in µV per ms and time is in ms*/
+    // On pourrais vérifier en ligne que le temps worst case est toujours > temps et sinon on remplace wcet par le temps mesuré
     if(tpl_kern_resurrect.elected != NULL){
         for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
         voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
@@ -202,6 +198,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         if(tpl_resurrect_energy.previous_harvesting->index == SMA_COUNT){
             tpl_resurrect_energy.previous_harvesting->index = 0;
         }
+        tpl_resurrect_energy.error = (int32_t)tpl_resurrect_energy.prediction - voltage_harvested;
         tpl_resurrect_energy.prediction = tpl_prediction_sma();
       }
       #endif /* WITH_ENERGY_PREDICTION */
@@ -209,7 +206,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
         #if WITH_ENERGY_PREDICTION
-        if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3))
+        if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy)
         #else
         if (voltageInMillis >= tmp_ptr_step->energy)
         #endif /* WITH_ENERGY_PREDICTION */

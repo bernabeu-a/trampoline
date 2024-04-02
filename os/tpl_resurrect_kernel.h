@@ -96,6 +96,7 @@ struct TPL_ENERGY
 {
     P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) previous_harvesting;
     VAR(uint32_t, TYPEDEF) prediction;
+    VAR(int32_t, TYPEDEF) error;
 };
 typedef struct TPL_ENERGY tpl_energy;
 #endif // WITH_ENERGY_PREDICTION
