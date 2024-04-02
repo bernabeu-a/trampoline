@@ -203,23 +203,33 @@ ISR(timer_activity)
  */
  
 %
-foreach resurrect_transition in RESURRECT_TRANSITION 
+
+foreach resurrect_transition in RESURRECT_TRANSITION
  do
-  if exists resurrect_transition::FUNC then
-  let nb_activity:= [resurrect_transition::FUNC length]
+ let nb_activity := 0
+   if exists resurrect_transition::FUNC then
+    foreach transition in resurrect_transition::FUNC do
+    foreach s in RESURRECT_SUPER_STEP
+     do
+     if s::NAME == transition::VALUE then
+      let nb_activity := nb_activity + [s::FUNC length]
+     end if
+    end foreach
+    end foreach
 %
 VAR(uint16_t, AUTOMATIC) current_time_slope_step_% !resurrect_transition::NAME% [%!nb_activity%]= {%
-loop a from 1 to nb_activity step 1
-do 
-%0%
-between
-%,%
-after
-%};
-%
-end loop
-end if
+    loop a from 1 to nb_activity step 1
+     do
+     %0%
+     between
+     %,%
+     after
+     %};
+     %
+    end loop
+   end if
 end foreach
+      
 %
 #endif /* WITH_TIMER_ACTIVITY */
 %
@@ -246,7 +256,7 @@ FUNC(void, OS_APPL_CODE) % !super_step::NAME%_super_step (void){
 %
        do
          if OS::TIMER_ACTIVITY then
-           %start_timer_activity();
+          tab(5)%start_timer_activity();
 %
          end if
          tab(5) !super_step_func::VALUE%();
@@ -294,17 +304,8 @@ tab(5) %SetRelAlarm(%!al::ALARM%, %!al::ALARMTIME%, %!al::CYCLETIME%);
       end foreach
       end if
       do
-if OS::TIMER_ACTIVITY then
-tab(5)%start_timer_activity();
-%
-end if
 tab(5) !resurrect_transition_func::VALUE%_super_step();
 %
-if OS::TIMER_ACTIVITY then
-tab(5)%stop_timer_activity();
-%
-end if
-
       after
       if exists resurrect_transition::ALARM_RESURRECT then
       let listAlResurrect := @[]
@@ -323,30 +324,6 @@ end if
      end foreach
      end if
     end foreach
-     
-#     let list_event_al_res := @[]
-#     foreach al_resurrect in ALARM 
-#     do
-#     foreach al in ALARM_RESURRECT do
-#       if al_resurrect::VALUE == al::NAME then
-#       let key := al::EV
-#       let list_event_al_resLength := [list_event_al_res length]
-#
-#     if list_event_al_resLength == 0 then
-#       let list_event_al_res[key] := key
-#     else
-#     foreach token in list_event_al_res do
-#       if token == key then
-#       else
-#         let list_event_al_res[key] := key
-#       end if
-#     end foreach
-#     end if
-#     end if 
-#     end foreach
-#     end foreach
-     
-
 tab(5)%EventMaskType myEventMask;
 %
 foreach al_resurrect in resurrect_transition::ALARM_RESURRECT 
@@ -366,21 +343,7 @@ tab(5)%GetEvent(resurrect, myEventMask);
 tab(5)%ClearEvent(myEventMask);
 %
 end foreach
-#      foreach resurrect_transition_alarm in resurrect_transition::ALARM_RESURRECT
-#      do
-#       foreach al in ALARM_RESURRECT
-#       do
-#       if resurrect_transition_alarm::VALUE == al::NAME then
-#      tab(5) %WaitEvent(%!al::EV%);
-#%
-#      tab(5) %ClearEvent(%!al::EV%);
-#%
-#      tab(5) % CancelAlarm(%!al::ALARM%);
-#%
-#      end if
-#      end foreach 
-#      end foreach
-      end if
+
 tab(5)%TerminateStepResurrect();
 }
 %
@@ -419,7 +382,7 @@ foreach slope_res in RESURRECT_SLOPE do
   else
   let list_slope := list_slope + slope_res::NAME
   %CONST (uint16_t, AUTOMATIC) %!slope_res::NAME% = %!slope_res::VALUE%;
- %
+%
   end if
 end foreach
 
@@ -430,40 +393,57 @@ foreach slope_time_res in RESURRECT_TIME_SLOPE do
   else
   let list_slope_time := list_slope_time + slope_time_res::NAME
   %CONST (uint16_t, AUTOMATIC) %!slope_time_res::NAME% = %!slope_time_res::VALUE%;
- %
+%
   end if
 end foreach
 
 foreach resurrect_transition in RESURRECT_TRANSITION 
   do
-  if exists resurrect_transition::SLOPE then
-    let nb_activity:= [resurrect_transition::FUNC length]
-   %CONST(uint16_t, AUTOMATIC) slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
-  %
-  foreach slope in resurrect_transition::SLOPE do
-  %%!slope::VALUE
-  between 
-  %,
-  %
+  let nb_activity := 0
+  let list_tmp_slope := @()
+  let list_tmp_time_slope := @()
+  foreach s_func in resurrect_transition::FUNC 
+   do
+   foreach super_step in RESURRECT_SUPER_STEP 
+    do
+    if s_func::VALUE == super_step::NAME then
+     if exists super_step::SLOPE then
+       let nb_activity := nb_activity + [super_step::FUNC length]
+       let list_tmp_slope := list_tmp_slope | super_step::SLOPE
+      end if
+      if exists super_step::TIME_SLOPE then
+        let list_tmp_time_slope := list_tmp_time_slope | super_step::TIME_SLOPE
+      end if
+    end if
+   end foreach
   end foreach
+  %CONST(uint16_t, AUTOMATIC) slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
   %
+  foreach value in list_tmp_slope
+    do
+    !value::VALUE
+    between
+    %,
+  %
+    after
+    %
 };
 %
-  end if
-  if exists resurrect_transition::TIME_SLOPE then
-    let nb_activity:= [resurrect_transition::FUNC length]
-   %CONST(uint16_t, AUTOMATIC) time_slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
+    end foreach
+
+    %CONST(uint16_t, AUTOMATIC) time_slope_step_% !resurrect_transition::NAME%[%!nb_activity%] = {
   %
-  foreach time_slope in resurrect_transition::TIME_SLOPE do
-  %%!time_slope::VALUE
-  between 
-  %,
+    foreach value in list_tmp_time_slope 
+      do
+      !value::VALUE
+      between
+      %,
   %
-  end foreach
-  %
+      after
+      %
 };
 %
-  end if
+   end foreach
   
 end foreach
 foreach resurrect_transition in RESURRECT_TRANSITION 
