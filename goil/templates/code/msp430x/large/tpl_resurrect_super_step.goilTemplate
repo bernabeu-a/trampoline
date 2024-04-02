@@ -343,7 +343,7 @@ tab(5)%GetEvent(resurrect, myEventMask);
 tab(5)%ClearEvent(myEventMask);
 %
 end foreach
-
+end if
 tab(5)%TerminateStepResurrect();
 }
 %
