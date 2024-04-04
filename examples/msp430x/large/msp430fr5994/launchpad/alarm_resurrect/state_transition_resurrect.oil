@@ -1,10 +1,23 @@
 RESURRECT_STATE Start {INITIAL_STATE=TRUE;};
 RESURRECT_STATE q_0 {};
 
+ALARM_RESURRECT al_Start_q_0{
+    ALARM = al_blink;
+    ALARMTIME = 1000;
+    CYCLETIME = 1000;
+    NB_ACTIVATION = 5;
+};
+
+ALARM_RESURRECT al_q_0_Start{
+    ALARM = al_blink2;
+    ALARMTIME = 1000;
+    CYCLETIME = 1000;
+    NB_ACTIVATION = 3;
+};
 
 RESURRECT_TRANSITION Start_q_0{
   FUNC=main_main;
-  ALARM=al_blink;
+  ALARM_RESURRECT=al_Start_q_0;
   FROM_STATE=Start;
   TO_STATE=q_0;
   ENTRY=Start_q_0_func;
@@ -14,7 +27,7 @@ RESURRECT_TRANSITION Start_q_0{
 
 RESURRECT_TRANSITION q_0_Start{
   FUNC=main_main;
-  ALARM=al_blink2;
+  ALARM_RESURRECT=al_q_0_Start;
   FROM_STATE=q_0;
   TO_STATE=Start;
   ENTRY=q_0_Start_func;
