@@ -10,8 +10,8 @@
 #include "tpl_memmap.h"
 
 FUNC(int, OS_APPL_CODE) main(void){
-    P1DIR |= BIT0 + BIT2 + BIT4 + BIT5;
-    P1OUT &= ~(BIT0 + BIT2 + BIT4 + BIT5);
+    P1DIR |= BIT0 + BIT1 + BIT4 + BIT5;
+    P1OUT &= ~(BIT0 + BIT1 + BIT4 + BIT5);
     P3DIR = 0xFF;
     // Disable the GPIO power-on default high-impedance mode
     // to activate previously configured port settings
@@ -21,8 +21,8 @@ FUNC(int, OS_APPL_CODE) main(void){
 }
 
 FUNC(int, OS_APPL_CODE) restart_main(void){
-    P1DIR |= BIT0 + BIT2 + BIT4 + BIT5;
-    P1OUT &= ~(BIT0 + BIT2 + BIT4 + BIT5);
+    P1DIR |= BIT0 + BIT1 + BIT4 + BIT5;
+    P1OUT &= ~(BIT0 + BIT1 + BIT4 + BIT5);
     P3DIR = 0xFF;
     // Disable the GPIO power-on default high-impedance mode
     // to activate previously configured port settings
@@ -56,7 +56,7 @@ TASK(blink){
 #define APP_Task_blink2_START_SEC_CODE
 #include "tpl_memmap.h"
 TASK(blink2){
-    P1OUT ^= BIT2;
+    P1OUT ^= BIT1;
     TerminateTask();
 }
 #define APP_Task_blink2_STOP_SEC_CODE

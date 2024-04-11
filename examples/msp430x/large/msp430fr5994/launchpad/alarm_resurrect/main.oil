@@ -85,9 +85,6 @@ EVENT ev_al_blink2 {
       TASK = blink;
     };
     AUTOSTART = FALSE;
-    ALARMTIME = 1000;
-    CYCLETIME = 1000;
-    NB_ACTIVATION = 5;
     EV = ev_al_blink;
   };
   
@@ -97,9 +94,6 @@ EVENT ev_al_blink2 {
       TASK = blink2;
     };
     AUTOSTART = FALSE;
-    ALARMTIME = 1000;
-    CYCLETIME = 1000;
-    NB_ACTIVATION = 3;
     EV = ev_al_blink2;
   };
    #include "state_transition_resurrect.oil"
