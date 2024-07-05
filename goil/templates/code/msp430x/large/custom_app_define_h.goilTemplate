@@ -101,6 +101,7 @@ if OS::RESURRECT then%
 #define RESURRECT_TASK_ID 0
 #define WITH_RESURRECT_EVENT %! yesNo(exists OS::RESURRECT_S::EVENT default(false))%
 #define WITH_TIMER_ACTIVITY   % ! yesNo(exists OS::TIMER_ACTIVITY default(false)) %
+#define WITH_BET            % ! yesNo(OS::RESURRECT_S::BET)%
 
 %
 if OS::RESURRECT_S::EVENT then

@@ -15,7 +15,8 @@ IMPLEMENTATION lauchpad {
           adc,
           ref_a,
           checkpointing,
-          dsplib
+          dsplib,
+          IQMATHLIB
         ] LIBRARY[];
       },
       FALSE
@@ -24,6 +25,11 @@ IMPLEMENTATION lauchpad {
 };
 
 CPU launchpad {
+  LIBRARY IQMATHLIB {
+    PATH = "msp430x/large/msp430fr5994/launchpad/IQMATHLIB";
+    CHEADER = "QmathLib.h";
+    CHEADER = "IQmathLib.h";
+  };
   LIBRARY serial {
     PATH = "msp430x/large/msp430fr5994/launchpad/serial";
     CHEADER = "serial.h";

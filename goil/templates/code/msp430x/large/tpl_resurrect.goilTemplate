@@ -24,7 +24,7 @@
  * $URL$
  */
 %
-if OS::RESURRECT then 
+if OS::RESURRECT then
 %
 #include <stdbool.h>
 #include <stdint.h>
@@ -46,8 +46,8 @@ foreach resurrect_transition in RESURRECT_TRANSITION do
   else
    foreach item in listEntry do
      if item == key then
-   
-    else 
+
+    else
       let listEntry[key] := key
     end if
    end foreach
@@ -71,7 +71,7 @@ foreach resurrect_transition in RESURRECT_TRANSITION do
      else
      foreach token in listFunc do
        if token == key then
-       
+
        else
          let listFunc[key] := key
        end if
@@ -99,6 +99,12 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_previous_harvesting = {
 /* index */                      0,
 /* current size */               0
 };
+
+VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
+/* buffer of %!OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE% previous value */ {0},
+/* index */                      0,
+/* current size */               0
+};
 #define OS_STOP_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
@@ -107,10 +113,19 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_previous_harvesting = {
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
   &struct_buffer_previous_harvesting,
-  0
+  &struct_buffer_power_previous_harvesting,
+  0,
+  0,
+  0%
+if OS::RESURRECT_S::BET then  
+%, 
+  0.0,
+  0.0,
+  0%
+end if%
 };
 %
-end if 
+end if
 
 if OS::TIMER_ACTIVITY then
 %
@@ -134,9 +149,9 @@ void start_timer_activity(){
   time_microsec_activity = 0;
   /* Set up timer TA2 with ACLK. ACLK is set to LFXTCLK at start : 32.768 kHz */
   TA2CCR0 = 0;          /* lock the timer */
-  TA2CTL = TASSEL__ACLK /* ACLK */ 
-           | ID__1 /* divide by 1 */ 
-           | MC__UP /* Up count */ 
+  TA2CTL = TASSEL__ACLK /* ACLK */
+           | ID__1 /* divide by 1 */
+           | MC__UP /* Up count */
            | TACLR /* Clear counter */;
   TA2CCTL0 |= CCIE;     /* enable the compare interrupt */
   TA2CCR0 = 32;         /* start with a 1.007 ms period (33/32768) */
@@ -165,16 +180,16 @@ ISR(timer_activity)
 /*
  * Current time measured for activities
  */
- 
+
 %
-foreach resurrect_transition in RESURRECT_TRANSITION 
+foreach resurrect_transition in RESURRECT_TRANSITION
  do
   if exists resurrect_transition::FUNC then
   let nb_activity:= [resurrect_transition::FUNC length]
 %
 VAR(uint16_t, AUTOMATIC) current_time_slope_step_% !resurrect_transition::NAME% [%!nb_activity%]= {%
 loop a from 1 to nb_activity step 1
-do 
+do
 %0%
 between
 %,%
@@ -202,27 +217,31 @@ foreach resurrect_transition in RESURRECT_TRANSITION do
     foreach resurrect_transition_func in resurrect_transition::FUNC
       before
 %
-FUNC(void, OS_APPL_CODE) % !item% (void){ 
+FUNC(void, OS_APPL_CODE) % !item% (void){
 %
 if OS::TIMER_ACTIVITY then
 tab(5) %init_ptr_current_time();
 %
 end if
-tab(5) % //initMicrophone();
+tab(5) %#ifdef BARD
+%
+tab(5) %initMicrophone();
+%
+tab(5) %#endif
 %
       if exists resurrect_transition::ALARM_RESURRECT then
       foreach resurrect_transition_alarm in resurrect_transition::ALARM_RESURRECT
       do
-       foreach al in ALARM_RESURRECT 
+       foreach al in ALARM_RESURRECT
        do
        if resurrect_transition_alarm::VALUE == al::NAME then
 tab(5) %SetNbAlarmActivation(%!al::ALARM%, %!al::NB_ACTIVATION%);
 %
 tab(5) %SetRelAlarm(%!al::ALARM%, %!al::ALARMTIME%, %!al::CYCLETIME%);
-% 
-    
+%
+
       end if
-      end foreach  
+      end foreach
       end foreach
       end if
       do
@@ -255,9 +274,9 @@ end if
      end foreach
      end if
     end foreach
-     
+
 #     let list_event_al_res := @[]
-#     foreach al_resurrect in ALARM 
+#     foreach al_resurrect in ALARM
 #     do
 #     foreach al in ALARM_RESURRECT do
 #       if al_resurrect::VALUE == al::NAME then
@@ -274,21 +293,21 @@ end if
 #       end if
 #     end foreach
 #     end if
-#     end if 
+#     end if
 #     end foreach
 #     end foreach
-     
+
 
 tab(5)%EventMaskType myEventMask;
 %
-foreach al_resurrect in resurrect_transition::ALARM_RESURRECT 
+foreach al_resurrect in resurrect_transition::ALARM_RESURRECT
 do
 tab(5)%WaitEvent(%
-foreach al_ev in ALARM 
+foreach al_ev in ALARM
  do
  if exists al_ev::EV then
  foreach item_ev in al_ev::EV do
- !item_ev::VALUE 
+ !item_ev::VALUE
  end foreach
  end if between% | % after %);
 %
@@ -302,6 +321,8 @@ end foreach
 #      do
 #       foreach al in ALARM_RESURRECT
 #       do
+#       display al
+#       display resurrect_transition_alarm
 #       if resurrect_transition_alarm::VALUE == al::NAME then
 #      tab(5) %WaitEvent(%!al::EV%);
 #%
@@ -310,7 +331,7 @@ end foreach
 #      tab(5) % CancelAlarm(%!al::ALARM%);
 #%
 #      end if
-#      end foreach 
+#      end foreach
 #      end foreach
       end if
 tab(5)%TerminateStepResurrect();
@@ -347,7 +368,7 @@ if OS::TIMER_ACTIVITY then
 let list_slope := @! !
 foreach slope_res in RESURRECT_SLOPE do
   if [list_slope contains: slope_res::NAME] then
-  
+
   else
   let list_slope := list_slope + slope_res::NAME
   %CONST (uint16_t, AUTOMATIC) %!slope_res::NAME% = %!slope_res::VALUE%;
@@ -358,7 +379,7 @@ end foreach
 let list_slope_time := @! !
 foreach slope_time_res in RESURRECT_TIME_SLOPE do
   if [list_slope_time contains: slope_time_res::NAME] then
-  
+
   else
   let list_slope_time := list_slope_time + slope_time_res::NAME
   %CONST (uint16_t, AUTOMATIC) %!slope_time_res::NAME% = %!slope_time_res::VALUE%;
@@ -366,7 +387,7 @@ foreach slope_time_res in RESURRECT_TIME_SLOPE do
   end if
 end foreach
 
-foreach resurrect_transition in RESURRECT_TRANSITION 
+foreach resurrect_transition in RESURRECT_TRANSITION
   do
   if exists resurrect_transition::SLOPE then
     let nb_activity:= [resurrect_transition::FUNC length]
@@ -374,7 +395,7 @@ foreach resurrect_transition in RESURRECT_TRANSITION
   %
   foreach slope in resurrect_transition::SLOPE do
   %%!slope::VALUE
-  between 
+  between
   %,
   %
   end foreach
@@ -388,7 +409,7 @@ foreach resurrect_transition in RESURRECT_TRANSITION
   %
   foreach time_slope in resurrect_transition::TIME_SLOPE do
   %%!time_slope::VALUE
-  between 
+  between
   %,
   %
   end foreach
@@ -396,9 +417,9 @@ foreach resurrect_transition in RESURRECT_TRANSITION
 };
 %
   end if
-  
+
 end foreach
-foreach resurrect_transition in RESURRECT_TRANSITION 
+foreach resurrect_transition in RESURRECT_TRANSITION
  do
   if exists resurrect_transition::FUNC then
   let nb_activity:= [resurrect_transition::FUNC length]
@@ -414,7 +435,7 @@ foreach resurrect_transition in RESURRECT_TRANSITION
 end foreach
 end if
 
-foreach resurrect_transition in RESURRECT_TRANSITION 
+foreach resurrect_transition in RESURRECT_TRANSITION
   do
   %
 CONST(tpl_step, OS_CONST) step_% !resurrect_transition::NAME% = {
@@ -427,7 +448,7 @@ if OS::RESURRECT_S::EVENT then%
   if [RESURRECT_EVENT length] == 0 then
   %};%
   else
-  foreach res_event in RESURRECT_EVENT 
+  foreach res_event in RESURRECT_EVENT
   do
   if exists resurrect_transition::RES_EVENT then
   foreach step_event in resurrect_transition::RES_EVENT do
@@ -451,6 +472,12 @@ if OS::TIMER_ACTIVITY then
 , .activity = &activity_step_% !resurrect_transition::NAME%
 %
 end if
+if OS::RESURRECT_S::BET then
+ %
+, .delta_v = % !resurrect_transition::DELTA_V%
+, .award = % !resurrect_transition::AWARD%
+%
+end if
 %
 };
 %
@@ -471,7 +498,7 @@ foreach resurrect_state in RESURRECT_STATE do
      error resurrect_state::INITIAL_STATE : "More than one initial state"
     end if
   end if
-  
+
 end foreach
 
 %
@@ -482,6 +509,20 @@ end foreach
  * tpl_kern_resurrect gather informations on the current step and
  * the state
  */
+ 
+#if WITH_BET
+#define OS_START_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+
+VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
+/* buffer of 10 previous value */ {0},
+/* index */                      0,
+/* current size */               0
+};
+#define OS_STOP_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+#endif /* WITH_BET */
+
 VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
 {
   NULL,                      /* no elected step   */
@@ -494,7 +535,13 @@ VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
   %
   0,                        /* Energy measured when starting the step */%
   end if
-%  
+  if OS::RESURRECT_S::BET then
+  %
+  0,                        /* Award accumulated with steps */
+  0,                        /* Variance for probability of lossing BET */
+  &struct_variance_buffer,  /* Buffer for variance computation */%
+  end if
+%
 };
 
 #define OS_START_SEC_CONST_UNSPECIFIED

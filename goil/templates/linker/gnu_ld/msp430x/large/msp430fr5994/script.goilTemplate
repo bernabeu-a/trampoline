@@ -170,7 +170,7 @@ SECTIONS {
   osconst : {
     *(.osConst)
     *(.osApiConst) /* API constants */
-  } >FRAM
+  } >FRAM_UP
 }
 
 /*
@@ -267,13 +267,13 @@ SECTIONS {
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
     _exit = .;
-  } >FRAM
+  } > FRAM
   
   const : {
-    . = ALIGN(2);
+    . = ALIGN(4);
     *(.const)
     *(.const*)
-  } > FRAM
+  } > FRAM_UP
 }
 
 /* used by the startup to initialize data */

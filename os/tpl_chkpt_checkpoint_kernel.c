@@ -41,6 +41,9 @@
 
 #if WITH_RESURRECT == YES
 #include "tpl_resurrect_kernel.h"
+#ifdef LoRa
+#include "rfm9x.h"
+#endif
 #endif /* WITH_RESURRECT */
 
 #if NUMBER_OF_CORES > 1
@@ -135,29 +138,31 @@ void tpl_RTC_init()
 
 void tpl_RTC_stop()
 {
-		  // stop rtc
-		  RTCCTL1 |= RTCHOLD;
+  // stop rtc
+  RTCCTL1 |= RTCHOLD;
 }
 
-void tpl_lpm_hibernate()
+uint8_t tpl_lpm_hibernate()
 {
-  // P1OUT &= ~BIT2;
-  /* Disable TIMER3_A0 interrupt
-     in LPM3, ACLK is still active
-   */
-	// TA3CCTL0 &= ~CCIE;
+  /*
+    Disable TIMER3_A0 interrupt
+    in LPM3, ACLK is still active
+  */
+  // TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
   __bis_SR_register(LPM3_bits + GIE);
   /* remove interrupts (we are in kernel mode) */
-	__bic_SR_register(GIE);
- 	/* Restore TIMER3_A0 interrupt */
+  __bic_SR_register(GIE);
+  /* Restore TIMER3_A0 interrupt */
   // TA3CCTL0 |= CCIE;
+  return 1;
 }
 
 FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
   // P1OUT |= BIT4;
   sint16 l_buffer;
+  uint8_t was_sleeping = 0;
   l_buffer = (tpl_checkpoint_buffer + 1) % 2;
   tpl_save_checkpoint(l_buffer);
   /* Avoid using DMA with ADC linked to DMA */
@@ -192,32 +197,134 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     ptr_state = tpl_step_state[tpl_kern_resurrect.state];
     uint8_t i;
     uint32 tmp_step_energy = 0xFFFFFFFF;
-    for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
-      {
+    for (i = 0; i < ENERGY_LEVEL_COUNT; i++){
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
         if(tmp_ptr_step->energy < tmp_step_energy){
           tmp_step_energy = tmp_ptr_step->energy;
         }
-      }
+    }
     if(voltageInMillis > tmp_step_energy){
       tpl_RTC_stop();
 		  waiting_loop = 0;
 	  }
+			else{
+        if(was_sleeping == 1){
+
+        }
+        else{
+            #ifdef LoRa
+            setModeSleep();
+            // setModeIdle();
+            // wait 400/500 µS
+            for (volatile uint32_t i = 0; i < 400000; i++);
+            // Remove MOSI - MISO - CLK - CS of LoRa
+
+            P6SEL0 &= ~(BIT0 + BIT1 + BIT2);               // P6.0 = MOSI, P6.1 = MISO, P6.2 = CLK,
+            P6SEL1 &= ~(BIT0 + BIT1 + BIT2);               // P6.0 = MOSI, P6.1 = MISO, P6.2 = CLK
+            P6DIR |= (BIT0 + BIT1 + BIT2);
+            P6OUT &= ~(BIT0 + BIT1 + BIT2);
+
+            P3DIR  |= BIT0;                                // Set P3.0 as OUTPUT for CS
+            P3OUT  &= ~BIT0;                               // Set P3.0 LOW
+            // Remove power supply of LoRa
+            P5DIR |= BIT7;
+            P3DIR &= ~BIT1;
+            P5OUT &= ~BIT7;
+            /* Disable GPIO power-on default high-impedance mode for FRAM devices */
+            PM5CTL0 &= ~LOCKLPM5;
+            for (volatile uint32_t i = 0; i < 400000; i++);
+            #endif
+        }
+
+      tpl_RTC_init(); //startRTC => interrupt next 1 min
+
+      P7OUT |= BIT0;
+      was_sleeping = tpl_lpm_hibernate();
+      P7OUT &= ~BIT0;
+  }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
     if(voltageInMillis > RESUME_FROM_HIBERNATE_THRESHOLD){
       tpl_RTC_stop();
 		  waiting_loop = 0;
 	  }
-    #endif /* WITH_RESURRECT == NO */
-    else {
-      // setModeSleep();
+	else{
+        if(was_sleeping == 1){
+
+        }
+        else{
+            #ifdef LoRa
+            setModeSleep();
+            // setModeIdle();
+            // wait 400/500 µS
+            for (volatile uint32_t i = 0; i < 400000; i++);
+            // Remove MOSI - MISO - CLK - CS of LoRa
+            P6SEL0 &= ~(BIT0 + BIT1 + BIT2);               // P6.0 = MOSI, P6.1 = MISO, P6.2 = CLK,
+            P6SEL1 &= ~(BIT0 + BIT1 + BIT2);               // P6.0 = MOSI, P6.1 = MISO, P6.2 = CLK
+            P6DIR |= (BIT0 + BIT1 + BIT2);
+            P6OUT &= ~(BIT0 + BIT1 + BIT2);
+
+            P3DIR  |= BIT0;                                // Set P3.0 as OUTPUT for CS
+            P3OUT  &= ~BIT0;                               // Set P3.0 LOW
+
+            // Remove power supply of LoRa
+            P5DIR |= BIT7;
+            P3DIR &= ~BIT1;
+            P5OUT &= ~BIT7;
+            /* Disable GPIO power-on default high-impedance mode for FRAM devices */
+            PM5CTL0 &= ~LOCKLPM5;
+            for (volatile uint32_t i = 0; i < 400000; i++);
+            #endif
+        }
       tpl_RTC_init(); //startRTC => interrupt next 1 min
-      tpl_lpm_hibernate();
-	  }
-    // setModeIdle();
-    // P1OUT |= BIT2;
+      P7OUT |= BIT0;
+      was_sleeping = tpl_lpm_hibernate();
+      P7OUT &= ~BIT0;
   }
+    #endif /* WITH_RESURRECT == NO */
+  }
+    /* If use BET, reset prediction and variance buffer */
+    #if WITH_ENERGY_PREDICTION & WITH_BET == 1
+    uint8_t index;
+
+    for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
+        tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    }
+    for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
+        tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
+    }
+    tpl_resurrect_energy.previous_harvesting->current_size = 0;
+    tpl_kern_resurrect.variance_buffer->current_size = 0;
+
+    tpl_resurrect_energy.previous_harvesting->index = 0;
+    tpl_kern_resurrect.variance_buffer->index = 0;
+
+    /* We set wake up to one, to avoid doing a prediction for the next step */
+    tpl_resurrect_energy.wake_up = TRUE;
+    #endif
+
+    // Setup IO and LoRa when exiting
+    #ifdef LoRa
+    setupIO();
+
+    /* LoRa */
+    writeRegister(RH_RF95_REG_01_OP_MODE | RH_SPI_WRITE_MASK, RH_RF95_MODE_SLEEP | RH_RF95_LONG_RANGE_MODE);
+
+    long wait = 32600;
+    long w;
+    for(w=0; w<wait; w++){
+    }
+    if(readRegister(RH_RF95_REG_01_OP_MODE) != (RH_RF95_MODE_SLEEP | RH_RF95_LONG_RANGE_MODE)){
+        //tpl_serial_print_string("error");
+    }
+    writeRegister(RH_RF95_REG_0E_FIFO_TX_BASE_ADDR, 0);
+    writeRegister(RH_RF95_REG_0F_FIFO_RX_BASE_ADDR, 0);
+    setModeIdle();
+
+    setPreambleLength(8);
+    setFrequency(868.0);
+    setTxPower(5);
+    #endif
 }
 
 FUNC(void, OS_CODE) tpl_hibernate_os_service(void)
@@ -346,6 +453,26 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
   #endif
 
   #if WITH_RESURRECT == YES
+
+    #if WITH_ENERGY_PREDICTION & WITH_BET == 1
+    uint8_t index;
+
+    for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
+        tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    }
+    for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
+        tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
+    }
+    tpl_resurrect_energy.previous_harvesting->current_size = 0;
+    tpl_kern_resurrect.variance_buffer->current_size = 0;
+
+    tpl_resurrect_energy.previous_harvesting->index = 0;
+    tpl_kern_resurrect.variance_buffer->index = 0;
+
+    /* We set wake up to one, to avoid doing a prediction for the next step */
+    tpl_resurrect_energy.wake_up = TRUE;
+    #endif
+
     // P1OUT &= ~BIT5;
     tpl_choose_next_step();
     // tpl_start(CORE_ID_OR_NOTHING(core_id));

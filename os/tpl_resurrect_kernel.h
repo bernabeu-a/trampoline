@@ -30,6 +30,7 @@
 #include "tpl_compiler.h"
 #include "tpl_os_internal_types.h"
 #include "tpl_os_kernel.h"
+#include "tpl_os_alarm_kernel.h"
 #include <stdint.h>
 /**
  * @typedef EventResurrectType
@@ -65,10 +66,24 @@ struct TPL_STEP
   #if WITH_TIMER_ACTIVITY == YES
   CONSTP2CONST(tpl_activity,TYPEDEF, OS_VAR) activity;
   #endif /* WITH_TIMER_ACTIVITY */
+  #if WITH_BET
+  CONST(uint32, TYPEDEF) delta_v;
+  CONST(uint32, TYPEDEF) award;
+  #endif /* WITH_BET */
 };
 
 typedef struct TPL_STEP tpl_step;
 typedef tpl_step const *tpl_step_ref;
+
+#if WITH_BET
+struct TPL_VARIANCE_BUFFER
+{
+    int32_t buffer[10];
+    uint8_t index;
+    uint8_t current_size;
+};
+typedef struct TPL_VARIANCE_BUFFER tpl_variance_buffer;
+#endif /* WITH_BET */
 
 typedef struct
 {
@@ -80,6 +95,11 @@ typedef struct
   #if WITH_TIMER_ACTIVITY
   VAR(uint16, TYPEDEF) energy_at_start;
   #endif /* WITH_TIMER_ACTIVITY */
+  #if WITH_BET
+  VAR(uint8, TYPEDEF) award;
+  VAR(uint16_t, TYPEDEF) variance;
+  P2VAR(tpl_variance_buffer, TYPEDEF, OS_VAR) variance_buffer;
+  #endif /* WITH_BET */
 } tpl_kern_resurrect_state;
 
 #if WITH_ENERGY_PREDICTION == YES
@@ -87,7 +107,7 @@ typedef struct
 struct TPL_ENERGY_BUFFER
 {
     uint32_t buffer[SMA_COUNT];
-    uint16_t index;
+    uint8_t index;
     uint8_t current_size;
 };
 typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
@@ -95,8 +115,15 @@ typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
 struct TPL_ENERGY
 {
     P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) previous_harvesting;
+    P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) power_previous_harvesting;
     VAR(uint32_t, TYPEDEF) prediction;
+    VAR(uint32_t, TYPEDEF) power_prediction;
     VAR(int32_t, TYPEDEF) error;
+    #if WITH_BET
+    VAR(float, TYPEDEF) proba;
+    VAR(float, TYPEDEF) proba_power;
+    VAR(uint8_t, TYPEDEF) wake_up;
+    #endif /* WITH_BET */
 };
 typedef struct TPL_ENERGY tpl_energy;
 #endif // WITH_ENERGY_PREDICTION
@@ -142,7 +169,12 @@ FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMAT
 #if WITH_ENERGY_PREDICTION == YES
 #if ENERGY_PREDICTOR == SMA
 FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void);
+FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void);
 #endif // ENERGY_PREDICTOR == "SMA"
+#if WITH_BET
+FUNC(uint32_t, OS_CODE) tpl_variance_sma(void);
+FUNC(uint32_t, OS_CODE) tpl_variance_power_sma(void);
+#endif // WITH_BET
 #endif // WITH_ENERGY_PREDICTOR
 #define OS_STOP_SEC_CODE
 #include "tpl_memmap.h"
