@@ -39,7 +39,7 @@
 #include "tpl_resurrect_kernel.h"
 
 #if WITH_BET == YES
-
+#define THESHOLD_AWARD 1000 /* A bit random atm */
 #include "QmathLib.h"
 
 #define PI      3.1415926536
@@ -186,7 +186,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     uint32_t voltage_consumed = (uint32_t)tpl_kern_resurrect.energy_at_start*1000;
     uint32_t time_step = 0;
     /* Slope are in µV per ms and time is in ms*/
-    // On pourrais vérifier en ligne que le temps worst case est toujours > temps et sinon on remplace wcet par le temps mesuré
+    // We could check online that wcet is always greater that measured time and if not, update it
     if(tpl_kern_resurrect.elected != NULL){
         for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
             voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
@@ -199,6 +199,12 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
     while (ptr_step == NULL)
     {
+      #if WITH_BET
+      /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
+      if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+          break;
+      }
+      #endif /* WITH_BET */
       // P1OUT |= BIT2;
       /* Get energy level from ADC */
       bool use1V2Ref = true;
@@ -373,8 +379,14 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             // tpl_serial_print_string("proba: ");
             // tpl_serial_print_int(gaussian_q12, 0);
             // tpl_serial_print_string("\n");
-            if (tpl_resurrect_energy.proba > 0.9)
-            // if (voltageInMillis >= tmp_ptr_step->energy)
+            float proba_threshold;
+            proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+            /* Proba_threshold should at least be 0.5 */
+            if(proba_threshold < 0.5){
+                proba_threshold = 0.5;
+            }
+            if (tpl_resurrect_energy.proba > proba_threshold)
+            // if (tpl_resurrect_energy.proba > 0.9)
             #else
             if (voltageInMillis >= tmp_ptr_step->energy)
             #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
@@ -440,6 +452,10 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     tpl_activate_task(RESURRECT_TASK_ID);
     /* Update tpl_kern_resurrect.state with next state from step elected */
     tpl_kern_resurrect.state = tpl_kern_resurrect.elected->to_state;
+    #if WITH_BET
+    /* Update accumulated award */
+    tpl_kern_resurrect.award += tpl_kern_resurrect.elected->award;
+    #endif
     P1OUT &= ~BIT2;
 }
 
