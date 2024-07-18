@@ -136,6 +136,47 @@ void tpl_RTC_init()
     RTCCTL1 &= ~(RTCHOLD);
 }
 
+ void tpl_RTC_init_time(uint8_t hibernate_time_second, uint8_t hibernate_time_minute){
+    // Unlock RTC key protected registers
+    RTCCTL0_H = RTCKEY_H;
+    // Clear RTCAIE RTCAIFG and AE bits to prevent potential erroneous alarm condition
+    RTCCTL0_L &= ~RTCAIE;
+    RTCCTL0_L &= ~RTCAIFG;
+    // Calendar + Hold, Hexa code
+    RTCCTL1 = RTCHOLD | RTCMODE;
+    // Random year, day, month, day of week, hour, set minute and sec to 0
+    RTCYEAR = 0x0000;
+    RTCMON = 0x0;
+    RTCDAY = 0x00;
+    RTCDOW = 0x00;
+    RTCHOUR = 0x0;
+    RTCMIN = 0x00;
+    // reset all register alarm because they are in undefined state when reset
+    RTCAHOUR &= ~(0x80);
+    RTCADOW &= ~(0x80);
+    RTCADAY &= ~(0x80);
+    if(hibernate_time_minute!=0){
+        if(hibernate_time_second!=0){
+            RTCSEC = 60-hibernate_time_second;
+            RTCAMIN = ((hibernate_time_minute+1) | (1<<7));
+        }
+        else{
+            RTCSEC = 0x00;
+            RTCAMIN = (hibernate_time_minute | (1<<7));
+        }
+    }
+    else{
+        RTCSEC = 60 - hibernate_time_second;
+        RTCAMIN = ((RTCMIN + 1) | (1<<7));
+    }
+    // Interrupt from alarm
+    RTCCTL0_L = RTCAIE;
+    // RTCCTL0_H = 0x0;
+    // start rtc
+    RTCCTL1 &= ~(RTCHOLD);
+ }
+
+
 void tpl_RTC_stop()
 {
   // stop rtc
@@ -204,14 +245,11 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         }
     }
     if(voltageInMillis > tmp_step_energy){
-      tpl_RTC_stop();
-		  waiting_loop = 0;
-	  }
-			else{
-        if(was_sleeping == 1){
-
-        }
-        else{
+        tpl_RTC_stop();
+		waiting_loop = 0;
+	}
+	else{
+        if(was_sleeping != 1){
             #ifdef LoRa
             setModeSleep();
             // setModeIdle();
@@ -236,11 +274,24 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             #endif
         }
 
-      tpl_RTC_init(); //startRTC => interrupt next 1 min
+        // #if WITH_BET == YES
+        // /* Use prediction to compute hibernation time */
+        // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
+        // uint32_t hibernate_time_second = (uint32_t)hibernate_time_us * 1000000;
+        // uint8_t hibernate_time_minute = 0;
+        // while(hibernate_time_second > 60){
+        //     hibernate_time_minute++;
+        //     hibernate_time_second = hibernate_time_second - 60;
+        // }
+        // hibernate_time_second = (uint8_t) hibernate_time_second;
+        // tpl_RTC_init_time(hibernate_time_second, hibernate_time_minute);
+        // #else
+        tpl_RTC_init(); //startRTC => interrupt next 1 min
+        // #endif  /* WITH_BET */
 
-      P7OUT |= BIT0;
-      was_sleeping = tpl_lpm_hibernate();
-      P7OUT &= ~BIT0;
+        P7OUT |= BIT0;
+        was_sleeping = tpl_lpm_hibernate();
+        P7OUT &= ~BIT0;
   }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
