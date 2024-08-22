@@ -68,7 +68,7 @@ struct TPL_STEP
   #endif /* WITH_TIMER_ACTIVITY */
   #if WITH_BET
   CONST(uint32, TYPEDEF) delta_v;
-  CONST(uint32, TYPEDEF) award;
+  CONST(uint16, TYPEDEF) award;
   #endif /* WITH_BET */
 };
 
@@ -96,8 +96,8 @@ typedef struct
   VAR(uint16, TYPEDEF) energy_at_start;
   #endif /* WITH_TIMER_ACTIVITY */
   #if WITH_BET
-  VAR(uint8, TYPEDEF) award;
-  VAR(uint16_t, TYPEDEF) variance;
+  VAR(uint16, TYPEDEF) award;
+  VAR(uint16, TYPEDEF) variance;
   P2VAR(tpl_variance_buffer, TYPEDEF, OS_VAR) variance_buffer;
   #endif /* WITH_BET */
 } tpl_kern_resurrect_state;
