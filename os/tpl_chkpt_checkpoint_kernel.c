@@ -375,7 +375,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     setModeIdle();
 
     setPreambleLength(8);
-    setFrequency(868.0);
+    setFrequency(915.0);
     setTxPower(5);
     #endif
 }

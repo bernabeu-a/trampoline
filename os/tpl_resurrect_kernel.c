@@ -199,13 +199,20 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
     while (ptr_step == NULL)
     {
-      #if WITH_BET
-      /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
-      if(tpl_kern_resurrect.award > THESHOLD_AWARD){
-          P1OUT ^= BIT5;
-          break;
-      }
-      #endif /* WITH_BET */
+      // #if WITH_BET
+      // /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
+      // if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+      //     P1OUT ^= BIT5;
+      //     break;
+      // }
+      // #endif /* WITH_BET */
+
+      // #if WITH_BET
+      // /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
+      // if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+      //     break;
+      // }
+      // #endif /* WITH_BET */
       // P1OUT |= BIT2;
       /* Get energy level from ADC */
       bool use1V2Ref = true;
@@ -417,8 +424,16 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         }
       }
       /* Not enough energy to elect next step --> hibernate */
-      if (ptr_step == NULL)
-      {
+      #if WITH_BET
+      /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
+      if(ptr_step == NULL | tpl_kern_resurrect.award > THESHOLD_AWARD){
+          if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+              P1OUT ^= BIT5;
+          }
+      // }
+      #else
+      if (ptr_step == NULL){
+      #endif /* WITH_BET */
         tpl_chkpt_hibernate();
         #if WITH_ENERGY_PREDICTION & WITH_BET == 1
 
