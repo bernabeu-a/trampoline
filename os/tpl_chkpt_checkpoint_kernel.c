@@ -352,6 +352,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
+    /* And we reset award accumulated */
+    tpl_kern_resurrect.award = 0;
     #endif
 
     // Setup IO and LoRa when exiting
