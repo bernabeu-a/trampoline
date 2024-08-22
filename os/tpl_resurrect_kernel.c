@@ -39,7 +39,7 @@
 #include "tpl_resurrect_kernel.h"
 
 #if WITH_BET == YES
-#define THESHOLD_AWARD 1000 /* A bit random atm */
+#define THESHOLD_AWARD 100 /* A bit random atm */
 #include "QmathLib.h"
 
 #define PI      3.1415926536
@@ -202,6 +202,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       #if WITH_BET
       /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
       if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+          P1OUT ^= BIT5;
           break;
       }
       #endif /* WITH_BET */
@@ -384,6 +385,9 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* Proba_threshold should at least be 0.5 */
             if(proba_threshold < 0.5){
                 proba_threshold = 0.5;
+            }
+            if (tpl_resurrect_energy.proba < 1.0){
+                P1OUT ^= BIT4;
             }
             if (tpl_resurrect_energy.proba > proba_threshold)
             // if (tpl_resurrect_energy.proba > 0.9)
