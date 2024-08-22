@@ -148,18 +148,28 @@ void start_timer_activity(){
   time_millisec_activity = 0;
   time_microsec_activity = 0;
   /* Set up timer TA2 with ACLK. ACLK is set to LFXTCLK at start : 32.768 kHz */
-  TA2CCR0 = 0;          /* lock the timer */
-  TA2CTL = TASSEL__ACLK /* ACLK */
-           | ID__1 /* divide by 1 */
-           | MC__UP /* Up count */
-           | TACLR /* Clear counter */;
-  TA2CCTL0 |= CCIE;     /* enable the compare interrupt */
-  TA2CCR0 = 32;         /* start with a 1.007 ms period (33/32768) */
+  # TA2CCR0 = 0;          /* lock the timer */
+  # TA2CTL = TASSEL__ACLK /* ACLK */
+  #          | ID__1 /* divide by 1 */
+  #          | MC__UP /* Up count */
+  #          | TACLR /* Clear counter */;
+  # TA2CCTL0 |= CCIE;     /* enable the compare interrupt */
+  # TA2CCR0 = 32;         /* start with a 1.007 ms period (33/32768) */
+
+  /* With free running timer */
+  TA2CCR0 = 0               /* lock the timer */
+  TA2CTL = TASSEL__SMCLK    /* SMCLK (1 MHz) */
+          | ID__2           /* divide by 2 (0.5MHz) */
+          | MC__CONTINUOUS  /* Up coutinuous */
+          | TACLR;          /* clear counter */
+  TA2EX0 = TAIDEX_4;        /* divide by 5 (0.1 MHz) */
+  TA2CCTL0 |= CCIE;     /* enable the compare interrupt */       
   return;
 }
 
 void stop_timer_activity(){
-  TA2CTL &= ~(MC__UP);  /* stop timer */
+  # TA2CTL &= ~(MC__UP);          /* stop timer */
+  TA2CTL &= ~(MC__CONTINUOUS);  /* stop timer */
   time_microsec_activity = TA2R<<5; /* multiply by 32 as 1 tick is 1/32768 = 30.5 µs */
   *ptr_current_time = time_millisec_activity;
   ptr_current_time++;
@@ -171,6 +181,7 @@ void stop_timer_activity(){
 
 ISR(timer_activity)
 {
+  P1OUT ^= BIT0;
   time_millisec_activity += 1;
 }
 
@@ -223,11 +234,11 @@ if OS::TIMER_ACTIVITY then
 tab(5) %init_ptr_current_time();
 %
 end if
-tab(5) %#ifdef BARD
+tab(5) %//#ifdef BARD
 %
 tab(5) %initMicrophone();
 %
-tab(5) %#endif
+tab(5) %//#endif
 %
       if exists resurrect_transition::ALARM_RESURRECT then
       foreach resurrect_transition_alarm in resurrect_transition::ALARM_RESURRECT
