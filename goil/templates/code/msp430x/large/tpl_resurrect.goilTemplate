@@ -147,8 +147,8 @@ uint8_t isr_timer_activity_count;
 
 void start_timer_activity(){
   /* reset previous measure */
-  time_millisec_activity = 0;
-  time_microsec_activity = 0;
+  //time_millisec_activity = 0;
+  //time_microsec_activity = 0;
   isr_timer_activity_count = 0;       /* count the numbe rof time we entered the interruption (ie x*6.5536 s) */
   /* Set up timer TA2 with ACLK. ACLK is set to LFXTCLK at start : 32.768 kHz */
   // TA2CCR0 = 0;          /* lock the timer */
@@ -187,7 +187,7 @@ void stop_timer_activity(){
 ISR(timer_activity)
 {
   /* interruption every 65535*10 µs */
-  P1OUT ^= BIT0;
+  //P1OUT ^= BIT0;
   isr_timer_activity_count += 1;
   //time_millisec_activity += 1;
 }
@@ -241,11 +241,11 @@ if OS::TIMER_ACTIVITY then
 tab(5) %init_ptr_current_time();
 %
 end if
-tab(5) %//#ifdef BARD
+tab(5) %#ifdef BARD
 %
-tab(5) %//initMicrophone();
+tab(5) %initMicrophone();
 %
-tab(5) %//#endif
+tab(5) %#endif
 %
       if exists resurrect_transition::ALARM_RESURRECT then
       foreach resurrect_transition_alarm in resurrect_transition::ALARM_RESURRECT

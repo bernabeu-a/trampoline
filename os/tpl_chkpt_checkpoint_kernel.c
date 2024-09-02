@@ -60,6 +60,10 @@
 #include "tpl_resurrect_kernel.h"
 #endif
 
+#if WITH_BET == YES
+#include "QmathLib.h"
+#endif
+
 extern FUNC(void, OS_CODE) tpl_restart_os(void);
 
 #define OS_START_SEC_VAR_NON_VOLATILE_16BIT
@@ -200,6 +204,10 @@ uint8_t tpl_lpm_hibernate()
 }
 
 FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
+  /* Disable Microphone if with BARD */
+  #ifdef BARD
+  P4OUT &= ~BIT7;
+  #endif
   P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
   // P1OUT |= BIT4;
   sint16 l_buffer;
@@ -244,7 +252,27 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
           tmp_step_energy = tmp_ptr_step->energy;
         }
     }
-    if(voltageInMillis > tmp_step_energy){
+    #if WITH_ENERGY_PREDICTION & WITH_BET == 1
+    uint16_t predictionInMillis = 0;
+    if(tpl_resurrect_energy.power_prediction != 0){
+        uint32_t time_tmp_step = 0;
+        for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
+            time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+        }
+        float prediction_from_power = (float) ((float) tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
+        /* We have nJ, so with nF as capacitance, we have V */
+        float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
+        /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
+        _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
+        /* Cast prediction to float to convert into mV */
+        float prediction_v_float = _Q12toF(prediction_v) * 1000;
+        predictionInMillis = (uint16_t) prediction_v_float;
+    }
+    if(voltageInMillis + predictionInMillis > tmp_step_energy)
+    #else
+    if(voltageInMillis > tmp_step_energy)
+    #endif /* WITH_ENERGY_PREDICTION & WITH_BET */
+    {
         tpl_RTC_stop();
 		waiting_loop = 0;
 	}
@@ -288,10 +316,13 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         // #else
         tpl_RTC_init(); //startRTC => interrupt next 1 min
         // #endif  /* WITH_BET */
-
+        #ifndef BARD
         P7OUT |= BIT0;
+        #endif
         was_sleeping = tpl_lpm_hibernate();
+        #ifndef BARD
         P7OUT &= ~BIT0;
+        #endif
   }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
@@ -328,9 +359,13 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             #endif
         }
       tpl_RTC_init(); //startRTC => interrupt next 1 min
+      #ifndef BARD
       P7OUT |= BIT0;
+      #endif
       was_sleeping = tpl_lpm_hibernate();
+      #ifndef BARD
       P7OUT &= ~BIT0;
+      #endif
   }
     #endif /* WITH_RESURRECT == NO */
   }
@@ -338,16 +373,23 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     #if WITH_ENERGY_PREDICTION & WITH_BET == 1
     uint8_t index;
 
-    for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
-        tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    // for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
+    //     tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    // }
+
+    for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
+        tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
     }
+
     for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
         tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
     }
-    tpl_resurrect_energy.previous_harvesting->current_size = 0;
+    // tpl_resurrect_energy.previous_harvesting->current_size = 0;
+    tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
     tpl_kern_resurrect.variance_buffer->current_size = 0;
 
-    tpl_resurrect_energy.previous_harvesting->index = 0;
+    // tpl_resurrect_energy.previous_harvesting->index = 0;
+    tpl_resurrect_energy.power_previous_harvesting->index = 0;
     tpl_kern_resurrect.variance_buffer->index = 0;
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
@@ -375,7 +417,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     setModeIdle();
 
     setPreambleLength(8);
-    setFrequency(915.0);
+    setFrequency(868.0);
     setTxPower(5);
     #endif
 }
