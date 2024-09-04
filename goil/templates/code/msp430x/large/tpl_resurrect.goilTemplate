@@ -533,7 +533,7 @@ end foreach
 #include "tpl_memmap.h"
 
 VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
-/* buffer of 10 previous value */ {0},
+/* buffer of 5 previous value */ {0},
 /* index */                      0,
 /* current size */               0
 };

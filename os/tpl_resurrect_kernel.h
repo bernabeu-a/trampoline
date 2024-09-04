@@ -32,6 +32,9 @@
 #include "tpl_os_kernel.h"
 #include "tpl_os_alarm_kernel.h"
 #include <stdint.h>
+#if WITH_BET == YES
+#include "QmathLib.h"
+#endif
 /**
  * @typedef EventResurrectType
  *
@@ -78,7 +81,7 @@ typedef tpl_step const *tpl_step_ref;
 #if WITH_BET
 struct TPL_VARIANCE_BUFFER
 {
-    int32_t buffer[10];
+    _q12 buffer[5];
     uint8_t index;
     uint8_t current_size;
 };

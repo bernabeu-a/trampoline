@@ -34,6 +34,7 @@
 #include "msp430.h"
 
 #include "tpl_chkpt_adc.h"
+#include <math.h>
 
 #if WITH_RESURRECT == YES
 #include "tpl_resurrect_kernel.h"
@@ -41,22 +42,28 @@
 #if WITH_BET == YES
 #define THESHOLD_AWARD 100 /* A bit random atm */
 #include "QmathLib.h"
-
-#define PI      3.1415926536
+#include "math.h"
+// #define PI      3.1415926536
 
 _q12 gaussian(_q12 mu, _q12 sigma, _q12 x)
 {
-    _q12 res;
-    _q12 pi2 = _Q12mpy(_Q12(2), _Q12(PI));
-    _q12 mu_x = _Q12mpy(mu - x,mu - x);
-    _q12 sigma_2 = _Q12mpy(sigma, sigma);
-    _q12 sigma_2_2 = _Q12mpy(sigma_2, _Q12(2));
-    _q12 sigma_sqrt_pi = _Q12mpy(sigma, _Q12sqrt(pi2));
-    _q12 div_mu_sigma = _Q12div(mu_x, sigma_2_2);
-    _q12 tmp_res = _Q12exp(~(div_mu_sigma)+1);
-    res = _Q12div(tmp_res, sigma_sqrt_pi);
-    // res = _Q12div(_Q12exp(-_Q12div(_Q12mpy(mu - x,mu - x), _Q12mpy(sigma, sigma))), _Q12mpy(sigma, _Q12sqrt(pi2)));
-    return res;
+    float mu_float = _Q12toF(mu);
+    float sigma_float = _Q12toF(sigma);
+    float x_float = _Q12toF(x);
+    float sqrtf_pi = sqrtf(2.0);
+    float erff_f = erff((x_float - mu_float) / (sigma_float * sqrtf_pi));
+    return (_Q12mpy(_Q12(0.5), _Q12(1+erff_f)));
+    // _q12 res;
+    // _q12 pi2 = _Q12mpy(_Q12(2), _Q12(PI));
+    // _q12 mu_x = _Q12mpy(x - mu, x - mu);
+    // _q12 sigma_2 = _Q12mpy(sigma, sigma);
+    // _q12 sigma_2_2 = _Q12mpy(sigma_2, _Q12(2));
+    // _q12 sigma_sqrt_pi = _Q12mpy(sigma, _Q12sqrt(pi2));
+    // _q12 div_mu_sigma = _Q12div(mu_x, sigma_2_2);
+    // _q12 tmp_res = _Q12exp(~(div_mu_sigma)+1);
+    // res = _Q12div(tmp_res, sigma_sqrt_pi);
+    // // res = _Q12div(_Q12exp(-_Q12div(_Q12mpy(mu - x,mu - x), _Q12mpy(sigma, sigma))), _Q12mpy(sigma, _Q12sqrt(pi2)));
+    // return res;
 }
 #endif /* WITH_BET */
 
@@ -262,9 +269,9 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
           // tpl_serial_print_string("v harv: ");
           // tpl_serial_print_int(FLOAT_TO_INT(v_harvested),0);
           // tpl_serial_print_string("\n");
-          tpl_serial_print_string("power: ");
-          tpl_serial_print_int(FLOAT_TO_INT(power_harvested), 0);
-          tpl_serial_print_string("\n");
+          // tpl_serial_print_string("power: ");
+          // tpl_serial_print_int(FLOAT_TO_INT(power_harvested), 0);
+          // tpl_serial_print_string("\n");
           #endif
       }
       #endif /* WITH_TIMER_ACTIVITY */
@@ -297,20 +304,52 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* Positive if overestimate */
             // tpl_resurrect_energy.error = (int32_t)tpl_resurrect_energy.prediction - voltage_harvested;
             tpl_resurrect_energy.error = (int32_t)tpl_resurrect_energy.power_prediction - (int32_t) power_harvested;
+            #ifdef debug_bet
+            // tpl_serial_print_string("pred: ");
+            // tpl_serial_print_int((int16_t)tpl_resurrect_energy.power_prediction, 0);
+            // tpl_serial_print_string("\n");
+            // tpl_serial_print_string("reel: ");
+            // tpl_serial_print_int(FLOAT_TO_INT(power_harvested), 0);
+            // tpl_serial_print_string("\n");
+            // tpl_serial_print_string("error: ");
+            // tpl_serial_print_int((int16_t) tpl_resurrect_energy.error, 0);
+            // tpl_serial_print_string("\n");
+            #endif
             #if WITH_BET
             /* We store error to buffer for variance */
-            const uint8_t index_variance = (tpl_kern_resurrect.variance_buffer->index++) % 10;
-            tpl_kern_resurrect.variance_buffer->buffer[index_variance] = tpl_resurrect_energy.error;
-            if(tpl_kern_resurrect.variance_buffer->current_size != 10){
+            const uint8_t index_variance = (tpl_kern_resurrect.variance_buffer->index++) % 5;
+            int32_t error_time = tpl_resurrect_energy.error * time_step;
+            uint8_t is_negative = FALSE;
+            if(tpl_resurrect_energy.error < 0){
+                is_negative = TRUE;
+                error_time = ~error_time+1;
+            }
+            float error_time_capacitance = (2 * (float)error_time) / 6800000.0;
+            /* We have error_v as V^2 -> to q12 for division and sqrt */
+            _q12 error_v = _Q12sqrt(_Q12(error_time_capacitance));
+            // if(is_negative){
+            //     error_v = ~error_v+1;
+            // }
+            #ifdef debug_bet
+            // tpl_serial_print_string("errq12: ");
+            // tpl_serial_print_int(error_v, 0);
+            // tpl_serial_print_string("\n");
+            #endif
+            tpl_kern_resurrect.variance_buffer->buffer[index_variance] = error_v;
+            if(tpl_kern_resurrect.variance_buffer->current_size != 5){
                 tpl_kern_resurrect.variance_buffer->current_size++;
             }
-            if(tpl_kern_resurrect.variance_buffer->index == 10){
+            if(tpl_kern_resurrect.variance_buffer->index == 5){
                 tpl_kern_resurrect.variance_buffer->index = 0;
             }
             /* We then compute variance */
             // tpl_kern_resurrect.variance = ((float) tpl_variance_sma() / 2147483648.0f) ;
             tpl_kern_resurrect.variance = tpl_variance_power_sma();
-
+            #ifdef debug_bet
+            // tpl_serial_print_string("p_var: ");
+            // tpl_serial_print_int(tpl_kern_resurrect.variance, 0);
+            // tpl_serial_print_string("\n");
+            #endif
             #endif /* WITH_BET */
         }
         /* Next prediction */
@@ -352,91 +391,103 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             #if WITH_ENERGY_PREDICTION & WITH_BET == 0
             if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy)
             #elif WITH_ENERGY_PREDICTION & WITH_BET == 1
-            /* With power, we add every worstcase time to obtain time of the step */
-            uint32_t time_tmp_step = 0;
-            for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
-                time_tmp_step += tmp_ptr_step->activity->time_activity[i];
-            }
-            /* Delta_v is in nanoVolt */
-            float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
-            _q12 delta_v_q12 = _Q12(delta_v);
-            /* Prediction is in microVolt */
-            // float prediction = (float) tpl_resurrect_energy.prediction / 1000000.0;
-            /* Power prediction is in µW, time is in ms, we then have nJ */
-            float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float)time_tmp_step);
-            /* We want to have V from power prediction -> V = sqrt(2*P*T/C) */
-            /* We have nJ, so with nF as capacitance, we have V */
-            float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
-            /* We have prediction_v as V^2 -> to q12 for division and sqrt */
-            _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-            // float voltagePredictionInMicro = _Q12toF(prediction_v) * 1000000.0;
-            // _q12 voltagePredictionInMicro_q12 = _Q12(voltagePredictionInMicro);
-            /* We scale to µV */
-            #ifdef debug_bet
-            tpl_serial_print_string("power_pred: ");
-            tpl_serial_print_int(FLOAT_TO_INT((float)tpl_resurrect_energy.power_prediction), 0);
-            tpl_serial_print_string("\n");
-            tpl_serial_print_string("voltage_pred: ");
-            tpl_serial_print_int(FLOAT_TO_INT(_Q12toF(prediction_v)),0);
-            tpl_serial_print_string("\n");
-            #endif
-            // _q12 prediction_q12 = _Q12(prediction);
-            /* Current voltage is in milliVolt, scale to µV */
-            float voltageInMillis_float = ((float)voltageInMillis / 1000.0);
-            _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
-            // _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_q12;
-            _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;
-            // _q12 mu_power = _Q12((float) voltageInMillis / 1000.0) - delta_v_q12 + prediction_power_q12;
-            /* Computing probability of reaching 1.9V with current voltage and prediction according to step */
-            float variance_float = (float) tpl_kern_resurrect.variance / 1000000.0;
-            _q12 variance = _Q12(variance_float);
-            /* If variance is 0, we put a small value */
-            if(variance == 0){
-                // tpl_serial_print_string("variance: ");
-                // tpl_serial_print_int(variance, 0);
-                // tpl_serial_print_string("\n");
-                variance = _Q12(0.01);
-            }
-            #ifdef debug_bet
-            tpl_serial_print_string("variance: ");
-            tpl_serial_print_int(variance, 0);
-            tpl_serial_print_string("\n");
-            tpl_serial_print_string("mu: ");
-            tpl_serial_print_int(mu, 0);
-            tpl_serial_print_string("\n");
-            #endif
-            _q12 gaussian_q12;
-            if(mu <= _Q12(1.9)){
-                gaussian_q12 = _Q12(1.0);
-            }
-            else{
-                gaussian_q12 = gaussian(mu, variance, _Q12(1.9));
-            }
-            // _q12 gaussian_power_q12 = gaussian(mu_power, _Q12(tpl_kern_resurrect.variance), _Q12(1.9));
-            /* If we saturate, probability of reaching 1.9V is 0 */
-            if(gaussian_q12 == 0x7FFF){
-                gaussian_q12 = 0;
-            }
-            // if(gaussian_power_q12 == 0x7FFF){
-            //     gaussian_power_q12 = 0;
-            // }
-            tpl_resurrect_energy.proba = 1.0 - _Q12toF(gaussian_q12);
-            // tpl_resurrect_energy.proba_power = 1 - _Q12toF(gaussian_power_q12);
-            #ifdef debug_bet
-            tpl_serial_print_string("proba: ");
-            tpl_serial_print_int(gaussian_q12, 0);
-            tpl_serial_print_string("\n");
-            #endif
             float proba_threshold;
             proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
             /* Proba_threshold should at least be 0.5 */
             if(proba_threshold < 0.5){
                 proba_threshold = 0.5;
             }
-            if (tpl_resurrect_energy.proba < 1.0){
-                #ifndef BARD
-                P1OUT ^= BIT4;
+            #ifdef debug_bet
+            // tpl_serial_print_string("threshold: ");
+            // tpl_serial_print_int(_Q12(proba_threshold), 0);
+            // tpl_serial_print_string("\n");
+            #endif
+            /* If above voltage level, no need to compute probability of failing */
+            if (voltageInMillis >= tmp_ptr_step->energy)
+            {
+                tpl_resurrect_energy.proba = 1.0;
+            }
+            else{
+                /* With power, we add every worstcase time to obtain time of the step */
+                uint32_t time_tmp_step = 0;
+                for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
+                    time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+                }
+                /* Delta_v is in nanoVolt */
+                float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
+                _q12 delta_v_q12 = _Q12(delta_v);
+                /* Prediction is in microVolt */
+                // float prediction = (float) tpl_resurrect_energy.prediction / 1000000.0;
+                /* Power prediction is in µW, time is in ms, we then have nJ */
+                float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float)time_tmp_step);
+                /* We want to have V from power prediction -> V = sqrt(2*P*T/C) */
+                /* We have nJ, so with nF as capacitance, we have V */
+                float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
+                /* We have prediction_v as V^2 -> to q12 for division and sqrt */
+                _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
+                // float voltagePredictionInMicro = _Q12toF(prediction_v) * 1000000.0;
+                // _q12 voltagePredictionInMicro_q12 = _Q12(voltagePredictionInMicro);
+                /* We scale to µV */
+                #ifdef debug_bet
+                // tpl_serial_print_string("power_pred: ");
+                // tpl_serial_print_int(FLOAT_TO_INT((float)tpl_resurrect_energy.power_prediction), 0);
+                // tpl_serial_print_string("\n");
+                // tpl_serial_print_string("voltage_pred: ");
+                // tpl_serial_print_int(FLOAT_TO_INT(_Q12toF(prediction_v)),0);
+                // tpl_serial_print_string("\n");
                 #endif
+                // _q12 prediction_q12 = _Q12(prediction);
+                /* Current voltage is in milliVolt, scale to µV */
+                float voltageInMillis_float = ((float)voltageInMillis / 1000.0);
+                _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
+                // _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_q12;
+                _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;
+                // _q12 mu_power = _Q12((float) voltageInMillis / 1000.0) - delta_v_q12 + prediction_power_q12;
+                /* Computing probability of reaching 1.9V with current voltage and prediction according to step */
+                // float variance_float = (float) tpl_kern_resurrect.variance / 1000000.0;
+                // _q12 variance = _Q12(variance_float);
+                // _q12 variance = _Q12((float)tpl_kern_resurrect.variance);
+                /* If variance is 0, we put a small value */
+                // if(variance == 0){
+                //     variance = _Q12(0.01);
+                // }
+                if(tpl_kern_resurrect.variance < 410) tpl_kern_resurrect.variance = 410;
+
+                #ifdef debug_bet
+                tpl_serial_print_string("mu: ");
+                tpl_serial_print_int(mu, 0);
+                tpl_serial_print_string("\n");
+                tpl_serial_print_string("variance: ");
+                tpl_serial_print_int(tpl_kern_resurrect.variance, 0);
+                tpl_serial_print_string("\n");
+                #endif
+                _q12 gaussian_q12;
+                // if(mu <= _Q12(1.9)){
+                //     gaussian_q12 = _Q12(1.0);
+                // }
+                // else{
+                gaussian_q12 = gaussian(mu, tpl_kern_resurrect.variance, _Q12(1.9));
+                // }
+                // _q12 gaussian_power_q12 = gaussian(mu_power, _Q12(tpl_kern_resurrect.variance), _Q12(1.9));
+                /* If we saturate, probability of reaching 1.9V is 0 */
+                if(gaussian_q12 == 0x7FFF){
+                    gaussian_q12 = 0;
+                }
+                // if(gaussian_power_q12 == 0x7FFF){
+                //     gaussian_power_q12 = 0;
+                // }
+                tpl_resurrect_energy.proba = 1.0 - _Q12toF(gaussian_q12);
+                // tpl_resurrect_energy.proba_power = 1 - _Q12toF(gaussian_power_q12);
+                #ifdef debug_bet
+                tpl_serial_print_string("proba: ");
+                tpl_serial_print_int(gaussian_q12, 0);
+                tpl_serial_print_string("\n");
+                #endif
+                if (tpl_resurrect_energy.proba < 1.0){
+                    #ifndef BARD
+                    P1OUT ^= BIT4;
+                    #endif
+                }
             }
             if (tpl_resurrect_energy.proba > proba_threshold)
             // if (tpl_resurrect_energy.proba > 0.9)
@@ -478,8 +529,10 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       #else
       if (ptr_step == NULL){
       #endif /* WITH_BET */
+        P8OUT |= BIT0;
         tpl_chkpt_hibernate();
-        #if WITH_ENERGY_PREDICTION & WITH_BET == 1
+        P8OUT &= ~BIT0;
+        #if WITH_BET == YES
 
         /* Might have sleep for some time, reset previous harvesting data */
         // tpl_resurrect_energy.previous_harvesting->current_size = 0;
@@ -632,16 +685,17 @@ FUNC(uint32_t, OS_CODE) tpl_variance_sma(void){
 
 FUNC(uint32_t, OS_CODE) tpl_variance_power_sma(void){
     uint8_t i;
-    uint32_t result = 0;
+    _q12 result;
+    _q12 tmp = 0;
     for(i=0; i<tpl_kern_resurrect.variance_buffer->current_size; i++){
-        if(tpl_kern_resurrect.variance_buffer->buffer[i]< 0){
-            result += ~(tpl_kern_resurrect.variance_buffer->buffer[i]) + 1;
-        }
-        else{
-            result += tpl_kern_resurrect.variance_buffer->buffer[i];
-        }
+        // if(tpl_kern_resurrect.variance_buffer->buffer[i]< 0){
+        tmp += tpl_kern_resurrect.variance_buffer->buffer[i];
+        // }
+        // else{
+        // result += tpl_kern_resurrect.variance_buffer->buffer[i];
+        // }
     }
-    result /= tpl_kern_resurrect.variance_buffer->current_size;
+    result = _Q12div(tmp, _Q12((float)tpl_kern_resurrect.variance_buffer->current_size));
     return result;
 }
 #endif /* WITH_BET */
