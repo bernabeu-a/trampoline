@@ -94,12 +94,6 @@ if OS::ENERGY_PREDICTION then
 #define OS_START_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
-VAR(tpl_energy_buffer, OS_VAR) struct_buffer_previous_harvesting = {
-/* buffer of %!OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE% previous value */ {0},
-/* index */                      0,
-/* current size */               0
-};
-
 VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
 /* buffer of %!OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE% previous value */ {0},
 /* index */                      0,
@@ -112,16 +106,15 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
 
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
-  &struct_buffer_previous_harvesting,
-  &struct_buffer_power_previous_harvesting,
-  0,
-  0,
-  0%
+  &struct_buffer_power_previous_harvesting,    /* buffer of previous harvesting in µW (q12 format)*/
+  0,                                           /* power prediction in µW (q12 format) */
+  0                                            /* error of previous prediction */%
 if OS::RESURRECT_S::BET then  
 %, 
-  0.0,
-  0.0,
-  0%
+  0.0,                      /* probability of reaching 1.9V with current energy and prediction */
+  0,                        /* flag if come back from sleeping */
+  0,                        /* Variance for probability of lossing BET */
+  &struct_variance_buffer,  /* Buffer for variance computation */%
 end if%
 };
 %
@@ -555,9 +548,7 @@ VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
   end if
   if OS::RESURRECT_S::BET then
   %
-  0,                        /* Award accumulated with steps */
-  0,                        /* Variance for probability of lossing BET */
-  &struct_variance_buffer,  /* Buffer for variance computation */%
+  0                         /* Award accumulated with steps */%
   end if
 %
 };
