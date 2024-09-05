@@ -120,15 +120,15 @@ VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
 
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
-  &struct_buffer_power_previous_harvesting,    /* buffer of previous harvesting in µW (q12 format)*/
-  0,                                           /* power prediction in µW (q12 format) */
+  &struct_buffer_power_previous_harvesting,    /* buffer of previous harvesting in µW 32bit*/
+  0,                                           /* power prediction in µW 32bit */
   0                                            /* error of previous prediction */%
 if OS::RESURRECT_S::BET then  
 %, 
   0.0,                      /* probability of reaching 1.9V with current energy and prediction */
   0,                        /* flag if come back from sleeping */
-  0,                        /* Variance for probability of lossing BET */
-  &struct_variance_buffer,  /* Buffer for variance computation */%
+  0,                        /* Variance for probability of lossing BET in Q12 */
+  &struct_variance_buffer,  /* Buffer for variance computation in Q12 */%
 end if%
 };
 %

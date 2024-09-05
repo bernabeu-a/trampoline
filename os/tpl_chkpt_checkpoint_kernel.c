@@ -327,20 +327,24 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             /* hibernate pred is in ms */
             int32_t diff_v = tmp_step_energy - voltageInMillis;
             #ifdef debug_bet
-            // tpl_serial_print_string("step: ");
-            // tpl_serial_print_int(tmp_step_energy, 0);
-            // tpl_serial_print_string("\n");
+            tpl_serial_print_string("step: ");
+            tpl_serial_print_int(tmp_step_energy, 0);
+            tpl_serial_print_string("\n");
             tpl_serial_print_string("vcur: ");
             tpl_serial_print_int(voltageInMillis, 0);
             tpl_serial_print_string("\n");
             tpl_serial_print_string("pred: ");
             tpl_serial_print_int((uint16_t)tpl_resurrect_energy.power_prediction, 0);
             tpl_serial_print_string("\n");
+            tpl_serial_print_string("diff: ");
+            tpl_serial_print_int((uint16_t)diff_v, 0);
+            tpl_serial_print_string("\n");
             #endif
             int32_t diff_v2 = diff_v * diff_v;
             // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
             // hibernate_pred *= hibernate_pred;
-            float hibernate_pred = ((float)((float)diff_v2 / 1000000) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+            float diff_v2_float = (float) diff_v2;
+            float hibernate_pred = ((float)(diff_v2_float / 1000000.0) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
             /* Compute minutes and second for RTC setup */
             // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
             uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
@@ -348,16 +352,16 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             tpl_serial_print_string("hib: ");
             tpl_serial_print_int(FLOAT_TO_INT(hibernate_pred), 0);
             tpl_serial_print_string("\n");
-            // tpl_serial_print_string("hibern: ");
-            // tpl_serial_print_int(hibernate_time_second, 0);
-            // tpl_serial_print_string("\n");
+            tpl_serial_print_string("hibern: ");
+            tpl_serial_print_int(hibernate_time_second, 0);
+            tpl_serial_print_string("\n");
             #endif
-            uint8_t hibernate_time_minute = 0;
+            uint8_t sleep_time_minute = 0;
             while(hibernate_time_second > 60){
-                hibernate_time_minute++;
+                sleep_time_minute++;
                 hibernate_time_second = hibernate_time_second - 60;
             }
-            hibernate_time_second = (uint8_t) hibernate_time_second;
+            uint8_t sleep_time_second = (uint8_t) hibernate_time_second;
             #ifdef debug_bet
             // tpl_serial_print_string("s: ");
             // tpl_serial_print_int(hibernate_time_second,0);
@@ -373,7 +377,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             // for (volatile uint32_t i = 0; i < 400000; i++);
 
             #endif
-            tpl_RTC_init_time(hibernate_time_second, hibernate_time_minute);
+            tpl_RTC_init_time(sleep_time_second, sleep_time_minute);
         }
         else{
             tpl_RTC_init(); //startRTC => interrupt next 1 min

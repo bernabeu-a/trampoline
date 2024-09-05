@@ -116,7 +116,7 @@ typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
 struct TPL_ENERGY
 {
     P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) power_previous_harvesting;
-    VAR(uint16_t, TYPEDEF) power_prediction;
+    VAR(uint32_t, TYPEDEF) power_prediction;
     VAR(int32_t, TYPEDEF) error;
     #if WITH_BET
     VAR(float, TYPEDEF) proba_power;
