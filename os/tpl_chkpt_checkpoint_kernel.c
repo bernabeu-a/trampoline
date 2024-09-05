@@ -340,7 +340,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             int32_t diff_v2 = diff_v * diff_v;
             // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
             // hibernate_pred *= hibernate_pred;
-            float hibernate_pred = ((float)(diff_v2 / 1000000) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+            float hibernate_pred = ((float)((float)diff_v2 / 1000000) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
             /* Compute minutes and second for RTC setup */
             // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
             uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
@@ -446,16 +446,16 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
     }
 
-    for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
-        tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
+    for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
+        tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
     }
     // tpl_resurrect_energy.previous_harvesting->current_size = 0;
     tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
-    tpl_kern_resurrect.variance_buffer->current_size = 0;
+    tpl_resurrect_energy.variance_buffer->current_size = 0;
 
     // tpl_resurrect_energy.previous_harvesting->index = 0;
     tpl_resurrect_energy.power_previous_harvesting->index = 0;
-    tpl_kern_resurrect.variance_buffer->index = 0;
+    tpl_resurrect_energy.variance_buffer->index = 0;
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
@@ -621,17 +621,17 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
     #if WITH_ENERGY_PREDICTION & WITH_BET == 1
     uint8_t index;
 
-    for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
-        tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
+        tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
     }
-    for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
-        tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
+    for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
+        tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
     }
-    tpl_resurrect_energy.previous_harvesting->current_size = 0;
-    tpl_kern_resurrect.variance_buffer->current_size = 0;
+    tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
+    tpl_resurrect_energy.variance_buffer->current_size = 0;
 
-    tpl_resurrect_energy.previous_harvesting->index = 0;
-    tpl_kern_resurrect.variance_buffer->index = 0;
+    tpl_resurrect_energy.power_previous_harvesting->index = 0;
+    tpl_resurrect_energy.variance_buffer->index = 0;
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;

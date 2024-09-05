@@ -108,16 +108,16 @@ tpl_init_resurrect_os(CONST(tpl_application_mode, AUTOMATIC) app_mode)
     for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
         tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
     }
-    for(index=0; index<tpl_kern_resurrect.variance_buffer->current_size; index++){
-        tpl_kern_resurrect.variance_buffer->buffer[index] = 0;
+    for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
+        tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
     }
     // tpl_resurrect_energy.previous_harvesting->current_size = 0;
     tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
-    tpl_kern_resurrect.variance_buffer->current_size = 0;
+    tpl_resurrect_energy.variance_buffer->current_size = 0;
 
     // tpl_resurrect_energy.previous_harvesting->index = 0;
     tpl_resurrect_energy.power_previous_harvesting->index = 0;
-    tpl_kern_resurrect.variance_buffer->index = 0;
+    tpl_resurrect_energy.variance_buffer->index = 0;
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
 #endif
@@ -317,7 +317,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             #endif
             #if WITH_BET
             /* We store error to buffer for variance */
-            const uint8_t index_variance = (tpl_kern_resurrect.variance_buffer->index++) % 5;
+            const uint8_t index_variance = (tpl_resurrect_energy.variance_buffer->index++) % 5;
             int32_t error_time = tpl_resurrect_energy.error * time_step;
             uint8_t is_negative = FALSE;
             if(tpl_resurrect_energy.error < 0){
@@ -335,16 +335,16 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             // tpl_serial_print_int(error_v, 0);
             // tpl_serial_print_string("\n");
             #endif
-            tpl_kern_resurrect.variance_buffer->buffer[index_variance] = error_v;
-            if(tpl_kern_resurrect.variance_buffer->current_size != 5){
-                tpl_kern_resurrect.variance_buffer->current_size++;
+            tpl_resurrect_energy.variance_buffer->buffer[index_variance] = error_v;
+            if(tpl_resurrect_energy.variance_buffer->current_size != 5){
+                tpl_resurrect_energy.variance_buffer->current_size++;
             }
-            if(tpl_kern_resurrect.variance_buffer->index == 5){
-                tpl_kern_resurrect.variance_buffer->index = 0;
+            if(tpl_resurrect_energy.variance_buffer->index == 5){
+                tpl_resurrect_energy.variance_buffer->index = 0;
             }
             /* We then compute variance */
             // tpl_kern_resurrect.variance = ((float) tpl_variance_sma() / 2147483648.0f) ;
-            tpl_kern_resurrect.variance = tpl_variance_power_sma();
+            tpl_resurrect_energy.variance = tpl_variance_power_sma();
             #ifdef debug_bet
             // tpl_serial_print_string("p_var: ");
             // tpl_serial_print_int(tpl_kern_resurrect.variance, 0);
@@ -405,7 +405,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* If above voltage level, no need to compute probability of failing */
             if (voltageInMillis >= tmp_ptr_step->energy)
             {
-                tpl_resurrect_energy.proba = 1.0;
+                tpl_resurrect_energy.proba_power = 1.0;
             }
             else{
                 /* With power, we add every worstcase time to obtain time of the step */
@@ -451,7 +451,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 // if(variance == 0){
                 //     variance = _Q12(0.01);
                 // }
-                if(tpl_kern_resurrect.variance < 410) tpl_kern_resurrect.variance = 410;
+                if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
 
                 #ifdef debug_bet
                 // tpl_serial_print_string("mu: ");
@@ -466,7 +466,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 //     gaussian_q12 = _Q12(1.0);
                 // }
                 // else{
-                gaussian_q12 = gaussian(mu, tpl_kern_resurrect.variance, _Q12(1.9));
+                gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
                 // }
                 // _q12 gaussian_power_q12 = gaussian(mu_power, _Q12(tpl_kern_resurrect.variance), _Q12(1.9));
                 /* If we saturate, probability of reaching 1.9V is 0 */
@@ -476,20 +476,20 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 // if(gaussian_power_q12 == 0x7FFF){
                 //     gaussian_power_q12 = 0;
                 // }
-                tpl_resurrect_energy.proba = 1.0 - _Q12toF(gaussian_q12);
+                tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
                 // tpl_resurrect_energy.proba_power = 1 - _Q12toF(gaussian_power_q12);
                 #ifdef debug_bet
                 // tpl_serial_print_string("proba: ");
                 // tpl_serial_print_int(gaussian_q12, 0);
                 // tpl_serial_print_string("\n");
                 #endif
-                if (tpl_resurrect_energy.proba < 1.0){
+                if (tpl_resurrect_energy.proba_power < 1.0){
                     #ifndef BARD
                     P1OUT ^= BIT4;
                     #endif
                 }
             }
-            if (tpl_resurrect_energy.proba > proba_threshold)
+            if (tpl_resurrect_energy.proba_power > proba_threshold)
             // if (tpl_resurrect_energy.proba > 0.9)
             #else
             if (voltageInMillis >= tmp_ptr_step->energy)
@@ -541,8 +541,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
         tpl_resurrect_energy.power_previous_harvesting->index = 0;
 
-        tpl_kern_resurrect.variance_buffer->index = 0;
-        tpl_kern_resurrect.variance_buffer->current_size = 0;
+        tpl_resurrect_energy.variance_buffer->index = 0;
+        tpl_resurrect_energy.variance_buffer->current_size = 0;
 
         #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
       }
@@ -649,15 +649,15 @@ FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMAT
 #if WITH_ENERGY_PREDICTION == YES
 #if ENERGY_PREDICTOR == SMA
 /* Prediction with sliding moving average */
-FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void)
-{
-    uint8_t i;
-    uint32_t result = 0;
-    for(i=0; i<tpl_resurrect_energy.previous_harvesting->current_size; i++){
-        result += tpl_resurrect_energy.previous_harvesting->buffer[i];
-    }
-    return (result/tpl_resurrect_energy.previous_harvesting->current_size);
-}
+// FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void)
+// {
+//     uint8_t i;
+//     uint32_t result = 0;
+//     for(i=0; i<tpl_resurrect_energy.previous_harvesting->current_size; i++){
+//         result += tpl_resurrect_energy.previous_harvesting->buffer[i];
+//     }
+//     return (result/tpl_resurrect_energy.previous_harvesting->current_size);
+// }
 
 FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void)
 {
@@ -673,29 +673,24 @@ FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void)
 #endif // WITH_ENERGY_PREDICTION
 
 #if WITH_BET
-FUNC(uint32_t, OS_CODE) tpl_variance_sma(void){
-    uint8_t i;
-    uint32_t result = 0;
-    for(i=0; i<tpl_kern_resurrect.variance_buffer->current_size; i++){
-        result += tpl_kern_resurrect.variance_buffer->buffer[i];
-    }
-    result /= tpl_kern_resurrect.variance_buffer->current_size;
-    return result;
-}
+// FUNC(uint32_t, OS_CODE) tpl_variance_sma(void){
+//     uint8_t i;
+//     uint32_t result = 0;
+//     for(i=0; i<tpl_resurrect_energy.variance_buffer->current_size; i++){
+//         result += tpl_resurrect_energy.variance_buffer->buffer[i];
+//     }
+//     result /= tpl_resurrect_energy.variance_buffer->current_size;
+//     return result;
+// }
 
-FUNC(uint32_t, OS_CODE) tpl_variance_power_sma(void){
+FUNC(uint16_t, OS_CODE) tpl_variance_power_sma(void){
     uint8_t i;
     _q12 result;
     _q12 tmp = 0;
-    for(i=0; i<tpl_kern_resurrect.variance_buffer->current_size; i++){
-        // if(tpl_kern_resurrect.variance_buffer->buffer[i]< 0){
-        tmp += tpl_kern_resurrect.variance_buffer->buffer[i];
-        // }
-        // else{
-        // result += tpl_kern_resurrect.variance_buffer->buffer[i];
-        // }
+    for(i=0; i<tpl_resurrect_energy.variance_buffer->current_size; i++){
+        tmp += tpl_resurrect_energy.variance_buffer->buffer[i];
     }
-    result = _Q12div(tmp, _Q12((float)tpl_kern_resurrect.variance_buffer->current_size));
+    result = _Q12div(tmp, _Q12((float)tpl_resurrect_energy.variance_buffer->current_size));
     return result;
 }
 #endif /* WITH_BET */

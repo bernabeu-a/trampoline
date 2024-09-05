@@ -100,8 +100,6 @@ typedef struct
   #endif /* WITH_TIMER_ACTIVITY */
   #if WITH_BET
   VAR(uint16, TYPEDEF) award;
-  VAR(uint16, TYPEDEF) variance;
-  P2VAR(tpl_variance_buffer, TYPEDEF, OS_VAR) variance_buffer;
   #endif /* WITH_BET */
 } tpl_kern_resurrect_state;
 
@@ -117,15 +115,14 @@ typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
 #endif // ENERGY_PREDICTOR == SMA
 struct TPL_ENERGY
 {
-    P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) previous_harvesting;
     P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) power_previous_harvesting;
-    VAR(uint32_t, TYPEDEF) prediction;
-    VAR(uint32_t, TYPEDEF) power_prediction;
+    VAR(uint16_t, TYPEDEF) power_prediction;
     VAR(int32_t, TYPEDEF) error;
     #if WITH_BET
-    VAR(float, TYPEDEF) proba;
     VAR(float, TYPEDEF) proba_power;
     VAR(uint8_t, TYPEDEF) wake_up;
+    VAR(uint16, TYPEDEF) variance;
+    P2VAR(tpl_variance_buffer, TYPEDEF, OS_VAR) variance_buffer;
     #endif /* WITH_BET */
 };
 typedef struct TPL_ENERGY tpl_energy;
@@ -171,12 +168,12 @@ FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMAT
 
 #if WITH_ENERGY_PREDICTION == YES
 #if ENERGY_PREDICTOR == SMA
-FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void);
+// FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void);
 FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void);
 #endif // ENERGY_PREDICTOR == "SMA"
 #if WITH_BET
-FUNC(uint32_t, OS_CODE) tpl_variance_sma(void);
-FUNC(uint32_t, OS_CODE) tpl_variance_power_sma(void);
+// FUNC(uint32_t, OS_CODE) tpl_variance_sma(void);
+FUNC(uint16_t, OS_CODE) tpl_variance_power_sma(void);
 #endif // WITH_BET
 #endif // WITH_ENERGY_PREDICTOR
 #define OS_STOP_SEC_CODE
