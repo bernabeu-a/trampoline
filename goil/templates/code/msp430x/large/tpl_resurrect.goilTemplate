@@ -99,10 +99,24 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
 /* index */                      0,
 /* current size */               0
 };
+
 #define OS_STOP_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
 
 #endif /* ENERGY_PREDICTOR == SMA */
+
+#if WITH_BET
+#define OS_START_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+
+VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
+/* buffer of 5 previous value */ {0},
+/* index */                      0,
+/* current size */               0
+};
+#define OS_STOP_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+#endif /* WITH_BET */
 
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
@@ -520,19 +534,6 @@ end foreach
  * tpl_kern_resurrect gather informations on the current step and
  * the state
  */
- 
-#if WITH_BET
-#define OS_START_SEC_VAR_UNSPECIFIED
-#include "tpl_memmap.h"
-
-VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
-/* buffer of 5 previous value */ {0},
-/* index */                      0,
-/* current size */               0
-};
-#define OS_STOP_SEC_VAR_UNSPECIFIED
-#include "tpl_memmap.h"
-#endif /* WITH_BET */
 
 VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
 {
