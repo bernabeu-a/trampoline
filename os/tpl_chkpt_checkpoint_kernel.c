@@ -273,15 +273,15 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         float prediction_v_float = (_Q12toF(prediction_v)) * 1000;
         predictionInMillis = (uint16_t) prediction_v_float;
         #ifdef debug_bet
-        // #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
+        #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
         // tpl_serial_print_string("pred_chkpt: ");
         // tpl_serial_print_int(FLOAT_TO_INT((float)prediction_v_float), 0);
-        tpl_serial_print_string("vpred: ");
-        tpl_serial_print_int(predictionInMillis, 0);
-        tpl_serial_print_string("\n");
-        tpl_serial_print_string("vmilli: ");
-        tpl_serial_print_int(voltageInMillis, 0);
-        tpl_serial_print_string("\n");
+        // tpl_serial_print_string("vpred: ");
+        // tpl_serial_print_int(predictionInMillis, 0);
+        // tpl_serial_print_string("\n");
+        // tpl_serial_print_string("vmilli: ");
+        // tpl_serial_print_int(voltageInMillis, 0);
+        // tpl_serial_print_string("\n");
         // tpl_serial_print_string("vstep");
         // tpl_serial_print_int(tmp_step_energy, 0);
         // tpl_serial_print_string("\n");
@@ -330,24 +330,27 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             // tpl_serial_print_string("step: ");
             // tpl_serial_print_int(tmp_step_energy, 0);
             // tpl_serial_print_string("\n");
-            // tpl_serial_print_string("vcur: ");
-            // tpl_serial_print_int(voltageInMillis, 0);
-            // tpl_serial_print_string("\n");
+            tpl_serial_print_string("vcur: ");
+            tpl_serial_print_int(voltageInMillis, 0);
+            tpl_serial_print_string("\n");
+            tpl_serial_print_string("pred: ");
+            tpl_serial_print_int((uint16_t)tpl_resurrect_energy.power_prediction, 0);
+            tpl_serial_print_string("\n");
             #endif
             int32_t diff_v2 = diff_v * diff_v;
             // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
             // hibernate_pred *= hibernate_pred;
-            float hibernate_pred = ((float)(diff_v2 / 1000) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+            float hibernate_pred = ((float)(diff_v2 / 1000000) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
             /* Compute minutes and second for RTC setup */
             // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
             uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
             #ifdef debug_bet
-            tpl_serial_print_string("hib_pred: ");
-            tpl_serial_print_int(hibernate_pred, 0);
+            tpl_serial_print_string("hib: ");
+            tpl_serial_print_int(FLOAT_TO_INT(hibernate_pred), 0);
             tpl_serial_print_string("\n");
-            tpl_serial_print_string("hibern: ");
-            tpl_serial_print_int(hibernate_time_second, 0);
-            tpl_serial_print_string("\n");
+            // tpl_serial_print_string("hibern: ");
+            // tpl_serial_print_int(hibernate_time_second, 0);
+            // tpl_serial_print_string("\n");
             #endif
             uint8_t hibernate_time_minute = 0;
             while(hibernate_time_second > 60){
@@ -362,9 +365,9 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             // tpl_serial_print_string("m: ");
             // tpl_serial_print_int(hibernate_time_minute,0);
             // tpl_serial_print_string("\n");
-            for (volatile uint32_t i = 0; i < 400000; i++);
-            for (volatile uint32_t i = 0; i < 400000; i++);
-            for (volatile uint32_t i = 0; i < 400000; i++);
+            // for (volatile uint32_t i = 0; i < 400000; i++);
+            // for (volatile uint32_t i = 0; i < 40000; i++);
+            // for (volatile uint32_t i = 0; i < 40000; i++);
             // for (volatile uint32_t i = 0; i < 400000; i++);
             // for (volatile uint32_t i = 0; i < 400000; i++);
             // for (volatile uint32_t i = 0; i < 400000; i++);
@@ -460,7 +463,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     tpl_kern_resurrect.award = 0;
 
     #ifdef debug_bet
-    tpl_serial_print_string("out\n");
+    // tpl_serial_print_string("out\n");
     #endif
     #endif
 

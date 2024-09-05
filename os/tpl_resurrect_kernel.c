@@ -256,7 +256,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
           power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
           // power_harvested = voltage_harvested / (int32_t) time_step;
           #ifdef debug_bet
-          #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
+          // #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
           // float v_harvested = (((float) voltage_harvested) / 1000.0);
           // float v_wcet = (((float) voltage_worst_case) / 1000.0);
           // float v_cons = (((float) voltage_consumed) / 1000.0);
@@ -454,12 +454,12 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 if(tpl_kern_resurrect.variance < 410) tpl_kern_resurrect.variance = 410;
 
                 #ifdef debug_bet
-                tpl_serial_print_string("mu: ");
-                tpl_serial_print_int(mu, 0);
-                tpl_serial_print_string("\n");
-                tpl_serial_print_string("variance: ");
-                tpl_serial_print_int(tpl_kern_resurrect.variance, 0);
-                tpl_serial_print_string("\n");
+                // tpl_serial_print_string("mu: ");
+                // tpl_serial_print_int(mu, 0);
+                // tpl_serial_print_string("\n");
+                // tpl_serial_print_string("variance: ");
+                // tpl_serial_print_int(tpl_kern_resurrect.variance, 0);
+                // tpl_serial_print_string("\n");
                 #endif
                 _q12 gaussian_q12;
                 // if(mu <= _Q12(1.9)){
@@ -479,9 +479,9 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 tpl_resurrect_energy.proba = 1.0 - _Q12toF(gaussian_q12);
                 // tpl_resurrect_energy.proba_power = 1 - _Q12toF(gaussian_power_q12);
                 #ifdef debug_bet
-                tpl_serial_print_string("proba: ");
-                tpl_serial_print_int(gaussian_q12, 0);
-                tpl_serial_print_string("\n");
+                // tpl_serial_print_string("proba: ");
+                // tpl_serial_print_int(gaussian_q12, 0);
+                // tpl_serial_print_string("\n");
                 #endif
                 if (tpl_resurrect_energy.proba < 1.0){
                     #ifndef BARD
