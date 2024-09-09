@@ -442,24 +442,20 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     #if WITH_BET == YES
     uint8_t index;
 
-    // for(index=0; index<tpl_resurrect_energy.previous_harvesting->current_size; index++){
-    //     tpl_resurrect_energy.previous_harvesting->buffer[index] = 0;
+    // for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
+    //     tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
     // }
 
-    for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
-        tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
-    }
+    // for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
+    //     tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
+    // }
+    // // tpl_resurrect_energy.previous_harvesting->current_size = 0;
+    // tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
+    // tpl_resurrect_energy.variance_buffer->current_size = 0;
 
-    for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
-        tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
-    }
-    // tpl_resurrect_energy.previous_harvesting->current_size = 0;
-    tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
-    tpl_resurrect_energy.variance_buffer->current_size = 0;
-
-    // tpl_resurrect_energy.previous_harvesting->index = 0;
-    tpl_resurrect_energy.power_previous_harvesting->index = 0;
-    tpl_resurrect_energy.variance_buffer->index = 0;
+    // // tpl_resurrect_energy.previous_harvesting->index = 0;
+    // tpl_resurrect_energy.power_previous_harvesting->index = 0;
+    // tpl_resurrect_energy.variance_buffer->index = 0;
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
@@ -639,6 +635,7 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
+    tpl_resurrect_energy.power_prediction = 0;
     #endif
 
     // P1OUT &= ~BIT5;
