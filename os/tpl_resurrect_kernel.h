@@ -93,13 +93,13 @@ typedef struct
   P2VAR(tpl_step, TYPEDEF, OS_VAR) elected;
   VAR(sint32, TYPEDEF) state;
   #if WITH_RESURRECT_EVENT == YES
-  VAR(uint16, TYPEDEF) state_event;
+  VAR(uint16_t, TYPEDEF) state_event;
   #endif /* WITH_RESURRECT_EVENT */
   #if WITH_TIMER_ACTIVITY
-  VAR(uint16, TYPEDEF) energy_at_start;
+  VAR(uint16_t, TYPEDEF) energy_at_start;
   #endif /* WITH_TIMER_ACTIVITY */
   #if WITH_BET
-  VAR(uint16, TYPEDEF) award;
+  VAR(uint16_t, TYPEDEF) award;
   #endif /* WITH_BET */
 } tpl_kern_resurrect_state;
 
@@ -121,8 +121,11 @@ struct TPL_ENERGY
     #if WITH_BET
     VAR(float, TYPEDEF) proba_power;
     VAR(uint8_t, TYPEDEF) wake_up;
-    VAR(uint16, TYPEDEF) variance;
+    VAR(uint16_t, TYPEDEF) variance;
     P2VAR(tpl_variance_buffer, TYPEDEF, OS_VAR) variance_buffer;
+    VAR(uint16_t, TYPEDEF) v_before_sleeping;
+    VAR(uint8_t, TYPEDEF) hibernate_second;
+    VAR(uint8_t, TYPEDEF) hibernate_minute;
     #endif /* WITH_BET */
 };
 typedef struct TPL_ENERGY tpl_energy;

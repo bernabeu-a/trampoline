@@ -240,6 +240,9 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     else{
       voltageInMillis = energy*3/5;
     }
+    #if WITH_BET
+    tpl_resurrect_energy.v_before_sleeping = voltageInMillis;
+    #endif
     #if WITH_RESURRECT == YES
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step = NULL;
     CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)
@@ -377,6 +380,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             // for (volatile uint32_t i = 0; i < 400000; i++);
 
             #endif
+            tpl_resurrect_energy.hibernate_second = sleep_time_second;
+            tpl_resurrect_energy.hibernate_minute = sleep_time_minute;
             tpl_RTC_init_time(sleep_time_second, sleep_time_minute);
         }
         else{
@@ -392,6 +397,45 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         #ifndef BARD
         P7OUT &= ~BIT0;
         #endif
+        #if WITH_BET == YES
+        if(tpl_resurrect_energy.power_prediction != 0){
+            /* With BET, we update the prediction with a new measurement after the sleeping */
+            /* Get energy level from ADC */
+            bool use1V2Ref = true;
+            tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+            /* Polling */
+            result_adc = readPowerVoltage_simple();
+            // uint16_t energy = (~result_adc)+1;
+            uint16_t energy = result_adc;
+            uint16_t voltageInMillis;
+            if(energy == 0x0FFF){
+              use1V2Ref = false;
+              tpl_adc_init_simple(use1V2Ref, result_adc_adc);
+              result_adc = readPowerVoltage_simple();
+              // energy = (~result_adc)+1;
+              energy = result_adc;
+              voltageInMillis = energy;
+            }
+            else{
+              voltageInMillis = energy*3/5;
+            }
+            /* Now compare with previous measurement and sleeping time */
+            uint32_t voltage_harvested = (((uint32_t)voltageInMillis)*1000 - ((uint32_t)tpl_resurrect_energy.v_before_sleeping)*1000);
+            float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
+            /* Time in ms */
+            float time_hibernation_ms = ((uint32_t)tpl_resurrect_energy.hibernate_second * 1000) + (60000 * (uint32_t)tpl_resurrect_energy.hibernate_minute);
+            float power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / (time_hibernation_ms);
+            const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
+            tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
+            if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
+                tpl_resurrect_energy.power_previous_harvesting->current_size++;
+            }
+            if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
+                tpl_resurrect_energy.power_previous_harvesting->index = 0;
+            }
+            tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
+            #endif
+        }
     }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
@@ -440,7 +484,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   }
     /* If use BET, reset prediction and variance buffer */
     #if WITH_BET == YES
-    uint8_t index;
+    // uint8_t index;
 
     // for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
     //     tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
@@ -618,7 +662,7 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
 
   #if WITH_RESURRECT == YES
 
-    #if WITH_ENERGY_PREDICTION & WITH_BET == 1
+    #if WITH_BET == 1
     uint8_t index;
 
     for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){

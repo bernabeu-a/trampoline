@@ -128,7 +128,10 @@ if OS::RESURRECT_S::BET then
   0.0,                      /* probability of reaching 1.9V with current energy and prediction */
   0,                        /* flag if come back from sleeping */
   0,                        /* Variance for probability of lossing BET in Q12 */
-  &struct_variance_buffer,  /* Buffer for variance computation in Q12 */%
+  &struct_variance_buffer,  /* Buffer for variance computation in Q12 */
+  0,                        /* Measurement of voltage before hibernation */
+  0,                        /* Hibernate time in second */
+  0,                        /* Hibernate time in minute */%
 end if%
 };
 %

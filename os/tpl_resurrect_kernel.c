@@ -319,12 +319,13 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* We store error to buffer for variance */
             const uint8_t index_variance = (tpl_resurrect_energy.variance_buffer->index++) % 5;
             int32_t error_time = tpl_resurrect_energy.error * time_step;
-            uint8_t is_negative = FALSE;
-            if(tpl_resurrect_energy.error < 0){
-                is_negative = TRUE;
-                error_time = ~error_time+1;
+            float error_time_float = (float) error_time;
+            // uint8_t is_negative = FALSE;
+            if(error_time_float < 0){
+                // is_negative = TRUE;
+                error_time_float = -error_time_float;
             }
-            float error_time_capacitance = (2 * (float)error_time) / 6800000.0;
+            float error_time_capacitance = (2 * error_time_float) / 6800000.0;
             /* We have error_v as V^2 -> to q12 for division and sqrt */
             _q12 error_v = _Q12sqrt(_Q12(error_time_capacitance));
             // if(is_negative){
@@ -538,11 +539,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         // tpl_resurrect_energy.previous_harvesting->current_size = 0;
         // tpl_resurrect_energy.previous_harvesting->index = 0;
 
-        tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
-        tpl_resurrect_energy.power_previous_harvesting->index = 0;
+        // tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
+        // tpl_resurrect_energy.power_previous_harvesting->index = 0;
 
-        tpl_resurrect_energy.variance_buffer->index = 0;
-        tpl_resurrect_energy.variance_buffer->current_size = 0;
+        // tpl_resurrect_energy.variance_buffer->index = 0;
+        // tpl_resurrect_energy.variance_buffer->current_size = 0;
 
         #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
       }
