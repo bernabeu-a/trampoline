@@ -299,6 +299,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
+        if(tmp_ptr_step == NULL) continue;
         #if WITH_ENERGY_PREDICTION & WITH_BET == 1
         if ((tpl_kern_resurrect.elected == NULL) | (tpl_resurrect_energy.wake_up == TRUE)) {
         #else
@@ -363,7 +364,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
                 if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
 
-                _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(2.0));
+                _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
 
                 tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
                 if (tpl_resurrect_energy.proba_power < 1.0){
@@ -372,7 +373,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                     #endif
                 }
             }
-            if (tpl_resurrect_energy.proba_power >= proba_threshold)
+            if (tpl_resurrect_energy.proba_power > proba_threshold)
             #else
             if (voltageInMillis >= tmp_ptr_step->energy)
             #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
@@ -401,8 +402,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       /* Not enough energy to elect next step --> hibernate */
       #if WITH_BET
       /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
-      if((ptr_step == NULL) | (tpl_kern_resurrect.award > THESHOLD_AWARD)){
-          if(tpl_kern_resurrect.award > THESHOLD_AWARD){
+      if((ptr_step == NULL) | (tpl_kern_resurrect.award >= THESHOLD_AWARD)){
+          if(tpl_kern_resurrect.award >= THESHOLD_AWARD){
               #ifndef BARD
               P1OUT ^= BIT5;
               #endif
@@ -535,10 +536,17 @@ FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void)
 {
     uint8_t i;
     uint32_t result = 0;
+    uint32_t tmp_result = 0;
     for(i=0; i<tpl_resurrect_energy.power_previous_harvesting->current_size; i++){
-        result += tpl_resurrect_energy.power_previous_harvesting->buffer[i];
+        tmp_result += tpl_resurrect_energy.power_previous_harvesting->buffer[i];
     }
-    return (result/tpl_resurrect_energy.power_previous_harvesting->current_size);
+    result = tmp_result / tpl_resurrect_energy.power_previous_harvesting->current_size;
+    if (result == 0){
+        return 1;
+    }
+    else{
+        return result;
+    }
 }
 
 #endif // ENERGY_PREDICTOR == "SMA"

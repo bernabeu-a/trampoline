@@ -194,8 +194,8 @@ uint8_t tpl_lpm_hibernate()
     in LPM3, ACLK is still active
   */
   /* SMCLK OFF */
-  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
-  CSCTL4 &= BIT1;
+  // CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+  // CSCTL4 &= BIT1;
   // TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
   __bis_SR_register(LPM3_bits + GIE);
@@ -204,8 +204,8 @@ uint8_t tpl_lpm_hibernate()
   /* Restore TIMER3_A0 interrupt */
   // TA3CCTL0 |= CCIE;
   /* SMCLK ON */
-  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
-  CSCTL4 |= BIT1;
+  // CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+  // CSCTL4 |= BIT1;
   return 1;
 }
 
@@ -257,30 +257,38 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     uint32 tmp_step_energy = 0xFFFFFFFF;
     for (i = 0; i < ENERGY_LEVEL_COUNT; i++){
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
+        if(tmp_ptr_step == NULL) continue;
         if(tmp_ptr_step->energy < tmp_step_energy){
           tmp_step_energy = tmp_ptr_step->energy;
         }
     }
     #if WITH_BET == YES
-    uint16_t predictionInMillis = 0;
-    if(tpl_resurrect_energy.power_prediction != 0){
-        uint32_t time_tmp_step = 0;
-        for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
-            time_tmp_step += tmp_ptr_step->activity->time_activity[i];
-        }
-        float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
-        /* We have nJ, so with nF as capacitance, we have V */
-        float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
-        /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
-        _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-        /* Cast prediction to float to convert into mV */
-        float prediction_v_float = (_Q12toF(prediction_v)) * 1000;
-        predictionInMillis = (uint16_t) prediction_v_float;
-        #ifdef debug_bet
-        #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
-        #endif
-    }
-    if(voltageInMillis + predictionInMillis > tmp_step_energy)
+    // float proba_threshold;
+    // proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+    // if(tpl_resurrect_energy.power_prediction != 0){
+    //     /* Proba_threshold should at least be 0.5 */
+    //     if(proba_threshold < 0.5){
+    //         proba_threshold = 0.5;
+    //     }
+    //     uint32_t time_tmp_step = 0;
+    //     for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
+    //         time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+    //     }
+    //     float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
+    //     /* We have nJ, so with nF as capacitance, we have V */
+    //     float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
+    //     /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
+    //     _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
+    //     _q12 voltage_v = _Q12toF((float)voltageInMillis/1000.0);
+    //     /* Delta_v is in nanoVolt */
+    //     float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
+    //     _q12 delta_v_q12 = _Q12(delta_v);
+    //     _q12 mu = voltage_v - delta_v_q12 + prediction_v;
+    //     _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+    //     tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+    // }
+    // if (tpl_resurrect_energy.proba_power > proba_threshold)
+    if(voltageInMillis > tmp_step_energy)
     #else
     if(voltageInMillis > tmp_step_energy)
     #endif /* WITH_ENERGY_PREDICTION & WITH_BET */
@@ -318,35 +326,43 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         if(tpl_resurrect_energy.power_prediction != 0){
             /* Use prediction to compute hibernation time */
             /* hibernate pred is in ms */
-            int32_t diff_v = tmp_step_energy - voltageInMillis;
-            #ifdef debug_bet
-
-            #endif
-            int32_t diff_v2 = diff_v * diff_v;
-            // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
-            // hibernate_pred *= hibernate_pred;
-            float diff_v2_float = (float) diff_v2;
-            float hibernate_pred = ((float)(diff_v2_float / 1000000.0) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
-            /* Compute minutes and second for RTC setup */
-            // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
-            uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
-            uint8_t sleep_time_minute = 0;
-            while(hibernate_time_second > 60){
-                sleep_time_minute++;
-                hibernate_time_second = hibernate_time_second - 60;
+            int32_t diff_v = (int32_t)tmp_step_energy - (int32_t)voltageInMillis;
+            if(diff_v < 0){
+                /*  */
+                tpl_RTC_init();
             }
-            uint8_t sleep_time_second = (uint8_t) hibernate_time_second;
-            #ifdef debug_bet
-            tpl_serial_print_string("s: ");
-            tpl_serial_print_int(sleep_time_second,0);
-            tpl_serial_print_string("\n");
-            tpl_serial_print_string("m: ");
-            tpl_serial_print_int(sleep_time_minute,0);
-            tpl_serial_print_string("\n");
-            #endif
-            tpl_resurrect_energy.hibernate_second = sleep_time_second;
-            tpl_resurrect_energy.hibernate_minute = sleep_time_minute;
-            tpl_RTC_init_time(sleep_time_second, sleep_time_minute);
+            else{
+                #ifdef debug_bet
+
+                #endif
+                int32_t diff_v2 = diff_v * diff_v;
+                // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
+                // hibernate_pred *= hibernate_pred;
+                float diff_v2_float = (float) diff_v2;
+                /* Hardcoder les calculs floattants  */
+                float hibernate_pred = ((float)(diff_v2_float / 1000000.0) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+                /* Compute minutes and second for RTC setup */
+                // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
+                uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
+                uint8_t sleep_time_minute = 0;
+                while(hibernate_time_second > 60){
+                    sleep_time_minute++;
+                    hibernate_time_second = hibernate_time_second - 60;
+                }
+                uint8_t sleep_time_second = (uint8_t) hibernate_time_second;
+                #ifdef debug_bet
+                // tpl_serial_print_string("s: ");
+                // tpl_serial_print_int(sleep_time_second,0);
+                // tpl_serial_print_string("\n");
+                // tpl_serial_print_string("m: ");
+                // tpl_serial_print_int(sleep_time_minute,0);
+                // tpl_serial_print_string("\n");
+                #endif
+                /* Borner le max d'hibernation */
+                tpl_resurrect_energy.hibernate_second = sleep_time_second;
+                tpl_resurrect_energy.hibernate_minute = sleep_time_minute;
+                tpl_RTC_init_time(sleep_time_second, sleep_time_minute);
+            }
         }
         else{
             tpl_RTC_init(); //startRTC => interrupt next 1 min
