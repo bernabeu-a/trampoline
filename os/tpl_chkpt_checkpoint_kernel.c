@@ -262,11 +262,6 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
             time_tmp_step += tmp_ptr_step->activity->time_activity[i];
         }
-        #ifdef debug_bet
-        // tpl_serial_print_string("time: ");
-        // tpl_serial_print_int(time_tmp_step, 0);
-        // tpl_serial_print_string("\n");
-        #endif
         float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
         /* We have nJ, so with nF as capacitance, we have V */
         float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
@@ -277,17 +272,6 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         predictionInMillis = (uint16_t) prediction_v_float;
         #ifdef debug_bet
         #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
-        // tpl_serial_print_string("pred_chkpt: ");
-        // tpl_serial_print_int(FLOAT_TO_INT((float)prediction_v_float), 0);
-        // tpl_serial_print_string("vpred: ");
-        // tpl_serial_print_int(predictionInMillis, 0);
-        // tpl_serial_print_string("\n");
-        // tpl_serial_print_string("vmilli: ");
-        // tpl_serial_print_int(voltageInMillis, 0);
-        // tpl_serial_print_string("\n");
-        // tpl_serial_print_string("vstep");
-        // tpl_serial_print_int(tmp_step_energy, 0);
-        // tpl_serial_print_string("\n");
         #endif
     }
     if(voltageInMillis + predictionInMillis > tmp_step_energy)
@@ -351,14 +335,6 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             /* Compute minutes and second for RTC setup */
             // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
             uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
-            #ifdef debug_bet
-            // tpl_serial_print_string("hib: ");
-            // tpl_serial_print_int(FLOAT_TO_INT(hibernate_pred), 0);
-            // tpl_serial_print_string("\n");
-            // tpl_serial_print_string("hibern: ");
-            // tpl_serial_print_int(hibernate_time_second, 0);
-            // tpl_serial_print_string("\n");
-            #endif
             uint8_t sleep_time_minute = 0;
             while(hibernate_time_second > 60){
                 sleep_time_minute++;
@@ -367,10 +343,10 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             uint8_t sleep_time_second = (uint8_t) hibernate_time_second;
             #ifdef debug_bet
             // tpl_serial_print_string("s: ");
-            // tpl_serial_print_int(hibernate_time_second,0);
+            // tpl_serial_print_int(sleep_time_second,0);
             // tpl_serial_print_string("\n");
             // tpl_serial_print_string("m: ");
-            // tpl_serial_print_int(hibernate_time_minute,0);
+            // tpl_serial_print_int(sleep_time_minute,0);
             // tpl_serial_print_string("\n");
             #endif
             tpl_resurrect_energy.hibernate_second = sleep_time_second;
