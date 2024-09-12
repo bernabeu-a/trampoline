@@ -195,9 +195,9 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     #if WITH_TIMER_ACTIVITY
     uint8_t k;
     /* Voltage is i µV */
-    uint32_t voltage_harvested = 0;
-    uint32_t voltage_worst_case = ((uint32_t)tpl_kern_resurrect.energy_at_start)*1000;
-    uint32_t voltage_consumed = ((uint32_t)tpl_kern_resurrect.energy_at_start)*1000;
+    int32_t voltage_harvested = 0;
+    int32_t voltage_worst_case = ((int32_t)tpl_kern_resurrect.energy_at_start)*1000;
+    int32_t voltage_consumed = ((int32_t)tpl_kern_resurrect.energy_at_start)*1000;
     /* Power is in µW */
     float power_harvested = 0;
     /* Time is in ms */
@@ -206,8 +206,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     // We could check online that wcet is always greater that measured time and if not, update it
     if(tpl_kern_resurrect.elected != NULL){
         for(k=0; k<tpl_kern_resurrect.elected->activity->nb_activity; k++){
-            voltage_worst_case -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
-            voltage_consumed -= ((uint32_t)tpl_kern_resurrect.elected->activity->slope[k] * (uint32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k]);
+            voltage_worst_case -= ((int32_t)tpl_kern_resurrect.elected->activity->slope[k] * (int32_t)tpl_kern_resurrect.elected->activity->time_activity[k]);
+            voltage_consumed -= ((int32_t)tpl_kern_resurrect.elected->activity->slope[k] * (int32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k]);
             time_step += (uint32_t)tpl_kern_resurrect.elected->activity->current_time_activity[k];
         }
     }
@@ -250,10 +250,16 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       #if WITH_TIMER_ACTIVITY
       /* Check if startup or not */
       if((tpl_kern_resurrect.elected != NULL) & (tpl_resurrect_energy.wake_up == FALSE)){
-          voltage_harvested = (((uint32_t)voltageInMillis)*1000 - voltage_worst_case) - (voltage_consumed - voltage_worst_case);
-          float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
-          /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
-          power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
+          voltage_harvested = (((int32_t)voltageInMillis)*1000 - voltage_worst_case) - (voltage_consumed - voltage_worst_case);
+          if(voltage_harvested < 0) {
+              voltage_harvested = 0;
+              power_harvested = 0;
+          }
+          else{
+            float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
+            /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
+            power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
+          }
           // power_harvested = voltage_harvested / (int32_t) time_step;
           #ifdef debug_bet
           // #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
