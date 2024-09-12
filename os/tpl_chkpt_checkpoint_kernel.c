@@ -135,7 +135,7 @@ void tpl_RTC_init()
     RTCAMIN = (PERIOD_WAKE_UP | (1<<7));
     // Interrupt from alarm
     RTCCTL0_L = RTCAIE;
-    RTCCTL0_H = 0x0;
+    // RTCCTL0_H = 0x0;
     // start rtc
     RTCCTL1 &= ~(RTCHOLD);
 }
@@ -175,7 +175,7 @@ void tpl_RTC_init()
     }
     // Interrupt from alarm
     RTCCTL0_L = RTCAIE;
-    RTCCTL0_H = 0x0;
+    // RTCCTL0_H = 0x0;
     // start rtc
     RTCCTL1 &= ~(RTCHOLD);
  }
@@ -193,6 +193,9 @@ uint8_t tpl_lpm_hibernate()
     Disable TIMER3_A0 interrupt
     in LPM3, ACLK is still active
   */
+  /* SMCLK OFF */
+  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+  CSCTL4 &= BIT1;
   // TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
   __bis_SR_register(LPM3_bits + GIE);
@@ -200,6 +203,9 @@ uint8_t tpl_lpm_hibernate()
   __bic_SR_register(GIE);
   /* Restore TIMER3_A0 interrupt */
   // TA3CCTL0 |= CCIE;
+  /* SMCLK ON */
+  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+  CSCTL4 |= BIT1;
   return 1;
 }
 
@@ -366,12 +372,12 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             }
             uint8_t sleep_time_second = (uint8_t) hibernate_time_second;
             #ifdef debug_bet
-            // tpl_serial_print_string("s: ");
-            // tpl_serial_print_int(hibernate_time_second,0);
-            // tpl_serial_print_string("\n");
-            // tpl_serial_print_string("m: ");
-            // tpl_serial_print_int(hibernate_time_minute,0);
-            // tpl_serial_print_string("\n");
+            tpl_serial_print_string("s: ");
+            tpl_serial_print_int(sleep_time_second,0);
+            tpl_serial_print_string("\n");
+            tpl_serial_print_string("m: ");
+            tpl_serial_print_int(sleep_time_minute,0);
+            tpl_serial_print_string("\n");
             #endif
             tpl_resurrect_energy.hibernate_second = sleep_time_second;
             tpl_resurrect_energy.hibernate_minute = sleep_time_minute;
@@ -413,7 +419,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
               voltageInMillis = energy*3/5;
             }
             /* Now compare with previous measurement and sleeping time */
-            if(voltageInMillis <= tpl_resurrect_energy.v_before_sleeping) {
+            if(voltageInMillis > tpl_resurrect_energy.v_before_sleeping) {
                 uint32_t voltage_harvested = (((uint32_t)voltageInMillis)*1000 - ((uint32_t)tpl_resurrect_energy.v_before_sleeping)*1000);
                 float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
                 /* Time in ms */

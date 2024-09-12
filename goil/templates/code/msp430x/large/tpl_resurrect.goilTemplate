@@ -149,16 +149,10 @@ void init_ptr_current_time(){
   ptr_current_time = tpl_kern_resurrect.elected->activity->current_time_activity;
   return;
 }
-uint16_t time_millisec_activity;
-
-uint16_t time_microsec_activity;
 
 uint8_t isr_timer_activity_count;
 
 void start_timer_activity(){
-  /* reset previous measure */
-  //time_millisec_activity = 0;
-  //time_microsec_activity = 0;
   isr_timer_activity_count = 0;       /* count the numbe rof time we entered the interruption (ie x*6.5536 s) */
   /* Set up timer TA2 with ACLK. ACLK is set to LFXTCLK at start : 32.768 kHz */
   // TA2CCR0 = 0;          /* lock the timer */
