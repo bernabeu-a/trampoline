@@ -246,7 +246,6 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
             power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
           }
-          // power_harvested = voltage_harvested / (int32_t) time_step;
           #ifdef debug_bet
           // #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
           #endif
@@ -364,7 +363,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
                 if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
 
-                _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+                _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(2.0));
 
                 tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
                 if (tpl_resurrect_energy.proba_power < 1.0){
@@ -373,8 +372,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                     #endif
                 }
             }
-            if (tpl_resurrect_energy.proba_power > proba_threshold)
-            // if (tpl_resurrect_energy.proba > 0.9)
+            if (tpl_resurrect_energy.proba_power >= proba_threshold)
             #else
             if (voltageInMillis >= tmp_ptr_step->energy)
             #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
