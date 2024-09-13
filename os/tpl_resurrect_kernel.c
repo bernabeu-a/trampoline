@@ -357,7 +357,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
                 /* We have prediction_v as V^2 -> to q12 for division and sqrt */
                 _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-                /* Current voltage is in milliVolt, scale to µV */
+                /* Current voltage is in milliVolt, scale to V */
                 float voltageInMillis_float = ((float)voltageInMillis / 1000.0);
                 _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
                 _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;

@@ -198,7 +198,7 @@ uint8_t tpl_lpm_hibernate()
   // CSCTL4 &= BIT1;
   // TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
-  __bis_SR_register(LPM3_bits + GIE);
+  __bis_SR_register(LPM1_bits + GIE);
   /* remove interrupts (we are in kernel mode) */
   __bic_SR_register(GIE);
   /* Restore TIMER3_A0 interrupt */
@@ -335,15 +335,19 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 #ifdef debug_bet
 
                 #endif
-                int32_t diff_v2 = diff_v * diff_v;
+                /* scale down to V */
+                float diff_v_float = ((float)diff_v / 1000.0);
+                /* Q12 for power 2 */
+                _q12 diff_v_q12 = _Q12mpy(_Q12(diff_v_float), _Q12(diff_v_float));
+                // int32_t diff_v2 = diff_v * diff_v;
                 // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
                 // hibernate_pred *= hibernate_pred;
-                float diff_v2_float = (float) diff_v2;
+                float diff_v2_float = _Q12toF(diff_v_q12);
                 /* 6.8 = 6800000 / 1000000 (6800000 nF / 1000000 (mV² --> V²)) */
-                float hibernate_pred = ((float)(diff_v2_float) * 6.8)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+                float hibernate_pred = (diff_v2_float * 6800000)/(2*(float)tpl_resurrect_energy.power_prediction);
                 /* Compute minutes and second for RTC setup */
                 // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
-                uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);
+                uint16_t hibernate_time_second = (uint16_t)(hibernate_pred / 1000);
                 uint8_t sleep_time_minute = 0;
                 while(hibernate_time_second > 60){
                     sleep_time_minute++;
@@ -359,6 +363,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 // tpl_serial_print_string("\n");
                 #endif
                 /* Borner le max d'hibernation */
+                if(sleep_time_minute > 2) sleep_time_minute = 2;
                 tpl_resurrect_energy.hibernate_second = sleep_time_second;
                 tpl_resurrect_energy.hibernate_minute = sleep_time_minute;
                 tpl_RTC_init_time(sleep_time_second, sleep_time_minute);
