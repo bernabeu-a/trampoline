@@ -329,6 +329,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             int32_t diff_v = (int32_t)tmp_step_energy - (int32_t)voltageInMillis;
             if(diff_v < 0){
                 /*  */
+                tpl_resurrect_energy.hibernate_second = 20;
+                tpl_resurrect_energy.hibernate_minute = 0;
                 tpl_RTC_init();
             }
             else{
@@ -402,19 +404,21 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             /* Now compare with previous measurement and sleeping time */
             if(voltageInMillis > tpl_resurrect_energy.v_before_sleeping) {
                 uint32_t voltage_harvested = (((uint32_t)voltageInMillis)*1000 - ((uint32_t)tpl_resurrect_energy.v_before_sleeping)*1000);
-                float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
-                /* Time in ms */
-                float time_hibernation_ms = ((uint32_t)tpl_resurrect_energy.hibernate_second * 1000) + (60000 * (uint32_t)tpl_resurrect_energy.hibernate_minute);
-                float power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / (time_hibernation_ms);
-                const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
-                tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
-                if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
-                    tpl_resurrect_energy.power_previous_harvesting->current_size++;
+                if(voltage_harvested > 0) {
+                    float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
+                    /* Time in ms */
+                    float time_hibernation_ms = ((uint32_t)tpl_resurrect_energy.hibernate_second * 1000) + (60000 * (uint32_t)tpl_resurrect_energy.hibernate_minute);
+                    float power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / (time_hibernation_ms);
+                    const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
+                    tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
+                    if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
+                        tpl_resurrect_energy.power_previous_harvesting->current_size++;
+                    }
+                    if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
+                        tpl_resurrect_energy.power_previous_harvesting->index = 0;
+                    }
+                    tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
                 }
-                if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
-                    tpl_resurrect_energy.power_previous_harvesting->index = 0;
-                }
-                tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
             }
             #endif
         }
