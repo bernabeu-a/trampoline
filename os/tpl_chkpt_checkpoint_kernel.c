@@ -339,8 +339,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
                 // hibernate_pred *= hibernate_pred;
                 float diff_v2_float = (float) diff_v2;
-                /* Hardcoder les calculs floattants  */
-                float hibernate_pred = ((float)(diff_v2_float / 1000000.0) * 6800000.0)/(2*(float)tpl_resurrect_energy.power_prediction) ;
+                /* 6.8 = 6800000 / 1000000 (6800000 nF / 1000000 (mV² --> V²)) */
+                float hibernate_pred = ((float)(diff_v2_float) * 6.8)/(2*(float)tpl_resurrect_energy.power_prediction) ;
                 /* Compute minutes and second for RTC setup */
                 // float hibernate_time_us = (float)tmp_step_energy - (float)voltageInMillis/(float)tpl_resurrect_energy.power_prediction;
                 uint32_t hibernate_time_second = (uint32_t)(hibernate_pred / 1000.0);

@@ -362,6 +362,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
                 _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;
 
+                /* Ensure at least 0.1V of variance (usefull ?) */
                 if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
 
                 _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
