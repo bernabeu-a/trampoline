@@ -263,32 +263,33 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         }
     }
     #if WITH_BET == YES
-    // float proba_threshold;
-    // proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
-    // if(tpl_resurrect_energy.power_prediction != 0){
-    //     /* Proba_threshold should at least be 0.5 */
-    //     if(proba_threshold < 0.5){
-    //         proba_threshold = 0.5;
-    //     }
-    //     uint32_t time_tmp_step = 0;
-    //     for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
-    //         time_tmp_step += tmp_ptr_step->activity->time_activity[i];
-    //     }
-    //     float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
-    //     /* We have nJ, so with nF as capacitance, we have V */
-    //     float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
-    //     /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
-    //     _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-    //     _q12 voltage_v = _Q12toF((float)voltageInMillis/1000.0);
-    //     /* Delta_v is in nanoVolt */
-    //     float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
-    //     _q12 delta_v_q12 = _Q12(delta_v);
-    //     _q12 mu = voltage_v - delta_v_q12 + prediction_v;
-    //     _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
-    //     tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
-    // }
-    // if (tpl_resurrect_energy.proba_power > proba_threshold)
-    if(voltageInMillis > tmp_step_energy)
+    float proba_threshold;
+    if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
+    proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+    if(tpl_resurrect_energy.power_prediction != 0){
+        /* Proba_threshold should at least be 0.5 */
+        if(proba_threshold < 0.5){
+            proba_threshold = 0.5;
+        }
+        uint32_t time_tmp_step = 0;
+        for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
+            time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+        }
+        float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
+        /* We have nJ, so with nF as capacitance, we have V */
+        float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
+        /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
+        _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
+        _q12 voltage_v = _Q12toF((float)voltageInMillis/1000.0);
+        /* Delta_v is in nanoVolt */
+        float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
+        _q12 delta_v_q12 = _Q12(delta_v);
+        _q12 mu = voltage_v - delta_v_q12 + prediction_v;
+        _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+        tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+    }
+    if (tpl_resurrect_energy.proba_power > proba_threshold)
+    // if(voltageInMillis > tmp_step_energy)
     #else
     if(voltageInMillis > tmp_step_energy)
     #endif /* WITH_ENERGY_PREDICTION & WITH_BET */
@@ -661,6 +662,8 @@ FUNC(void, OS_CODE) tpl_restart_os_service(void)
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
     tpl_resurrect_energy.power_prediction = 0;
+    tpl_kern_resurrect.award = 0;
+
     #endif
 
     tpl_choose_next_step();

@@ -333,7 +333,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             float proba_threshold;
             if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
             proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
-            /* Proba_threshold should at least be 0.5 */
+            /* Proba_threshold should at least be 0.5 (we don't take more than 50% risk of power failure */
             if(proba_threshold < 0.5){
                 proba_threshold = 0.5;
             }
