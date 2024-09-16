@@ -327,81 +327,86 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             }
         }
         else{
-            #if WITH_ENERGY_PREDICTION & WITH_BET == 0
-            if ((voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy) & (tmp_ptr_step != NULL))
-            #elif WITH_ENERGY_PREDICTION & WITH_BET == 1
-            float proba_threshold;
-            if((tpl_kern_resurrect.award == 0) & (tmp_ptr_step != NULL)) tpl_kern_resurrect.award = tmp_ptr_step->award;
-            if (tmp_ptr_step != NULL) {
+            if(tmp_ptr_step != NULL){
+                #if WITH_ENERGY_PREDICTION & WITH_BET == 0
+                if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy)
+                #elif WITH_ENERGY_PREDICTION & WITH_BET == 1
+                float proba_threshold;
+                if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
                 proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
-            }
-            /* Proba_threshold should at least be 0.5 (we don't take more than 50% risk of power failure */
-            if(proba_threshold < 0.5){
-                proba_threshold = 0.5;
-            }
-            /* If above voltage level, no need to compute probability of failing */
-            if ((voltageInMillis >= tmp_ptr_step->energy) & (tmp_ptr_step != NULL)){
-                tpl_resurrect_energy.proba_power = 1.0;
-            }
-            else{
-                /* With power, we add every worstcase time to obtain time of the step */
-                uint32_t time_tmp_step = 0;
-                for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
-                    time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+
+                /* Proba_threshold should at least be 0.5 (we don't take more than 50% risk of power failure */
+                if(proba_threshold < 0.5){
+                    proba_threshold = 0.5;
                 }
-                /* Delta_v is in nanoVolt */
-                float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
-                _q12 delta_v_q12 = _Q12(delta_v);
-                /* Power prediction is in µW, time is in ms, we then have nJ */
-                float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float)time_tmp_step);
-                /* We want to have V from power prediction -> V = sqrt(2*P*T/C) */
-                /* We have nJ, so with nF as capacitance, we have V */
-                float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
-                /* We have prediction_v as V^2 -> to q12 for division and sqrt */
-                _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-                /* Current voltage is in milliVolt, scale to V */
-                float voltageInMillis_float = ((float)voltageInMillis / 1000.0);
-                _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
-                _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;
-
-                /* Ensure at least 0.1V of variance (usefull ?) */
-                if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
-
-                _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
-
-                tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
-                if (tpl_resurrect_energy.proba_power < 1.0){
-                    #ifndef BARD
-                    P1OUT ^= BIT4;
-                    #endif
-                }
-            }
-            if ((tpl_resurrect_energy.proba_power > proba_threshold) & (tmp_ptr_step != NULL))
-            #else
-            if (voltageInMillis >= tmp_ptr_step->energy)
-            #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
-            {
-            #if WITH_RESURRECT_EVENT == YES
-            VAR(uint8, AUTOMATIC) j;
-            VAR(uint16, AUTOMATIC) mask = 0x0001;
-            for(j = 0; j < RESURRECT_EVENT_COUNT; j++){
-                if(((tpl_kern_resurrect.state_event & mask)>>j) == (tmp_ptr_step->resurrect_event[j])){
-                mask = mask<<1;
+                /* If above voltage level, no need to compute probability of failing */
+                if (voltageInMillis >= tmp_ptr_step->energy){
+                    tpl_resurrect_energy.proba_power = 1.0;
                 }
                 else{
-                    break;
+                    /* With power, we add every worstcase time to obtain time of the step */
+                    uint32_t time_tmp_step = 0;
+                    for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
+                        time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+                    }
+                    /* Delta_v is in nanoVolt */
+                    float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
+                    _q12 delta_v_q12 = _Q12(delta_v);
+                    /* Power prediction is in µW, time is in ms, we then have nJ */
+                    float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float)time_tmp_step);
+                    /* We want to have V from power prediction -> V = sqrt(2*P*T/C) */
+                    /* We have nJ, so with nF as capacitance, we have V */
+                    float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
+                    /* We have prediction_v as V^2 -> to q12 for division and sqrt */
+                    _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
+                    /* Current voltage is in milliVolt, scale to V */
+                    float voltageInMillis_float = ((float)voltageInMillis / 1000.0);
+                    _q12 voltageInMillis_q12 = _Q12(voltageInMillis_float);
+                    _q12 mu = voltageInMillis_q12 - delta_v_q12 + prediction_v;
+
+                    /* Ensure at least 0.1V of variance (usefull ?) */
+                    if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
+
+                    _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+
+                    tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+                    if (tpl_resurrect_energy.proba_power < 1.0){
+                        #ifndef BARD
+                        P1OUT ^= BIT4;
+                        #endif
+                    }
                 }
+                if (tpl_resurrect_energy.proba_power > proba_threshold)
+                #else
+                if (voltageInMillis >= tmp_ptr_step->energy)
+                #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
+                {
+                #if WITH_RESURRECT_EVENT == YES
+                VAR(uint8, AUTOMATIC) j;
+                VAR(uint16, AUTOMATIC) mask = 0x0001;
+                for(j = 0; j < RESURRECT_EVENT_COUNT; j++){
+                    if(((tpl_kern_resurrect.state_event & mask)>>j) == (tmp_ptr_step->resurrect_event[j])){
+                    mask = mask<<1;
+                    }
+                    else{
+                        break;
+                    }
+                    tpl_kern_resurrect.elected = tmp_ptr_step;
+                    ptr_step = tmp_ptr_step;
+                }
+                #else
                 tpl_kern_resurrect.elected = tmp_ptr_step;
                 ptr_step = tmp_ptr_step;
+                break;
+                #endif /* WITH_RESURRECT_EVENT */
+                }
             }
-            #else
-            tpl_kern_resurrect.elected = tmp_ptr_step;
-            ptr_step = tmp_ptr_step;
-            break;
-            #endif /* WITH_RESURRECT_EVENT */
+            else{
+                ptr_step = tmp_ptr_step;
             }
         }
       }
+
       /* Not enough energy to elect next step --> hibernate */
       #if WITH_BET
       /* If accumulated award reaches a threshold, we chkpt --> ptr_step == NULL --> break while loop */
