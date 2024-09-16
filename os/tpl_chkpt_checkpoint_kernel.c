@@ -253,21 +253,25 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     #endif
     #if WITH_RESURRECT == YES
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step = NULL;
+    P2VAR(tpl_step, AUTOMATIC, OS_VAR) tmp_ptr_step_chosen = NULL;
     CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)
     ptr_state = tpl_step_state[tpl_kern_resurrect.state];
     uint8_t i;
     uint32 tmp_step_energy = 0xFFFFFFFF;
+
     for (i = 0; i < ENERGY_LEVEL_COUNT; i++){
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
         if(tmp_ptr_step == NULL) continue;
         if(tmp_ptr_step->energy < tmp_step_energy){
           tmp_step_energy = tmp_ptr_step->energy;
+          tmp_ptr_step_chosen = tmp_ptr_step;
         }
     }
     #if WITH_BET == YES
+
     float proba_threshold;
-    if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
-    proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+    if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step_chosen->award;
+    proba_threshold = 1.0 - ((float)tmp_ptr_step_chosen->award / (float) tpl_kern_resurrect.award);
     /* Proba_threshold should at least be 0.5 */
     if(proba_threshold < 0.5){
         proba_threshold = 0.5;
@@ -279,8 +283,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     }
     else{
         uint32_t time_tmp_step = 0;
-        for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
-            time_tmp_step += tmp_ptr_step->activity->time_activity[i];
+        for(i=0; i<tmp_ptr_step_chosen->activity->nb_activity; i++){
+            time_tmp_step += tmp_ptr_step_chosen->activity->time_activity[i];
         }
         float prediction_from_power = (float) ((float)tpl_resurrect_energy.power_prediction * (float) time_tmp_step);
         /* We have nJ, so with nF as capacitance, we have V */
@@ -289,7 +293,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
         _q12 voltage_v = _Q12toF((float)voltageInMillis/1000.0);
         /* Delta_v is in nanoVolt */
-        float delta_v = ((float) tmp_ptr_step->delta_v / 1000000000.0);
+        float delta_v = ((float) tmp_ptr_step_chosen->delta_v / 1000000000.0);
         _q12 delta_v_q12 = _Q12(delta_v);
         _q12 mu = voltage_v - delta_v_q12 + prediction_v;
         _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
@@ -347,7 +351,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 #endif
                 /* scale down to V */
                 float diff_v_float = ((float)diff_v / 1000.0);
-                /* Q12 for Power 2 */
+                /* Q12 for power 2 */
                 _q12 diff_v_q12 = _Q12mpy(_Q12(diff_v_float), _Q12(diff_v_float));
                 // int32_t diff_v2 = diff_v * diff_v;
                 // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
