@@ -331,6 +331,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy)
             #elif WITH_ENERGY_PREDICTION & WITH_BET == 1
             float proba_threshold;
+            if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
             proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
             /* Proba_threshold should at least be 0.5 */
             if(proba_threshold < 0.5){

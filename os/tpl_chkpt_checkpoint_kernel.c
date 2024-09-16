@@ -198,7 +198,7 @@ uint8_t tpl_lpm_hibernate()
   // CSCTL4 &= BIT1;
   // TA3CCTL0 &= ~CCIE;
   /* enters in LPM - enable interrupt for RTC*/
-  __bis_SR_register(LPM1_bits + GIE);
+  __bis_SR_register(LPM3_bits + GIE);
   /* remove interrupts (we are in kernel mode) */
   __bic_SR_register(GIE);
   /* Restore TIMER3_A0 interrupt */
@@ -329,8 +329,6 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             int32_t diff_v = (int32_t)tmp_step_energy - (int32_t)voltageInMillis;
             if(diff_v < 0){
                 /*  */
-                tpl_resurrect_energy.hibernate_second = 20;
-                tpl_resurrect_energy.hibernate_minute = 0;
                 tpl_RTC_init();
             }
             else{
@@ -409,24 +407,22 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             /* Now compare with previous measurement and sleeping time */
             if(voltageInMillis > tpl_resurrect_energy.v_before_sleeping) {
                 uint32_t voltage_harvested = (((uint32_t)voltageInMillis)*1000 - ((uint32_t)tpl_resurrect_energy.v_before_sleeping)*1000);
-                if(voltage_harvested > 0) {
-                    float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
-                    /* Time in ms */
-                    float time_hibernation_ms = ((uint32_t)tpl_resurrect_energy.hibernate_second * 1000) + (60000 * (uint32_t)tpl_resurrect_energy.hibernate_minute);
-                    float power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / (time_hibernation_ms);
-                    const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
-                    tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
-                    if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
-                        tpl_resurrect_energy.power_previous_harvesting->current_size++;
-                    }
-                    if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
-                        tpl_resurrect_energy.power_previous_harvesting->index = 0;
-                    }
-                    tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
+                float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
+                /* Time in ms */
+                float time_hibernation_ms = ((uint32_t)tpl_resurrect_energy.hibernate_second * 1000) + (60000 * (uint32_t)tpl_resurrect_energy.hibernate_minute);
+                float power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / (time_hibernation_ms);
+                const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
+                tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
+                if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
+                    tpl_resurrect_energy.power_previous_harvesting->current_size++;
                 }
+                if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
+                    tpl_resurrect_energy.power_previous_harvesting->index = 0;
+                }
+                tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
             }
-            #endif
         }
+        #endif
     }
     #endif /* WITH_RESURRECT == YES */
     #if WITH_RESURRECT == NO
@@ -470,9 +466,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
       #ifndef BARD
       P7OUT &= ~BIT0;
       #endif
-  }
     #endif /* WITH_RESURRECT == NO */
-  }
+	}
     /* If use BET, reset prediction and variance buffer */
     #if WITH_BET == YES
     // uint8_t index;
@@ -491,7 +486,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     // tpl_resurrect_energy.variance_buffer->index = 0;
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
-    tpl_resurrect_energy.wake_up = TRUE;
+    // tpl_resurrect_energy.wake_up = TRUE;
     /* And we reset award accumulated */
     tpl_kern_resurrect.award = 0;
 
