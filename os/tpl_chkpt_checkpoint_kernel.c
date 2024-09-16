@@ -291,11 +291,12 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         float prediction_v2 = (2 * prediction_from_power) / 6800000.0;
         /* We have prediction_v2 as v^2 -> to q12 for division and sqrt */
         _q12 prediction_v = _Q12sqrt(_Q12(prediction_v2));
-        _q12 voltage_v = _Q12toF((float)voltageInMillis/1000.0);
+        _q12 voltage_v = _Q12((float)voltageInMillis/1000.0);
         /* Delta_v is in nanoVolt */
         float delta_v = ((float) tmp_ptr_step_chosen->delta_v / 1000000000.0);
         _q12 delta_v_q12 = _Q12(delta_v);
         _q12 mu = voltage_v - delta_v_q12 + prediction_v;
+        if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
         _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
         tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
     }
