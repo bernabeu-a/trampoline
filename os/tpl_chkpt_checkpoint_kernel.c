@@ -225,6 +225,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   tpl_checkpoint_buffer = l_buffer;
 
   uint16_t waiting_loop = 1;
+  /* We reset award accumulated as we checkpointed just before, we can take more risk */
+  tpl_kern_resurrect.award = 0;
 
   while(waiting_loop){
     /* Get energy level from ADC */
@@ -266,11 +268,16 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     float proba_threshold;
     if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
     proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
-    if(tpl_resurrect_energy.power_prediction != 0){
-        /* Proba_threshold should at least be 0.5 */
-        if(proba_threshold < 0.5){
-            proba_threshold = 0.5;
-        }
+    /* Proba_threshold should at least be 0.5 */
+    if(proba_threshold < 0.5){
+        proba_threshold = 0.5;
+    }
+    /* If above voltage level, no need to compute probability of failing */
+    if (voltageInMillis >= tmp_step_energy)
+    {
+        tpl_resurrect_energy.proba_power = 1.0;
+    }
+    else{
         uint32_t time_tmp_step = 0;
         for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
             time_tmp_step += tmp_ptr_step->activity->time_activity[i];
@@ -327,9 +334,11 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         if(tpl_resurrect_energy.power_prediction != 0){
             /* Use prediction to compute hibernation time */
             /* hibernate pred is in ms */
+            /* !!! diff_v can be < 0 ? !!! */
             int32_t diff_v = (int32_t)tmp_step_energy - (int32_t)voltageInMillis;
             if(diff_v < 0){
                 /*  */
+                P6OUT ^= BIT0;
                 tpl_RTC_init();
             }
             else{
@@ -338,7 +347,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 #endif
                 /* scale down to V */
                 float diff_v_float = ((float)diff_v / 1000.0);
-                /* Q12 for power 2 */
+                /* Q12 for Power 2 */
                 _q12 diff_v_q12 = _Q12mpy(_Q12(diff_v_float), _Q12(diff_v_float));
                 // int32_t diff_v2 = diff_v * diff_v;
                 // float hibernate_pred = ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0))) * ((((float)tmp_step_energy/1000.0)) - (((float)voltageInMillis/1000.0)));
@@ -371,6 +380,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
             }
         }
         else{
+            P6OUT ^= BIT1;
             tpl_RTC_init(); //startRTC => interrupt next 1 min
         }
         #else
@@ -488,8 +498,6 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
 
     /* We set wake up to one, to avoid doing a prediction for the next step */
     // tpl_resurrect_energy.wake_up = TRUE;
-    /* And we reset award accumulated */
-    tpl_kern_resurrect.award = 0;
 
     #endif
 
