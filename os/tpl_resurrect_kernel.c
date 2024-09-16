@@ -180,7 +180,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     #ifndef BARD
     P1OUT |= BIT2;
     #endif
-    VAR(uint16, AUTOMATIC) i;
+    VAR(uint8_t, AUTOMATIC) i;
     CONSTP2CONST(tpl_step_ref, AUTOMATIC, OS_VAR)
     ptr_state = tpl_step_state[tpl_kern_resurrect.state];
     P2VAR(tpl_step, AUTOMATIC, OS_VAR) ptr_step = NULL;
@@ -305,7 +305,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         #else
         if (tpl_kern_resurrect.elected == NULL) {
         #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
-            if (voltageInMillis >= tmp_ptr_step->energy){
+            if ((voltageInMillis >= tmp_ptr_step->energy) & (tmp_ptr_step != NULL)){
                   #if WITH_RESURRECT_EVENT == YES
                   VAR(uint8, AUTOMATIC) j;
                   VAR(uint16, AUTOMATIC) mask = 0x0001;
@@ -328,18 +328,19 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         }
         else{
             #if WITH_ENERGY_PREDICTION & WITH_BET == 0
-            if (voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy)
+            if ((voltageInMillis + (uint16_t)(tpl_resurrect_energy.prediction >> 3) >= tmp_ptr_step->energy) & (tmp_ptr_step != NULL))
             #elif WITH_ENERGY_PREDICTION & WITH_BET == 1
             float proba_threshold;
-            if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step->award;
-            proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+            if((tpl_kern_resurrect.award == 0) & (tmp_ptr_step != NULL)) tpl_kern_resurrect.award = tmp_ptr_step->award;
+            if (tmp_ptr_step != NULL) {
+                proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
+            }
             /* Proba_threshold should at least be 0.5 (we don't take more than 50% risk of power failure */
             if(proba_threshold < 0.5){
                 proba_threshold = 0.5;
             }
             /* If above voltage level, no need to compute probability of failing */
-            if (voltageInMillis >= tmp_ptr_step->energy)
-            {
+            if ((voltageInMillis >= tmp_ptr_step->energy) & (tmp_ptr_step != NULL)){
                 tpl_resurrect_energy.proba_power = 1.0;
             }
             else{
@@ -375,7 +376,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                     #endif
                 }
             }
-            if (tpl_resurrect_energy.proba_power > proba_threshold)
+            if ((tpl_resurrect_energy.proba_power > proba_threshold) & (tmp_ptr_step != NULL))
             #else
             if (voltageInMillis >= tmp_ptr_step->energy)
             #endif /* WITH_ENERGY_PREDICTION - WITH_BET */

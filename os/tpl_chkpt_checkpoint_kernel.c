@@ -298,7 +298,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     if (tpl_resurrect_energy.proba_power > proba_threshold)
     // if(voltageInMillis > tmp_step_energy)
     #else
-    if(voltageInMillis > tmp_step_energy)
+    if(voltageInMillis >= tmp_step_energy)
     #endif /* WITH_ENERGY_PREDICTION & WITH_BET */
     {
         tpl_RTC_stop();
