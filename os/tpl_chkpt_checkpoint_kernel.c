@@ -295,7 +295,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         /* Delta_v is in nanoVolt */
         float delta_v = ((float) tmp_ptr_step_chosen->delta_v / 1000000000.0);
         _q12 delta_v_q12 = _Q12(delta_v);
-        _q12 mu = voltage_v - delta_v_q12 + prediction_v;
+        _q12 mu = voltage_v - delta_v_q12 + prediction_v - 410;
         if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
         _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
         tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);

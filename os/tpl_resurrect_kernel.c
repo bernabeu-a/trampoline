@@ -209,6 +209,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     #endif /* WITH_TIMER_ACTIVITY */
 
     P2VAR(uint16_t, AUTOMATIC, OS_VAR) result_adc_adc = &result_adc;
+    uint16_t voltageInMillis;
     while (ptr_step == NULL)
     {
       /* Get energy level from ADC */
@@ -219,7 +220,6 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
       // uint16_t energy = (~result_adc)+1;
       uint16_t energy = result_adc;
-      uint16_t voltageInMillis;
       if(energy == 0x0FFF){
         use1V2Ref = false;
         tpl_adc_init_simple(use1V2Ref, result_adc_adc);
@@ -436,12 +436,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
         #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
       }
-      /* Save Energy at start if starting a step */
-      #if WITH_TIMER_ACTIVITY
-      tpl_kern_resurrect.energy_at_start = voltageInMillis;
-      #endif /* WITH_TIMER_ACTIVITY */
     }
-
+    #if WITH_TIMER_ACTIVITY
+    /* Save Energy at start if starting a step */
+    tpl_kern_resurrect.energy_at_start = voltageInMillis;
+    #endif /* WITH_TIMER_ACTIVITY */
     #if WITH_ENERGY_PREDICTION & WITH_BET == 1
     tpl_resurrect_energy.wake_up = FALSE;
     #endif /* WITH_ENERGY_PREDICTION - WITH_BET */
