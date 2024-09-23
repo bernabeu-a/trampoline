@@ -225,9 +225,10 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
   tpl_checkpoint_buffer = l_buffer;
 
   uint16_t waiting_loop = 1;
+  #if WITH_BET
   /* We reset award accumulated as we checkpointed just before, we can take more risk */
   tpl_kern_resurrect.award = 0;
-
+  #endif /* WITH_BET */
   while(waiting_loop){
     /* Get energy level from ADC */
     bool use1V2Ref = true;
@@ -273,8 +274,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     if(tpl_kern_resurrect.award == 0) tpl_kern_resurrect.award = tmp_ptr_step_chosen->award;
     proba_threshold = 1.0 - ((float)tmp_ptr_step_chosen->award / (float) tpl_kern_resurrect.award);
     /* Proba_threshold should at least be 0.5 */
-    if(proba_threshold < 0.5){
-        proba_threshold = 0.5;
+    if(proba_threshold < 0.75){
+        proba_threshold = 0.75;
     }
     /* If above voltage level, no need to compute probability of failing */
     if (voltageInMillis >= tmp_step_energy)
@@ -295,7 +296,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         /* Delta_v is in nanoVolt */
         float delta_v = ((float) tmp_ptr_step_chosen->delta_v / 1000000000.0);
         _q12 delta_v_q12 = _Q12(delta_v);
-        _q12 mu = voltage_v - delta_v_q12 + prediction_v - 410;
+        _q12 mu = voltage_v - delta_v_q12 + prediction_v;
         if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
         _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
         tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
@@ -306,6 +307,11 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
     if(voltageInMillis >= tmp_step_energy)
     #endif /* WITH_ENERGY_PREDICTION & WITH_BET */
     {
+        #if WITH_BET
+        /* Set flag to 1 to skip proba computation in tpl_choose_next */
+        tpl_kern_resurrect.schedule_from_hibernate = TRUE;
+        tpl_kern_resurrect.elected = tmp_ptr_step_chosen;
+        #endif /* WITH_BET */
         tpl_RTC_stop();
 		waiting_loop = 0;
 	}
@@ -386,6 +392,8 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         }
         else{
             P6OUT ^= BIT1;
+            tpl_resurrect_energy.hibernate_second = 20;
+            tpl_resurrect_energy.hibernate_minute = 0;
             tpl_RTC_init(); //startRTC => interrupt next 1 min
         }
         #else
@@ -399,7 +407,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         P7OUT &= ~BIT0;
         #endif
         #if WITH_BET == YES
-        if(tpl_resurrect_energy.power_prediction != 0){
+        // if(tpl_resurrect_energy.power_prediction != 0){
             /* With BET, we update the prediction with a new measurement after sleeping */
             /* Get energy level from ADC */
             bool use1V2Ref = true;
@@ -437,7 +445,7 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
                 }
                 tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
             }
-        }
+        // }
         #endif
     }
     #endif /* WITH_RESURRECT == YES */

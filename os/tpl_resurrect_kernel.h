@@ -100,6 +100,7 @@ typedef struct
   #endif /* WITH_TIMER_ACTIVITY */
   #if WITH_BET
   VAR(uint16_t, TYPEDEF) award;
+  VAR(uint8_t, TYPEDEF) schedule_from_hibernate;
   #endif /* WITH_BET */
 } tpl_kern_resurrect_state;
 

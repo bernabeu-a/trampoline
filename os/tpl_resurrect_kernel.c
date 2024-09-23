@@ -336,8 +336,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 proba_threshold = 1.0 - ((float)tmp_ptr_step->award / (float) tpl_kern_resurrect.award);
 
                 /* Proba_threshold should at least be 0.5 (we don't take more than 50% risk of power failure */
-                if(proba_threshold < 0.5){
-                    proba_threshold = 0.5;
+                if(proba_threshold < 0.75){
+                    proba_threshold = 0.75;
                 }
                 /* If above voltage level, no need to compute probability of failing */
                 if (voltageInMillis >= tmp_ptr_step->energy){
@@ -424,6 +424,11 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         P8OUT &= ~BIT0;
         #if WITH_BET == YES
 
+        if(tpl_kern_resurrect.schedule_from_hibernate == TRUE){
+            /* Reset flag */
+            tpl_kern_resurrect.schedule_from_hibernate = FALSE;
+            break;
+        }
         /* Might have sleep for some time, reset previous harvesting data */
         // tpl_resurrect_energy.previous_harvesting->current_size = 0;
         // tpl_resurrect_energy.previous_harvesting->index = 0;

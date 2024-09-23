@@ -546,7 +546,8 @@ VAR(tpl_kern_resurrect_state, OS_VAR) tpl_kern_resurrect =
   end if
   if OS::RESURRECT_S::BET then
   %
-  0                         /* Award accumulated with steps */%
+  0,                        /* Award accumulated with steps */
+  FALSE                     /* With BET, TRUE when schedule from hibernate */%
   end if
 %
 };
