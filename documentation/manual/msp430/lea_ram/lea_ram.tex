@@ -1,0 +1,71 @@
+\documentclass[11pt, oneside]{article}
+\usepackage{geometry}  
+\geometry{letterpaper} 
+\usepackage{graphicx}
+\usepackage{amssymb}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{anyfontsize}
+\usepackage{tikz}
+\usetikzlibrary{patterns,calc}
+
+\newcommand{\sch}{\lstinline{tpl_sc_handler}}
+
+\title{MSP430X lea RAM - proposition}
+\author{Antoine Bernabeu}
+
+\lstset{
+	basicstyle=\footnotesize\ttfamily,
+	backgroundcolor=\color{lightgray!30},
+	frame=single, framerule=0pt
+}
+
+\begin{document}
+\maketitle
+
+\section{Contexte}
+Pouvoir utiliser le LEA (low energy accelerator) pour les micro-contrôleurs MSP430x.
+
+Le LEA utilise une section de la RAM partagée avec le CPU. Ainsi, il faut décomposer la section RAM afin de pouvoir placer les variables utilisées par le LEA dans la section partagée avec le CPU.
+
+\section{Proposition}
+
+Comme le montre la figure \ref{memory_map}, la RAM est décomposée en 2 parties de 4 kB. Une partie est partagée avec le LEA, il faut donc pouvoir mettre les variables utilisées par le LEA dans cette section de mémoire.
+\begin{figure}
+\caption{Mapping mémoire pour le MSP430FR5994}
+\includegraphics[scale=0.5]{memory_map.png}
+\label{memory_map}
+\end{figure}
+
+Dans un premier temps, au niveau du fichier script.ld, on modifie la partie "MEMORY". Ainsi on passerai de \ref{mem_avant} à \ref{mem_apres}.
+
+\begin{figure}
+\caption{Memory avant}
+\begin{lstlisting}
+MEMORY
+{
+  VECTOR (rx) : ORIGIN = 0x0FFB4, LENGTH = 0x4C   /* ends at 0x10000, 76 bytes - 38 vectors */
+  FLASH (rx)  : ORIGIN = 0x04000, LENGTH = 0xBF80 /* ends at 0xff80. size is 47,875k */
+  RAM (xrw)   : ORIGIN = 0x01C00, LENGTH = 0x2000 /* size is 8k */
+}
+\end{lstlisting}
+\label{mem_avant}
+\end{figure}
+
+\begin{figure}
+\caption{Memory après}
+\begin{lstlisting}
+MEMORY
+{
+  VECTOR (rx) : ORIGIN = 0x0FFB4, LENGTH = 0x4C   /* ends at 0x10000, 76 bytes - 38 vectors */
+  FLASH (rx)  : ORIGIN = 0x04000, LENGTH = 0xBF80 /* ends at 0xff80. size is 47,875k */
+  RAM (xrw)   : ORIGIN = 0x01C00, LENGTH = 0x1000 /* size is 4k */
+  LEA_RAM (xrw)  :ORIGIN = 0x02C00, LENGTH = 0x1000 /* size is 4k */
+}
+\end{lstlisting}
+\label{mem_apres}
+\end{figure}
+
+\end{document}
