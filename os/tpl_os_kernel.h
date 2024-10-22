@@ -236,6 +236,7 @@ struct TPL_PROC {
     entry;              /**<  function that is the entry point
                               of the task/isr                                */
   #endif /* WITH_RESURRECT */
+  VAR(tpl_isr2_wake_up_from_lpm, AUTOMATIC) exit_from_lpm;        /**<  if > 0, the isr2 does not wake up from lpm */
 };
 
 /**

@@ -205,6 +205,8 @@ CPU msp430x {
     ASFILE = "framtr.S";
     CFILE = "tpl_checkpointing.c";
     CFILE = "tpl_checkpoint.c";
+    /* ISR2 with LPM */
+    CFILE = "tpl_lpm_isr2.c";
   };
 
   GENERATED_FILES msp430x {

@@ -188,6 +188,13 @@ typedef sint8 tpl_application_mode;
  */
 typedef P2FUNC(void, OS_APPL_CODE, tpl_callback_func)(void);
 
+
+/**
+ * @typedef tpl_isr2_wake_up_from_lpm
+ *
+ * Identifies either to wake up or not from an ISR2 call terminate
+ */
+ typedef uint8  tpl_isr2_wake_up_from_lpm;
 #endif /* TPL_OS_INTERNAL_TYPES_H */
 
 /* End of file tpl_os_internal_type.h */

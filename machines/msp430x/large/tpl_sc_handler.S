@@ -154,9 +154,10 @@ tpl_sc_handler_id_ok:
  * pointer (PSP) is saved in r11, then SP is loaded to the kernel stack bottom
  * and the PSP is saved on the kernel stack.
  */
-  mova      r1, r11                         /* save the PSP into r11          */
-  mova      #__os_kern_stack_end, r1 /* on kernel stack    */
-  pushx.a     r11                             /* push the PSP on it             */
+  mova        r1, r11                       /* save the PSP into r11                  */
+  mova        #__os_kern_stack_end, r1      /* on kernel stack                        */
+  pushx.a     REG_SID                       /* push index of syscall on kernel stack  */     
+  pushx.a     r11                           /* push the PSP on it                     */
 /*
  * PROCESS STACK:                 KERNEL STACK:
  *    +--------------------+            +-------------------+
@@ -164,10 +165,10 @@ tpl_sc_handler_id_ok:
  *    +--------------------+            +-------------------+
  *  1 |   0  | r11.19:16   | + 2      1 |   0 |  PSP.19:16  | + 2
  *    +--------------------+            +-------------------+
- *  2 |      r12.15:0     | + 04
- *    +-------------------+
- *  3 |   0  | r12.19:16  | + 06
- *    +-------------------+
+ *  2 |      r12.15:0     | + 04      2 |   REG_SID.15:0    | + 4
+ *    +-------------------+             +-------------------+
+ *  3 |   0  | r12.19:16  | + 06      3 | 0 | REG_SID.19:16 | + 6
+ *    +-------------------+             +-------------------+
  *  4 |      r13.15:0     | + 08
  *    +-------------------+
  *  5 |   0  | r13.19:16  | + 10
@@ -193,6 +194,7 @@ tpl_sc_handler_id_ok:
   movx.a      #tpl_kern, r11
   movx.b      #NO_NEED_SWITCH_NOR_SCHEDULE, TPL_KERN_OFFSET_NEED_SWITCH(r11)
   movx.b      #NO_NEED_SWITCH_NOR_SCHEDULE, TPL_KERN_OFFSET_NEED_SCHEDULE(r11)
+
 /*-----------------------------------------------------------------------------
 * -7- Call the service. The reentrancy flag is incremented before and
  * decremented after.
@@ -211,12 +213,12 @@ tpl_sc_handler_id_ok:
   popx.a      r13                                /* get back PSP => r13.    */
   movx.a      REG_RETARG, REG_RETARG_OFFSET(r13) /* put in Process's stack  */
 /*
- * PROCESS STACK:                 KERNEL STACK:
- *    +--------------------+            EMPTY
- *  0 |      r11.15:0      | + 00
- *    +--------------------+
- *  1 |   0  | r11.19:16   | + 02
- *    +--------------------+
+ * PROCESS STACK:                     KERNEL STACK:     Update: Kernel Stack was empty, now it contain REG_SID
+ *    +--------------------+            +-------------------+
+ *  0 |      r11.15:0      | + 00     0 |   REG_SID.15:0    | + 0
+ *    +--------------------+            +-------------------+
+ *  1 |   0  | r11.19:16   | + 02     1 | 0 | REG_SID.19:16 | + 2
+ *    +--------------------+            +-------------------+
  *  2 |      r12.15:0      | + 04
  *    +--------------------+
  *  3 |   0  | r12.19:16   | + 06
@@ -259,7 +261,8 @@ tpl_sc_handler_id_ok:
  * -11- Test the NEED_SAVE condition.
  */
   bitx.b    #NEED_SAVE, TPL_KERN_OFFSET_NEED_SWITCH(r11)
-  jz       tpl_sc_handler_no_save_running_context
+  jz        tpl_sc_handler_check_terminate_isr2
+  ; jz       tpl_sc_handler_no_save_running_context
 /*-----------------------------------------------------------------------------
 * -12- Save the context. The MSP430 have a "push multiple words", but no
  * "move multiple word". So, we get back to process stack to benefit this
@@ -272,12 +275,12 @@ tpl_sc_handler_id_ok:
  * The whole context is now saved on process stack and the kernel stack
  * has been cleaned. r14 points to the kernel stack.
  *
- * PROCESS STACK:                 KERNEL STACK:
- *    +--------------------+
- *  0 |       r4.15:0      | + 0
- *    +--------------------+
- *  1 |   0  |  r4.19:16   | + 2
- *    +--------------------+
+ * PROCESS STACK:                 KERNEL STACK: Update: Kernel Stack was empty, now it contain REG_SID
+ *    +--------------------+           +-------------------+
+ *  0 |       r4.15:0      | + 0     0 |   REG_SID.15:0    | + 0
+ *    +--------------------+           +-------------------+
+ *  1 |   0  |  r4.19:16   | + 2     1 | 0 | REG_SID.19:16 | + 2
+ *    +--------------------+           +-------------------+
  *  2 |      r5.15:0       | + 4
  *    +--------------------+
  *  3 |   0  |  r5.19:16   | + 6
@@ -339,8 +342,42 @@ tpl_sc_handler_id_ok:
  * -14- Prepare the argument of tpl_run_elected: 1 (aka save) and call it after
  * switching back to the kernel stack.
  */
-  mova      r14, r1          /* get back to kernel stack                  */
+  mova      r14, r1                                    /* get back to kernel stack                  */
+  popx.a    REG_RETARG                                 /* clean kernel stack */
   movx.a    #1, REG_RETARG
+  jmp       tpl_sc_handler_no_save_running_context     /* skip tpl_sc_handler_check_terminate_isr2 */
+
+tpl_sc_handler_check_terminate_isr2:
+/*
+ * Before running next task / isr2, if we are from a call_terminate_isr2, 
+ * we check if we need to exit or re-enter Low Power Mode
+ * with a CallTerminateISR2, we will never have a save of context
+ */
+  popx.a  REG_SID                                        /* pop REG_SID from kernel stack, it contains id of syscall now kernel stack is empty */
+  cmpx.a  #OSServiceId_CallTerminateISR2, REG_SID        /* if it is CallTerminateISR2, we want to set up wake up from LPM */
+  jne     tpl_sc_handler_no_save_running_context         /* continue and call tpl_run_elected if it is not a CallTerminateISR2 */
+  calla   #tpl_lpm_isr2                                  /* call function to check if we need to wake up from LPMx */
+  tst     REG_RETARG                                     /* tpl_lpm_isr2 return 0 if no need to wake up or 1 if need to wake up */
+  pushx.a REG_RETARG                                     /* push return value of tpl_lpm_isr2 on kernel stack */
+  movx.a  #0, REG_RETARG                                 /* we used REG_RETARG, so we put it again to 0 for tpl_run_elected call (no save) */
+  jz     tpl_sc_handler_no_save_running_context
+  ; bicx   #0xF0, 20(SP)    
+
+/*-----------------------------------------------------------------------------
+ * -15.a- 
+ * if we need to wake up from 
+ */
+tpl_sc_handler_no_save_running_context_with_isr2_wake_up:
+  calla     #tpl_run_elected
+  popx.a    REG_RETARG       /* get back value of tpl_lpm_isr2, now kernel stack is empty, REG_RETARG have either 1 if need to wake up or 0 if we don't */
+  mova      &tpl_kern, r11   /* Get the s_running slot of tpl_kern in r11 */
+  mova      @r11, r11        /* Get the pointer to the context (SP alone) */
+  movx.a    @r11, r1         /* Get the stack pointer                     */
+  tst       REG_RETARG
+  jz        tpl_sc_handler_no_save_running_context_end          /* if no need to wake up, jump to no save running end */
+  bicx      #0xF0, 48(SP)                                       /* SR is 2*12 bytes deep */
+  jmp       tpl_sc_handler_no_save_running_context_end          /* skip 15 */
+
 tpl_sc_handler_no_save_running_context:
 /*
  * Note: when getting there with a jump, we are coming from stage 11 where we
@@ -414,8 +451,9 @@ tpl_sc_handler_no_save_running_context:
  *
  *-----------------------------------------------------------------------------
  * -16- Now, the context of the new running process is loaded. Registers r4 to
- * r15} are popped and we return.
+ * r15 are popped and we return.
  */
+tpl_sc_handler_no_save_running_context_end:
   popm.a   #12,r15                 /* pop r4 to r15 at once              */
   #if MEASURE_OS_SERVICE_MSP == 1
     mov.b #00h, &P3OUT 
@@ -476,7 +514,7 @@ tpl_sc_handler_no_context_switch:
 tpl_sc_handler_from_hook:
   rlax.a      REG_SID                      /* index -> offset               */
   rlax.a      REG_SID                      /* index -> offset               */
-  movx.a    tpl_dispatch_table(REG_SID), REG_SID
+  movx.a      tpl_dispatch_table(REG_SID), REG_SID
   ; calla     tpl_dispatch_table(REG_SID)  /* func ptrs in dispatch table   */
   calla     REG_SID
   #if MEASURE_OS_SERVICE_MSP == 1

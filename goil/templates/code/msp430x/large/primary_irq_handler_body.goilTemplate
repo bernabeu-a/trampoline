@@ -318,6 +318,13 @@ tpl_% ! nameVector %_% ! handler::BIT %_handler:
   movx       #0,__% ! nameVector%
   movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
   calla      #tpl_fast_central_interrupt_handler%
+  if handler::EXIT_FROM_LPM then%
+  movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
+  calla      #set_wake_up_from_isr2%    
+  else%
+  movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
+  calla      #reset_wake_up_from_isr2%
+  end if
     between %
   jmp       tpl_direct_irq_handler_exit_% !handlerSource 
     end foreach    
@@ -344,6 +351,13 @@ tpl_% ! nameVector %_% ! handler::BIT %_handler:
 tpl_p% ! [handler::SOURCE charAtIndex: 4] %_% ! handler::BIT %_handler:
   movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
   calla      #tpl_fast_central_interrupt_handler%
+  if handler::EXIT_FROM_LPM then%
+  movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
+  calla      #set_wake_up_from_isr2%    
+  else%
+  movx       #% !handler::IDENT + [TASKS length] %, REG_RETARG
+  calla      #reset_wake_up_from_isr2%
+  end if
     between %
   jmp       tpl_direct_irq_handler_exit_% !handlerSource 
     end foreach    
