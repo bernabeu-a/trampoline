@@ -43,27 +43,19 @@
 #define THESHOLD_AWARD 100 /* A bit random atm */
 #include "QmathLib.h"
 #include "math.h"
+#include "tpl_table_standard_normal_law.h"
 // #define PI      3.1415926536
 
-_q12 gaussian(_q12 mu, _q12 sigma, _q12 x)
-{
+/* Function to compute probability P(X > x) with normal law µ, sigma
+    Only here for posterity, we use table instead
+*/
+_q12 gaussian(_q12 mu, _q12 sigma, _q12 x){
     float mu_float = _Q12toF(mu);
     float sigma_float = _Q12toF(sigma);
     float x_float = _Q12toF(x);
     float sqrtf_pi = sqrtf(2.0);
     float erff_f = erff((x_float - mu_float) / (sigma_float * sqrtf_pi));
     return (_Q12mpy(_Q12(0.5), _Q12(1+erff_f)));
-    // _q12 res;
-    // _q12 pi2 = _Q12mpy(_Q12(2), _Q12(PI));
-    // _q12 mu_x = _Q12mpy(x - mu, x - mu);
-    // _q12 sigma_2 = _Q12mpy(sigma, sigma);
-    // _q12 sigma_2_2 = _Q12mpy(sigma_2, _Q12(2));
-    // _q12 sigma_sqrt_pi = _Q12mpy(sigma, _Q12sqrt(pi2));
-    // _q12 div_mu_sigma = _Q12div(mu_x, sigma_2_2);
-    // _q12 tmp_res = _Q12exp(~(div_mu_sigma)+1);
-    // res = _Q12div(tmp_res, sigma_sqrt_pi);
-    // // res = _Q12div(_Q12exp(-_Q12div(_Q12mpy(mu - x,mu - x), _Q12mpy(sigma, sigma))), _Q12mpy(sigma, _Q12sqrt(pi2)));
-    // return res;
 }
 #endif /* WITH_BET */
 
@@ -246,9 +238,6 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
             /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
             power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
           }
-          #ifdef debug_bet
-          // #define FLOAT_TO_INT(x) ((x)>=0?(int16_t)((x)+0.5):(int16_t)((x)-0.5))
-          #endif
       }
       #endif /* WITH_TIMER_ACTIVITY */
       #if WITH_ENERGY_PREDICTION
@@ -367,9 +356,14 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                     /* Ensure at least 0.1V of variance (usefull ?) */
                     if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
 
-                    _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
-
-                    tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+                    /* Computing Z value for standard normal law */
+                    float z_value = fabs((1.9 - _Q12toF(mu)) / _Q12toF(tpl_resurrect_energy.variance));
+                    // _q12 volatile z_value_test = _Q12div(_Q12abs(_Q12(1.9) - mu), tpl_resurrect_energy.variance);
+                    // z_value_test = _Q12abs(z_value_test);
+                    _q12 gaussian_q12_normalized = table_normal_law[(uint8_t)(z_value * 10)][(uint8_t)((z_value*10 - (uint8_t)(z_value*10)) * 10)];
+                    // _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+                    tpl_resurrect_energy.proba_power = _Q12toF(gaussian_q12_normalized);
+                    // tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
                     if (tpl_resurrect_energy.proba_power < 1.0){
                         #ifndef BARD
                         P1OUT ^= BIT4;
@@ -576,5 +570,6 @@ FUNC(uint16_t, OS_CODE) tpl_variance_power_sma(void){
     result = _Q12div(tmp, _Q12((float)tpl_resurrect_energy.variance_buffer->current_size));
     return result;
 }
+
 #endif /* WITH_BET */
 #endif // WITH_RESURRECT

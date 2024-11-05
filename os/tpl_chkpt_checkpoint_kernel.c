@@ -62,6 +62,8 @@
 
 #if WITH_BET == YES
 #include "QmathLib.h"
+#include "math.h"
+#include "tpl_table_standard_normal_law.h"
 #endif
 
 extern FUNC(void, OS_CODE) tpl_restart_os(void);
@@ -298,8 +300,11 @@ FUNC(void, OS_CODE) tpl_chkpt_hibernate(){
         _q12 delta_v_q12 = _Q12(delta_v);
         _q12 mu = voltage_v - delta_v_q12 + prediction_v;
         if(tpl_resurrect_energy.variance < 410) tpl_resurrect_energy.variance = 410;
-        _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
-        tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+        float z_value = fabs((1.9 - _Q12toF(mu)) / _Q12toF(tpl_resurrect_energy.variance));
+        _q12 gaussian_q12_normalized = table_normal_law[(uint8_t)(z_value * 10)][(uint8_t)((z_value*10 - (uint8_t)(z_value*10)) * 10)];
+        tpl_resurrect_energy.proba_power = _Q12toF(gaussian_q12_normalized);
+        // _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
+        // tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
     }
     if (tpl_resurrect_energy.proba_power > proba_threshold)
     // if(voltageInMillis > tmp_step_energy)
