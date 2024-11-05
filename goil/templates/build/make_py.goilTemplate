@@ -157,6 +157,11 @@ if OS::RESURRECT then
 %
 sourceList.append("% !PROJECT %/tpl_resurrect.c")%
 end if
+
+if OS::RESURRECT_S::BET then
+%
+sourceList.append("% !PROJECT %/tpl_table_standard_normal_law.c")%
+end if
 %
 
 rule = makefile.Rule (sourceList, "Compiling OIL file " + oilFile)

@@ -429,6 +429,11 @@ if OS::RESURRECT then
 %
 cSourceList.append(projfile.ProjectFile("% !PROJECT %/tpl_resurrect.c"))%
 end if
+if OS::RESURRECT_S::BET then
+%
+cSourceList.append(projfile.ProjectFile("% !PROJECT %/tpl_table_standard_normal_law.c"))%
+end if
+
 
 foreach platform in exists GENERATED_FILES default ( @() ) do
   if not exists platform::CFILE then let platform::CFILE := @() end if
