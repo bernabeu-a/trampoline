@@ -496,8 +496,8 @@ if OS::TIMER_ACTIVITY then
 end if
 if OS::RESURRECT_S::BET then
  %
-, .delta_v = % !resurrect_transition::DELTA_V%
-, .award = % !resurrect_transition::AWARD%
+, .delta_v = % !resurrect_transition::DELTA_V[0]::VALUE%
+, .award = % !resurrect_transition::AWARD[0]::VALUE%
 %
 end if
 %
