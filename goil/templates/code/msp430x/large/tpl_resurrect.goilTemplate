@@ -89,12 +89,12 @@ end foreach
 if OS::ENERGY_PREDICTION then
 %
 /* Data structure for previous harvesting and prediction */
-#if ENERGY_PREDICTOR == SMA
-
 #define OS_START_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
-
-VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
+%
+if OS::ENERGY_PREDICTION_S::PREDICTOR == "SMA" then
+%
+VAR(tpl_energy_buffer, OS_VAR) struct_predictor_sma = {
 /* buffer of %!OS::ENERGY_PREDICTION_S::PREDICTOR_S::SIZE% previous value */ {0},
 /* index */                      0,
 /* current size */               0
@@ -102,8 +102,21 @@ VAR(tpl_energy_buffer, OS_VAR) struct_buffer_power_previous_harvesting = {
 
 #define OS_STOP_SEC_VAR_UNSPECIFIED
 #include "tpl_memmap.h"
-
-#endif /* ENERGY_PREDICTOR == SMA */
+%
+end if
+if OS::ENERGY_PREDICTION_S::PREDICTOR == "LINEAR" then
+%
+VAR(tpl_energy_buffer, OS_VAR) struct_predictor_linear = {
+/* buffer of 2 previous power value */ {0},
+/* buffer of 2 previous time value */  {0},
+/* time value for prediction */        0,
+/* index */                            0
+};
+#define OS_STOP_SEC_VAR_UNSPECIFIED
+#include "tpl_memmap.h"
+%
+end if
+%
 
 #if WITH_BET
 #define OS_START_SEC_VAR_UNSPECIFIED
@@ -120,7 +133,12 @@ VAR(tpl_variance_buffer, OS_VAR) struct_variance_buffer = {
 
 VAR(tpl_energy, OS_VAR) tpl_resurrect_energy =
 {
-  &struct_buffer_power_previous_harvesting,    /* buffer of previous harvesting in µW 32bit*/
+  #if ENERGY_PREDICTOR == SMA
+  &struct_predictor_sma,                       /* buffer of previous harvesting in µW 32bit*/
+  #endif /* ENERGY_PREDICTOR == SMA */
+  #if ENERGY_PREDICTOR == LINEAR
+  &struct_predictor_linear,
+  #endif /* ENERGY_PREDICTOR == LINEAR */
   0,                                           /* power prediction in µW 32bit */
   0                                            /* error of previous prediction */%
 if OS::RESURRECT_S::BET then  

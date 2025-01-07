@@ -19,7 +19,7 @@
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
-/*                                   Peripheral registers definition    */
+/*                                   Peripheral registers definition          */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 %
@@ -34,6 +34,7 @@ template periph
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
+OUTPUT_ARCH(msp430)
 ENTRY(tpl_reset_handler)
 
 /* Highest address of the user mode stack */
@@ -82,6 +83,9 @@ SECTIONS {
  * Section for checkpoint. For the moment, 2 buffers, inserted at the end
  * of high fram memory.
  */
+% 
+if OS::CHECKPOINTING then
+%
 SECTIONS {
   .chkpt0 :{
       _chkptStartAddress_0 = .;
@@ -93,7 +97,9 @@ SECTIONS {
       _chkptStartAddress_1 = .;
   } > FRAM_CHKPT_1
 }
-
+%
+end if
+%
 /*
  * Sections for Non Volatile variables. They should be inserted
  * at the beginning of the FRAM, so that the MPU is easier to configure.
@@ -168,6 +174,7 @@ SECTIONS {
   . = ALIGN(4);
   /* --- const of OS --- */
   osconst : {
+    PROVIDE (__fram_up_start = .);
     *(.osConst)
     *(.osApiConst) /* API constants */
   } >FRAM_UP
@@ -337,7 +344,7 @@ SECTIONS {
 foreach proc in PROCESSES do
 %
 /* Initialized FRAM_UP variables sections of % !proc::KIND % % !proc::NAME % */
-    . = ALIGN(4);
+    . = ALIGN(2);
 
 %
  foreach DATA_SIZE in @("32BIT", "16BIT", "8BIT", "BOOLEAN", "UNSPECIFIED") do
@@ -359,6 +366,8 @@ foreach app in APPLICATIONS do
     end foreach
 end foreach
 %
+    . = ALIGN(2);
+    PROVIDE (__fram_up_end = .);
   } >FRAM_UP
 }   
 %
@@ -625,5 +634,8 @@ SECTIONS {
 
   /DISCARD/ : { *(.note.GNU-stack) }
 }
+
+/*ASSERT( LENGTH(FRAM_UP) >= (__fram_up_end - __fram_up_start), "FRAM memory overflowed !")*/
+
 /* vim:ft=ld
  */

@@ -112,11 +112,22 @@ struct TPL_ENERGY_BUFFER
     uint8_t index;
     uint8_t current_size;
 };
-typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
 #endif // ENERGY_PREDICTOR == SMA
+#if ENERGY_PREDICTOR == LINEAR
+struct TPL_ENERGY_BUFFER
+{
+    uint32_t buffer_time[2];
+    uint32_t buffer_power[2];
+    uint32_t time_elected_step;
+    uint8_t index;
+};
+#endif // ENERGY_PREDICTOR == LINEAR
+
+typedef struct TPL_ENERGY_BUFFER tpl_energy_buffer;
+
 struct TPL_ENERGY
 {
-    P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) power_previous_harvesting;
+    P2VAR(tpl_energy_buffer, TYPEDEF, OS_VAR) struct_predictor;
     VAR(uint32_t, TYPEDEF) power_prediction;
     VAR(int32_t, TYPEDEF) error;
     #if WITH_BET
@@ -171,13 +182,13 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void);
 FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMATIC)  alarm_id, VAR(int, AUTOMATIC) set_nb_activation);
 
 #if WITH_ENERGY_PREDICTION == YES
-#if ENERGY_PREDICTOR == SMA
+// #if ENERGY_PREDICTOR == SMA
 // FUNC(uint32_t, OS_CODE) tpl_prediction_sma(void);
-FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void);
-#endif // ENERGY_PREDICTOR == "SMA"
+FUNC(uint32_t, OS_CODE) tpl_power_prediction(void);
+// #endif // ENERGY_PREDICTOR == "SMA"
 #if WITH_BET
 // FUNC(uint32_t, OS_CODE) tpl_variance_sma(void);
-FUNC(uint16_t, OS_CODE) tpl_variance_power_sma(void);
+FUNC(uint16_t, OS_CODE) tpl_variance_power(void);
 #endif // WITH_BET
 #endif // WITH_ENERGY_PREDICTOR
 #define OS_STOP_SEC_CODE

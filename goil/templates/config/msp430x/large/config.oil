@@ -161,8 +161,8 @@ IMPLEMENTATION  msp430x {
        SMA {
         UINT32 SIZE = 3;
        },
-       EWMA{
-       }
+       EWMA,
+       LINEAR
        ] PREDICTOR = SMA;
      },
      FALSE

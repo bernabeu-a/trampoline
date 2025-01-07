@@ -92,18 +92,21 @@ tpl_init_resurrect_os(CONST(tpl_application_mode, AUTOMATIC) app_mode)
   }
 #endif
 #if WITH_ENERGY_PREDICTION & WITH_BET == 1
-    uint8_t index;
-
-    for(index=0; index<tpl_resurrect_energy.power_previous_harvesting->current_size; index++){
-        tpl_resurrect_energy.power_previous_harvesting->buffer[index] = 0;
+uint8_t index;
+#if ENERGY_PREDICTOR == SMA
+    for(index=0; index<tpl_resurrect_energy.struct_predictor->current_size; index++){
+        tpl_resurrect_energy.struct_predictor->buffer[index] = 0;
     }
+    tpl_resurrect_energy.struct_predictor->current_size = 0;
+    tpl_resurrect_energy.struct_predictor->index = 0;
+#endif /* ENERGY_PREDICTOR = SMA */
+#if ENERGY_PREDICTOR == LINEAR
+
+#endif /* ENERGY_PREDICTOR == LINEAR */
     for(index=0; index<tpl_resurrect_energy.variance_buffer->current_size; index++){
         tpl_resurrect_energy.variance_buffer->buffer[index] = 0;
     }
-    tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
     tpl_resurrect_energy.variance_buffer->current_size = 0;
-
-    tpl_resurrect_energy.power_previous_harvesting->index = 0;
     tpl_resurrect_energy.variance_buffer->index = 0;
     /* We set wake up to one, to avoid doing a prediction for the next step */
     tpl_resurrect_energy.wake_up = TRUE;
@@ -186,7 +189,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
     int32_t voltage_worst_case = ((int32_t)tpl_kern_resurrect.energy_at_start)*1000;
     int32_t voltage_consumed = ((int32_t)tpl_kern_resurrect.energy_at_start)*1000;
     /* Power is in µW */
-    float power_harvested = 0;
+    // float power_harvested = 0;
+    uint32_t power_harvested = 0;
     /* Time is in ms */
     uint32_t time_step = 0;
     /* Slope are in µV per ms and time is in ms*/
@@ -234,25 +238,59 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
               power_harvested = 0;
           }
           else{
-            float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
-            /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
-            power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
+            // float voltage_harvested_squared = (float) voltage_harvested * (float) voltage_harvested;
+            // /* Power is in µW, Capacitance in kF, Time in ms, Voltage in µV */
+            // power_harvested = ((voltage_harvested_squared * 0.5 * 0.0000068)) / ((float) time_step);
+            /*
+             * New test: 6800 µF ~ 2^(-17) [0.00000762939] kF
+             * New test: 6800 µF ~ 2^(-18) [0.00000381469] kF
+             * voltage_harvested_squared --> uint64_t
+             * power_harvested --> uint32_t instead of float
+            */
+            uint64_t voltage_harvested_squared = (uint64_t)voltage_harvested * (uint64_t)voltage_harvested;
+            power_harvested = (uint32_t)((voltage_harvested_squared >> 19) / time_step);
+
+            #ifdef PRINT_POWER
+            tpl_serial_print_string("Power: ");
+            tpl_serial_print_int(power_harvested);
+            tpl_serial_print_string("\n");
+            // tpl_serial_print_string("v2: ");
+            // tpl_serial_print_int(voltage_harvested_squared);
+            // tpl_serial_print_string("\n");
+            tpl_serial_print_string("v_h: ");
+            tpl_serial_print_int(voltage_harvested);
+            tpl_serial_print_string("\n");
+            tpl_serial_print_string("time: ");
+            tpl_serial_print_int(time_step);
+            tpl_serial_print_string("\n");
+            #endif
           }
       }
       #endif /* WITH_TIMER_ACTIVITY */
+      P8OUT |= BIT1;
       #if WITH_ENERGY_PREDICTION
       if((tpl_kern_resurrect.elected != NULL) & (tpl_resurrect_energy.wake_up == FALSE)){
-        const uint8_t index_power = (tpl_resurrect_energy.power_previous_harvesting->index++) % SMA_COUNT;
+        #if ENERGY_PREDICTOR == SMA
+        const uint8_t index_power = (tpl_resurrect_energy.struct_predictor->index++) % SMA_COUNT;
 
-        tpl_resurrect_energy.power_previous_harvesting->buffer[index_power] = (uint32_t) power_harvested;
+        tpl_resurrect_energy.struct_predictor->buffer[index_power] = (uint32_t) power_harvested;
 
-        if(tpl_resurrect_energy.power_previous_harvesting->current_size != SMA_COUNT){
-            tpl_resurrect_energy.power_previous_harvesting->current_size++;
+        if(tpl_resurrect_energy.struct_predictor->current_size != SMA_COUNT){
+            tpl_resurrect_energy.struct_predictor->current_size++;
         }
 
-        if(tpl_resurrect_energy.power_previous_harvesting->index == SMA_COUNT){
-            tpl_resurrect_energy.power_previous_harvesting->index = 0;
+        if(tpl_resurrect_energy.struct_predictor->index == SMA_COUNT){
+            tpl_resurrect_energy.struct_predictor->index = 0;
         }
+        #endif /* ENERGY_PREDICTOR == SMA */
+        #if ENERGY_PREDICTOR == LINEAR
+        const uint8_t index_power = (tpl_resurrect_energy.struct_predictor->index++) % 2;
+        tpl_resurrect_energy.struct_predictor->buffer_power[index_power] = (uint32_t) power_harvested;
+        tpl_resurrect_energy.struct_predictor->buffer_time[index_power] = time_step;
+        if(tpl_resurrect_energy.struct_predictor->index == 2){
+            tpl_resurrect_energy.struct_predictor->index = 0;
+        }
+        #endif /* ENERGY_PREDICTOR == LINEAR */
 
         if(tpl_resurrect_energy.power_prediction != 0){
             /* Error between previous prediction and current measure */
@@ -277,14 +315,17 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                 tpl_resurrect_energy.variance_buffer->index = 0;
             }
             /* We then compute variance */
-            tpl_resurrect_energy.variance = tpl_variance_power_sma();
+            tpl_resurrect_energy.variance = tpl_variance_power();
             #endif /* WITH_BET */
         }
         /* Next prediction */
-        tpl_resurrect_energy.power_prediction = tpl_power_prediction_sma();
+        tpl_resurrect_energy.power_prediction = tpl_power_prediction();
+        tpl_serial_print_string("Pred: ");
+        tpl_serial_print_int(tpl_resurrect_energy.power_prediction);
+        tpl_serial_print_string("\n");
       }
-
       #endif /* WITH_ENERGY_PREDICTION */
+      P8OUT &= ~BIT1;
       for (i = 0; i < ENERGY_LEVEL_COUNT; i++)
       {
         tmp_ptr_step = (P2VAR(tpl_step, AUTOMATIC, OS_VAR))ptr_state[i];
@@ -333,6 +374,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
                     tpl_resurrect_energy.proba_power = 1.0;
                 }
                 else{
+                    P1OUT |= BIT4;
                     /* With power, we add every worstcase time to obtain time of the step */
                     uint32_t time_tmp_step = 0;
                     for(i=0; i<tmp_ptr_step->activity->nb_activity; i++){
@@ -358,15 +400,13 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
 
                     /* Computing Z value for standard normal law */
                     float z_value = fabs((1.9 - _Q12toF(mu)) / _Q12toF(tpl_resurrect_energy.variance));
-                    // _q12 volatile z_value_test = _Q12div(_Q12abs(_Q12(1.9) - mu), tpl_resurrect_energy.variance);
-                    // z_value_test = _Q12abs(z_value_test);
                     _q12 gaussian_q12_normalized = table_normal_law[(uint8_t)(z_value * 10)][(uint8_t)((z_value*10 - (uint8_t)(z_value*10)) * 10)];
                     // _q12 gaussian_q12 = gaussian(mu, tpl_resurrect_energy.variance, _Q12(1.9));
                     tpl_resurrect_energy.proba_power = _Q12toF(gaussian_q12_normalized);
                     // tpl_resurrect_energy.proba_power = 1.0 - _Q12toF(gaussian_q12);
+                    P1OUT &= ~BIT4;
                     if (tpl_resurrect_energy.proba_power < 1.0){
                         #ifndef BARD
-                        P1OUT ^= BIT4;
                         #endif
                     }
                 }
@@ -407,7 +447,7 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
       if((ptr_step == NULL) | (tpl_kern_resurrect.award >= THESHOLD_AWARD)){
           if(tpl_kern_resurrect.award >= THESHOLD_AWARD){
               #ifndef BARD
-              P1OUT ^= BIT5;
+              // P1OUT ^= BIT5;
               #endif
           }
       #else
@@ -427,8 +467,8 @@ FUNC(void, OS_CODE) tpl_choose_next_step(void){
         // tpl_resurrect_energy.previous_harvesting->current_size = 0;
         // tpl_resurrect_energy.previous_harvesting->index = 0;
 
-        // tpl_resurrect_energy.power_previous_harvesting->current_size = 0;
-        // tpl_resurrect_energy.power_previous_harvesting->index = 0;
+        // tpl_resurrect_energy.struct_predictor->current_size = 0;
+        // tpl_resurrect_energy.struct_predictor->index = 0;
 
         // tpl_resurrect_energy.variance_buffer->index = 0;
         // tpl_resurrect_energy.variance_buffer->current_size = 0;
@@ -537,16 +577,22 @@ FUNC(void, OS_CODE) tpl_set_activation_alarm_service(CONST(tpl_alarm_id, AUTOMAT
 #if WITH_ENERGY_PREDICTION == YES
 #if ENERGY_PREDICTOR == SMA
 /* Prediction with sliding moving average */
-
-FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void)
+FUNC(uint32_t, OS_CODE) tpl_power_prediction(void)
 {
     uint8_t i;
     uint32_t result = 0;
     uint32_t tmp_result = 0;
-    for(i=0; i<tpl_resurrect_energy.power_previous_harvesting->current_size; i++){
-        tmp_result += tpl_resurrect_energy.power_previous_harvesting->buffer[i];
+    for(i=0; i<tpl_resurrect_energy.struct_predictor->current_size; i++){
+        tmp_result += tpl_resurrect_energy.struct_predictor->buffer[i];
     }
-    result = tmp_result / tpl_resurrect_energy.power_previous_harvesting->current_size;
+    result = tmp_result / tpl_resurrect_energy.struct_predictor->current_size;
+
+    // #ifdef PRINT_POWER
+    // // tpl_serial_print_string("Power: ");
+    // tpl_serial_print_int(result);
+    // tpl_serial_print_string("\n");
+    // #endif
+
     if (result == 0){
         return 1;
     }
@@ -554,13 +600,39 @@ FUNC(uint32_t, OS_CODE) tpl_power_prediction_sma(void)
         return result;
     }
 }
-
-#endif // ENERGY_PREDICTOR == "SMA"
+#endif // ENERGY_PREDICTOR == SMA
+#if ENERGY_PREDICTOR == LINEAR
+/* Prediction with linear extrapolation  */
+FUNC(uint32_t, OS_CODE) tpl_power_prediction(void){
+    uint32_t result;
+    uint8_t index_0;
+    uint8_t index_1;
+    if(tpl_resurrect_energy.struct_predictor->index == 0){
+        index_0 = 0;
+        index_1 = 1;
+    }
+    else{
+        index_0 = 1;
+        index_1 = 0;
+    }
+    result = tpl_resurrect_energy.struct_predictor->buffer_power[index_0] +
+        ((tpl_resurrect_energy.struct_predictor->time_elected_step
+            - tpl_resurrect_energy.struct_predictor->buffer_time[index_0]) /
+        (tpl_resurrect_energy.struct_predictor->buffer_time[index_1]
+            - tpl_resurrect_energy.struct_predictor->buffer_time[index_0])) *
+        (tpl_resurrect_energy.struct_predictor->buffer_power[index_1] -
+            tpl_resurrect_energy.struct_predictor->buffer_power[index_0]);
+    if(result == 0 || result < 0){
+        return 1;
+    }
+    return result;
+}
+#endif // ENERGY_PREDICTOR == LINEAR
 #endif // WITH_ENERGY_PREDICTION
 
 #if WITH_BET
 
-FUNC(uint16_t, OS_CODE) tpl_variance_power_sma(void){
+FUNC(uint16_t, OS_CODE) tpl_variance_power(void){
     uint8_t i;
     _q12 result;
     _q12 tmp = 0;
