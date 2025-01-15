@@ -19,13 +19,15 @@ FUNC(int, OS_APPL_CODE) main(void)
 	P5REN |= 1<<6;    /* pull-up/down resistor enable               */
 	P5OUT |= 1<<6;    /* pull-up                                    */
 	P5IES |= 1<<6;    /* high to low interrupt edge selection       */
+	P5IFG &= ~(1<<6);
 	P5IE  |= 1<<6;    /* interrupt enabled for the button           */
 
-	/* set GPIO P5.5 (button S2) as an input, with internal pull-up */
+	// /* set GPIO P5.5 (button S2) as an input, with internal pull-up */
 	P5DIR &= ~(1<<5); /* input                                      */
 	P5REN |= 1<<5;    /* pull-up/down resistor enable               */
 	P5OUT |= 1<<5;    /* pull-up                                    */
 	P5IES |= 1<<5;    /* high to low interrupt edge selection       */
+	P5IFG &= ~(1<<5);
 	P5IE  |= 1<<5;    /* interrupt enabled for the button           */
 
 	StartOS(OSDEFAULTAPPMODE);

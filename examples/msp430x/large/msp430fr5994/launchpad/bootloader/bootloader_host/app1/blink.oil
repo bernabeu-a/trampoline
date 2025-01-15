@@ -21,7 +21,7 @@ CPU blink {
       TRAMPOLINE_BASE_PATH = "/home/bernabeu-a/Code/trampoline";
       APP_SRC = "blink_red.c";
       APP_SRC = "leds.c";
-      APP_NAME = "blink_exe";
+      APP_NAME = "blink_exe.out";
       CFLAGS  = "-O0 -g3 -gdwarf-2 -ggdb"; //gdb usage
       LDFLAGS = "-Map=blink.map";
       //use either msp-gcc (provided with Energia)..
