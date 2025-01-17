@@ -1,0 +1,380 @@
+
+
+CPU efm32wg {
+
+  BUILDOPTIONS buildOptions {
+     COMMONFLAGS = "-DEFM32WG380F256=1"; //processor def
+  };
+
+  OS features {
+    ISR2_PRIORITY_MASKING = TRUE;
+  };
+
+  CORTEX efm32wg {
+    PRIO_BITS = 4;      // used in tpl_cortex_definitions for NVIC config
+    CLOCK = 140000000;  // init freq of HFRCO
+  };
+
+  INTERRUPT_COUNT nb_it {
+    IT_TABLE_SIZE = 54;
+  };
+  INTERRUPT NMI          {SETPRIO = TRUE { NUMBER = -14; };};
+  INTERRUPT HardFault    {SETPRIO = TRUE { NUMBER = -13; };};
+  INTERRUPT MemManage    {SETPRIO = TRUE { NUMBER = -12; };};
+  INTERRUPT BusFault     {SETPRIO = TRUE { NUMBER = -11; };};
+  INTERRUPT UsageFault   {SETPRIO = TRUE { NUMBER = -10; };};
+  INTERRUPT SVCall       {SETPRIO = TRUE { NUMBER = -5 ; };};
+  INTERRUPT DebugMonitor {SETPRIO = TRUE { NUMBER = -4 ; };};
+  INTERRUPT PendSV       {SETPRIO = TRUE { NUMBER = -2 ; };};
+  INTERRUPT SysTick      {SETPRIO = TRUE { NUMBER = -1 ; };};
+
+  INTERRUPT DMA_IRQ {
+    VECT = 16;
+    SETPRIO = TRUE { NUMBER = 0; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "DMA_IRQ_Handler";
+    };
+  } : "DMA Interrupt";
+
+  INTERRUPT GPIO_EVEN_IRQ {
+    VECT = 17;
+    SETPRIO = TRUE { NUMBER = 1; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "GPIO_EVEN_IRQ_Handler";
+    };
+  } : "GPIO EVEN Interrupt";
+
+  INTERRUPT TIMER0_IRQ {
+    VECT = 18;
+    SETPRIO = TRUE { NUMBER = 2; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "TIMER0_IRQ_Handler";
+    };
+  } : "TIMER0 Interrupt";
+
+  INTERRUPT USART0_RX_IRQ {
+    VECT = 19;
+    SETPRIO = TRUE { NUMBER = 3; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART0_RX_IRQ_Handler";
+    };
+  } : "USART0 RX Interrupt";
+
+  INTERRUPT USART0_TX_IRQ {
+    VECT = 20;
+    SETPRIO = TRUE { NUMBER = 4; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART0_TX_IRQ_Handler";
+    };
+  } : "USART0 TX Interrupt";
+
+  INTERRUPT USB_IRQ {
+    VECT = 21;
+    SETPRIO = TRUE { NUMBER = 5; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USB_IRQ_Handler";
+    };
+  } : "USB Interrupt";
+
+  INTERRUPT ACMP0_IRQ {
+    VECT = 22;
+    SETPRIO = TRUE { NUMBER = 6; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "ACMP0_IRQ_Handler";
+    };
+  } : "ACMP0 Interrupt";
+
+  INTERRUPT ADC0_IRQ {
+    VECT = 23;
+    SETPRIO = TRUE { NUMBER = 7; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "ADC0_IRQ_Handler";
+    };
+  } : "ADC0 Interrupt";
+
+  INTERRUPT DAC0_IRQ {
+    VECT = 24;
+    SETPRIO = TRUE { NUMBER = 8; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "DAC0_IRQ_Handler";
+    };
+  } : "DAC0 Interrupt";
+
+  INTERRUPT I2C0_IRQ {
+    VECT = 25;
+    SETPRIO = TRUE { NUMBER = 9; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "I2C0_IRQ_Handler";
+    };
+  } : "I2C0 Interrupt";
+
+  INTERRUPT I2C1_IRQ {
+    VECT = 26;
+    SETPRIO = TRUE { NUMBER = 10; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "I2C1_IRQ_Handler";
+    };
+  } : "I2C1 Interrupt";
+
+  INTERRUPT GPIO_ODD_IRQ {
+    VECT = 27;
+    SETPRIO = TRUE { NUMBER = 11; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "GPIO_ODD_IRQ_Handler";
+    };
+  } : "GPIO ODD Interrupt";
+
+  INTERRUPT TIMER1_IRQ {
+    VECT = 28;
+    SETPRIO = TRUE { NUMBER = 12; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "TIMER1_IRQ_Handler";
+    };
+  } : "TIMER1 Interrupt";
+
+  INTERRUPT TIMER2_IRQ {
+    VECT = 29;
+    SETPRIO = TRUE { NUMBER = 13; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "TIMER2_IRQ_Handler";
+    };
+  } : "TIMER2 Interrupt";
+
+  INTERRUPT TIMER3_IRQ {
+    VECT = 30;
+    SETPRIO = TRUE { NUMBER = 14; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "TIMER3_IRQ_Handler";
+    };
+  } : "TIMER3 Interrupt";
+
+  INTERRUPT USART1_RX_IRQ {
+    VECT = 31;
+    SETPRIO = TRUE { NUMBER = 15; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART_RX_IRQ_Handler";
+    };
+  } : "USART1 RX Interrupt";
+
+  INTERRUPT USART1_TX_IRQ {
+    VECT = 32;
+    SETPRIO = TRUE { NUMBER = 16; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART1_TX_IRQ_Handler";
+    };
+  } : "USART1 TX Interrupt";
+
+  INTERRUPT LESENSE_IRQ {
+    VECT = 33;
+    SETPRIO = TRUE { NUMBER = 17; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "LESENSE_IRQ_Handler";
+    };
+  } : "LESENSE Interrupt";
+
+  INTERRUPT USART2_RX_IRQ {
+    VECT = 34;
+    SETPRIO = TRUE { NUMBER = 18; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART2_RX_IRQ_Handler";
+    };
+  } : "USART2 RX Interrupt";
+
+  INTERRUPT USART2_TX_IRQ {
+    VECT = 35;
+    SETPRIO = TRUE { NUMBER = 19; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "USART2_TX_IRQ_Handler";
+    };
+  } : "USART2 TX Interrupt";
+
+  INTERRUPT UART0_RX_IRQ {
+    VECT = 36;
+    SETPRIO = TRUE { NUMBER = 20; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "UART0_RX_IRQ_Handler";
+    };
+  } : "UART0 RX Interrupt";
+
+  INTERRUPT UART0_TX_IRQ {
+    VECT = 37;
+    SETPRIO = TRUE { NUMBER = 21; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "UART0_TX_IRQ_Handler";
+    };
+  } : "UART0 TX Interrupt";
+
+  INTERRUPT UART1_RX_IRQ {
+    VECT = 38;
+    SETPRIO = TRUE { NUMBER = 22; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "UART1_RX_IRQ_Handler";
+    };
+  } : "UART1 RX Interrupt";
+
+  INTERRUPT UART1_TX_IRQ {
+    VECT = 39;
+    SETPRIO = TRUE { NUMBER = 23; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "UART1_TX_IRQ_Handler";
+    };
+  } : "UART1 TX Interrupt";
+
+  INTERRUPT LEUART0_IRQ {
+    VECT = 40;
+    SETPRIO = TRUE { NUMBER = 24; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "LEUART0_IRQ_Handler";
+    };
+  } : "LEUART0 Interrupt";
+
+  INTERRUPT LEUART1_IRQ {
+    VECT = 41;
+    SETPRIO = TRUE { NUMBER = 25; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "LEUART1_IRQ_Handler";
+    };
+  } : "LEUART1 Interrupt";
+
+  INTERRUPT LETIMER0_IRQ {
+    VECT = 42;
+    SETPRIO = TRUE { NUMBER = 26; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "LETIMER0_IRQ_Handler";
+    };
+  } : "LETIMER0 Interrupt";
+
+  INTERRUPT PCNT0_IRQ {
+    VECT = 43;
+    SETPRIO = TRUE { NUMBER = 27; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "PCNT0_IRQ_Handler";
+    };
+  } : "PCNT0 Interrupt";
+
+  INTERRUPT PCNT1_IRQ {
+    VECT = 44;
+    SETPRIO = TRUE { NUMBER = 28; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "PCNT1_IRQ_Handler";
+    };
+  } : "PCNT1 Interrupt";
+
+  INTERRUPT PCNT2_IRQ {
+    VECT = 45;
+    SETPRIO = TRUE { NUMBER = 29; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "PCNT2_IRQ_Handler";
+    };
+  } : "PCNT2 Interrupt";
+
+  INTERRUPT RTC_IRQ {
+    VECT = 46;
+    SETPRIO = TRUE { NUMBER = 30; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "RTC_IRQ_Handler";
+    };
+  } : "RTC Interrupt";
+
+  INTERRUPT BURTC_IRQ {
+    VECT = 47;
+    SETPRIO = TRUE { NUMBER = 31; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "BURTC_IRQ_Handler";
+    };
+  } : "BURTC Interrupt";
+
+  INTERRUPT CMU_IRQ {
+    VECT = 48;
+    SETPRIO = TRUE { NUMBER = 32; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "CMU_IRQ_Handler";
+    };
+  } : "CMU Interrupt";
+
+  INTERRUPT VCMP_IRQ {
+    VECT = 49;
+    SETPRIO = TRUE { NUMBER = 33; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "VCMP_IRQ_Handler";
+    };
+  } : "VCMP Interrupt";
+
+  INTERRUPT LCD_IRQ {
+    VECT = 50;
+    SETPRIO = TRUE { NUMBER = 34; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "LCD_IRQ_Handler";
+    };
+  } : "LCD Interrupt";
+
+  INTERRUPT MSC_IRQ {
+    VECT = 51;
+    SETPRIO = TRUE { NUMBER = 35; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "MSC_IRQ_Handler";
+    };
+  } : "MSC Interrupt";
+
+  INTERRUPT AES_IRQ {
+    VECT = 52;
+    SETPRIO = TRUE { NUMBER = 36; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "AES_IRQ_Handler";
+    };
+  } : "AES Interrupt";
+
+  INTERRUPT EBI_IRQ {
+    VECT = 53;
+    SETPRIO = TRUE { NUMBER = 37; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "EBI_IRQ_Handler";
+    };
+  } : "EBI Interrupt";
+
+  INTERRUPT EMU_IRQ {
+    VECT = 54;
+    SETPRIO = TRUE { NUMBER = 38; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "EMU_IRQ_Handler";
+    };
+  } : "EMU Interrupt";
+
+  INTERRUPT FPUEH_IRQ {
+    VECT = 55;
+    SETPRIO = TRUE { NUMBER = 39; };
+    VECTOR_TYPE = HANDLER {
+      NAME = "FPUEH_IRQ_Handler";
+    };
+  } : "FPUEH Interrupt";
+
+  PLATFORM_FILES efm32wg {
+    PATH = "cortex/armv7em/efm32wg";
+    CFILE = "startup_efm32wg.c";
+    CFILE = "system_efm32wg.c";
+    CFILE = "handlers_efm32wg.c";
+    CFILE = "tpl_machine_efm32wg.c";
+  };
+
+  PLATFORM_FILES efm32wg_device {
+    PATH = "cortex/armv7em/efm32wg/inc";
+  };
+
+  PLATFORM_FILES efm32wg_emlib_inc {
+    PATH    = "cortex/armv7em/efm32wg/emlib/inc";
+  };
+
+  PLATFORM_FILES efm32wg_emlib_src {
+    PATH  = "cortex/armv7em/efm32wg/emlib/src";
+    CFILE = "em_cmu.c";
+  };
+
+  POSTBUILD all {
+    COMMAND buildbin {
+      TYPE = COPIER;
+      INPUT = TARGET;
+      OUTPUT = ".bin";
+      PREOPTION = "-O binary";
+    };
+  };
+};
