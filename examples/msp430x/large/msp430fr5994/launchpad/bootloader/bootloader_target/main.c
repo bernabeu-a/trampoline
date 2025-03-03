@@ -236,14 +236,9 @@ uint8_t rxIntepreter(uint8_t *RxData, uint8_t RxLen, uint8_t *TxData){
 
 bool check_boot_is_forced(void){
     bool ret = false;
-
     if (PassWd_boot == BSL_PASSWORD){
         ret = true;
     }
-    else{
-        ret = false;
-    }
-
     PassWd_boot = 0;
     return ret;
 }
