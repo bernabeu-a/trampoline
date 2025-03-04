@@ -366,7 +366,46 @@ CPU efm32wg {
 
   PLATFORM_FILES efm32wg_emlib_src {
     PATH  = "cortex/armv7em/efm32wg/emlib/src";
+    CFILE = "em_acmp.c";
+    CFILE = "em_adc.c";
+    CFILE = "em_aes.c";
+    CFILE = "em_assert.c";
+    CFILE = "em_burtc.c";
+    CFILE = "em_can.c";
     CFILE = "em_cmu.c";
+    CFILE = "em_core.c";
+    CFILE = "em_cryotimer.c";
+    CFILE = "em_crypto.c";
+    CFILE = "em_csen.c";
+    CFILE = "em_dac.c";
+    CFILE = "em_dbg.c";
+    CFILE = "em_dma.c";
+    CFILE = "em_ebi.c";
+    CFILE = "em_emu.c";
+    CFILE = "em_gpcrc.c";
+    CFILE = "em_gpio.c";
+    CFILE = "em_i2c.c";
+    CFILE = "em_idac.c";
+    CFILE = "em_lcd.c";
+    CFILE = "em_ldma.c";
+    CFILE = "em_lesense.c";
+    CFILE = "em_letimer.c";
+    CFILE = "em_leuart.c";
+    CFILE = "em_mpu.c";
+    CFILE = "em_msc.c";
+    CFILE = "em_opamp.c";
+    CFILE = "em_pcnt.c";
+    CFILE = "em_prs.c";
+    CFILE = "em_qspi.c";
+    CFILE = "em_rmu.c";
+    CFILE = "em_rtc.c";
+    CFILE = "em_rtcc.c";
+    CFILE = "em_system.c";
+    CFILE = "em_timer.c";
+    CFILE = "em_usart.c";
+    CFILE = "em_vcmp.c";
+    CFILE = "em_vdac.c";
+    CFILE = "em_wdog.c";
   };
 
   POSTBUILD all {

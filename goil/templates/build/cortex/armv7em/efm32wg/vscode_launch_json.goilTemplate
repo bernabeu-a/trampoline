@@ -21,7 +21,7 @@ end if%
         "runToEntryPoint": "tpl_reset_handler",
         "device": "EFM32WG380F256",
         "v1": false,
-        "svdFile": "% !basePath %/machines/cortex/armv7em/efm32wg/svd/EFM32WG280F256.svd",
+        "svdFile": "% !basePath %/machines/cortex/armv7em/efm32wg/svd/EFM32WG380F256.svd",
     }
     ]
 }
