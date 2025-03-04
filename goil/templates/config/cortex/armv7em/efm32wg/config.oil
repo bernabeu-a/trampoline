@@ -416,4 +416,23 @@ CPU efm32wg {
       PREOPTION = "-O binary";
     };
   };
+
+  LIBRARY dmactrl {
+    PATH = "cortex/armv7em/efm32wg/driver/dmactrl";
+    CHEADER = "dmactrl.h";
+    CFILE   = "dmactrl.c";
+  };
+};
+
+IMPLEMENTATION audiomoth {
+  OS {
+    BOOLEAN [
+      TRUE {
+        ENUM [
+          dmactrl
+        ] LIBRARY[];
+      },
+      FALSE
+    ] BUILD = FALSE;
+  };
 };
