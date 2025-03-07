@@ -1008,8 +1008,10 @@ void DMA_Init(DMA_Init_TypeDef *init)
   DMA_Reset();
 
   /* Clear/enable DMA interrupts */
-  NVIC_ClearPendingIRQ(DMA_IRQn);
-  NVIC_EnableIRQ(DMA_IRQn);
+  DMA_IntClear(_DMA_IFC_MASK);
+  /* NVIC only possible in privileged mode --> only in kernel with trampoline */
+  // NVIC_ClearPendingIRQ(DMA_IRQn);
+  // NVIC_EnableIRQ(DMA_IRQn);
 
   /* Enable bus error interrupt */
   DMA->IEN = DMA_IEN_ERR;
@@ -1144,7 +1146,7 @@ void DMA_Reset(void)
   int i;
 
   /* Disable DMA interrupts */
-  NVIC_DisableIRQ(DMA_IRQn);
+  // NVIC_DisableIRQ(DMA_IRQn);
 
   /* Put the DMA controller into a known state, first disabling it. */
   DMA->CONFIG      = _DMA_CONFIG_RESETVALUE;
