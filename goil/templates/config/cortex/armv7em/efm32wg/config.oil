@@ -422,6 +422,19 @@ CPU efm32wg {
     CHEADER = "dmactrl.h";
     CFILE   = "dmactrl.c";
   };
+
+  LIBRARY microsd {
+    PATH = "cortex/armv7em/efm32wg/driver/microsd";
+    CHEADER = "microsd.h";
+    CFILE   = "microsd.c";
+    CHEADER = "diskio.h";
+    CFILE   = "diskio.c";
+    CHEADER = "ff.h";
+    CFILE   = "ff.c";
+    CHEADER = "ffconf.h";
+    CHEADER = "integer.h";
+    CFILE = "ffunicode.c";    
+  };
 };
 
 IMPLEMENTATION audiomoth {
@@ -429,7 +442,8 @@ IMPLEMENTATION audiomoth {
     BOOLEAN [
       TRUE {
         ENUM [
-          dmactrl
+          dmactrl,
+          microsd
         ] LIBRARY[];
       },
       FALSE
