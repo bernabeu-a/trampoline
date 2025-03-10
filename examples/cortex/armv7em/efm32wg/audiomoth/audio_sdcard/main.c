@@ -48,25 +48,41 @@ typedef struct {
 	uint16_t bytesPerCapture;
 	uint16_t bitsPerSample;
   } wavFormat_t;
-  
-  typedef struct {
-	chunk_t riff;
-	char format[4];
-	chunk_t fmt;
-	wavFormat_t wavFormat;
-	chunk_t list;
-	char info[4];
-	icmt_t icmt;
-	iart_t iart;
-	chunk_t data;
-  } wavHeader_t;
+
+typedef struct {
+chunk_t riff;
+char format[4];
+chunk_t fmt;
+wavFormat_t wavFormat;
+chunk_t list;
+char info[4];
+icmt_t icmt;
+iart_t iart;
+chunk_t data;
+} wavHeader_t;
+
+/* First attempt SD card */
+// typedef struct {
+// 	char riff[4];
+// 	int32_t flength;
+// 	char wave[4];
+// 	char fmt[4];
+// 	int32_t chunk_size;
+// 	int16_t format_tag;
+// 	int16_t num_chan;
+// 	int32_t sample_rate;
+// 	int32_t byte_per_second;
+// 	int16_t byte_per_sample;
+// 	int16_t bits_per_sample;
+// 	char data[4];
+// 	int32_t dlength;
+// } wavHeader_t;
 
 FIL fileaudio;
 static UINT bw;
 
 #define APP_Task_blink_START_SEC_CODE
 #include "tpl_memmap.h"
-
 FUNC(int, OS_APPL_CODE) main(void){
 	CHIP_Init();
 	// Enable Clock to GPIO
@@ -117,7 +133,7 @@ FUNC(int, OS_APPL_CODE) main(void){
 	GPIO_PinModeSet(gpioPortC, 0, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 1, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 3, gpioModePushPull, 0);
-	GPIO_PinModeSet(gpioPortC, 7,  gpioModePushPull, 1);
+	GPIO_PinModeSet(gpioPortC, 7, gpioModeDisabled, 0);	
 	GPIO_PinModeSet(gpioPortC, 8, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 9, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortC, 10, gpioModeDisabled, 0);
@@ -134,7 +150,9 @@ FUNC(int, OS_APPL_CODE) main(void){
 	GPIO_PinModeSet(gpioPortD, 11, gpioModePushPull, 1);
 	GPIO_PinModeSet(gpioPortD, 12, gpioModePushPull, 1);
 	/* GPIO E */
+	GPIO_PinModeSet(gpioPortE, 0, gpioModePushPull, 1);
 	GPIO_PinModeSet(gpioPortE, 1, gpioModeDisabled, 0);
+	GPIO_PinModeSet(gpioPortE, 2, gpioModePushPull, 1);
 	GPIO_PinModeSet(gpioPortE, 3, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortE, 4, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortE, 5, gpioModeDisabled, 0);
@@ -228,8 +246,7 @@ TASK(start_audio){
 	ADC_Init(ADC0, &adcInit);
 	/* SCAN mode voltage reference must match the reference selected for SINGLE mode conversions */
 	// Reset and set 2.5V Ref
-	ADC0->SCANCTRL &= (0b000 << 16);
-	ADC0->SCANCTRL |= (0b001 << 16);
+	ADC0->SCANCTRL = ADC_SCANCTRL_REF_2V5;
 	/* Configure ADC single conversion structure */
 	ADC_InitSingle_TypeDef adcSingleInit = ADC_INITSINGLE_DEFAULT;
 	adcSingleInit.prsSel = adcPRSSELCh0;
@@ -459,9 +476,9 @@ TASK(copyDMAtoSRAM){
 
 	/* For testing only, we write 1 min to sd card, 8KHz --> 1024 points --> 469 buffers to write */
 	static uint16_t cnt_write = 0;
-	if(cnt_write < 469){
+	if(cnt_write < 1000){
 		cnt_write++;
-		f_open(&fileaudio, "audio.pcm", FA_OPEN_APPEND | FA_WRITE);
+		f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
 		f_write(&fileaudio, check_buffer_sram, 2*1024, &bw);
 		f_close(&fileaudio);
 	}
@@ -560,26 +577,35 @@ TASK(start_sdcard){
         while(1);
     }
 
-  	f_open(&fileaudio, "audio.pcm", FA_OPEN_APPEND | FA_WRITE);
+	const int duration_in_second = 128;				/* For example 1024/8000 = 0.128 s */
+
+
+  	f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
 	/* Header detail of wav file */
-	// static wavHeader_t wavHeader = {
-	// 	.riff = {.id = "RIFF", .size = 0},
-	// 	.format = "WAVE",
-	// 	.fmt = {.id = "fmt ", .size = sizeof(wavFormat_t)},
-	// 	.wavFormat = {.format = 1,							/* PCM format */
-	// 				  .numberOfChannels = 1,
-	// 				  .samplesPerSecond = 8000,				/* 8 KHz */
-	// 				  .bytesPerSecond = 2*8000,
-	// 				  .bytesPerCapture = 2,
-	// 				  .bitsPerSample = 16},
-	// 	.list = {.id = "LIST",
-	// 			 .size = 4 + sizeof(icmt_t) + sizeof(iart_t)},
-	// 	.info = "INFO",
-	// 	.icmt = {.icmt.id = "ICMT", .icmt.size = 0, .comment = ""},
-	// 	.iart = {.iart.id = "IART", .iart.size = 0, .artist = ""},
-	// 	.data = {.id = "data", .size = 0}};
-	// FRESULT res = f_lseek(&fileaudio, 0);
-	// f_write(&fileaudio, &wavHeader, sizeof(wavHeader_t), &bw);
+	static wavHeader_t wavHeader = {
+	 .riff = {.id = "RIFF", .size = 0},
+		.format = "WAVE",
+		.fmt = {.id = "fmt ", .size = sizeof(wavFormat_t)},
+		.wavFormat = {.format = 1,							/* PCM format */
+					  .numberOfChannels = 1,
+					  .samplesPerSecond = 8000,				/* 8 KHz */
+					  .bytesPerSecond = 2*8000,
+					  .bytesPerCapture = 2,
+					  .bitsPerSample = 16},
+		.list = {.id = "LIST",
+				 .size = 4 + sizeof(icmt_t) + sizeof(iart_t)},
+		.info = "INFO",
+		.icmt = {.icmt.id = "ICMT", .icmt.size = 0, .comment = ""},
+		.iart = {.iart.id = "IART", .iart.size = 0, .artist = ""},
+		.data = {.id = "data", .size = 0}
+	};
+
+	wavHeader.wavFormat.samplesPerSecond = 8000;
+	wavHeader.wavFormat.bytesPerSecond = 2 * 8000;
+	wavHeader.data.size = 2 * 8000 * duration_in_second;
+	wavHeader.riff.size = 2 * 8000 * duration_in_second +
+						   sizeof(wavHeader_t) - sizeof(chunk_t);
+	f_write(&fileaudio, &wavHeader, sizeof(wavHeader_t), &bw);
 	f_close(&fileaudio);
 	TerminateTask();
 
