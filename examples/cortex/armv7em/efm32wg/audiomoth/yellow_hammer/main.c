@@ -683,7 +683,11 @@ typedef struct {
 	float yv[11];
 } BW_filter_t;
 
-VAR(float, AUTOMATIC) a_band1 [11] = {
+VAR(float, AUTOMATIC) envelope_1 [87] = {0};
+VAR(float, AUTOMATIC) envelope_2 [87] = {0};
+VAR(float, AUTOMATIC) envelope_3 [87] = {0};
+
+CONST(float, AUTOMATIC) a_band1 [11] = {
 	0.15321141,
 	-0.5377237,
 	1.8085212,
@@ -697,7 +701,35 @@ VAR(float, AUTOMATIC) a_band1 [11] = {
 	1.
 };
 
-VAR(float, AUTOMATIC) b [11] = {
+CONST(float, AUTOMATIC) a_band2 [11] = {
+	0.15321141,
+	0.26168753,
+	1.22782599,
+	1.51382384,
+	3.70608462,
+	3.28072692,
+	5.35124787,
+	3.1793689,
+	3.7219365,
+	1.17771582,
+	1.
+};
+
+CONST(float, AUTOMATIC) a_band3 [11]= {
+	0.15321141,
+	1.23019342,
+	5.03014405,
+	13.32784841,
+	25.13192442,
+	35.0384834,
+	36.5651516,
+	28.23264406,
+	15.52834643,
+	5.5364437,
+	1.
+};
+
+CONST(float, AUTOMATIC) b [11] = {
 	-0.00084414,
 	0.,
 	0.00422071,
@@ -747,14 +779,82 @@ TASK(preprocess){
 	const int frame_length = 1048;
 	const int hop_length = 128;
 
-	const sample_length = 10;
+	// const float sample_rate = 22050;
+	// const float time_audio = 0.5;
 
-	BW_filter_t filter_buffer = {{0}, {0}};
+	/* Sample length is sample rate times audio length --> 22.05KHz and 0.5s */
+	const uint16_t sample_length = 11025; 
+
+	BW_filter_t filter_buffer_1 = {{0}, {0}};
+	BW_filter_t filter_buffer_2 = {{0}, {0}};
+	BW_filter_t filter_buffer_3 = {{0}, {0}};
+
 	uint16_t count = 0; 
 	uint16_t count_frame = 0;
 	
+	float filtered_audio[11025] = {0};
+
+	float min_1 = 999.9; 
+	float max_1 = -1;
+
+	float min_2 = 999.9; 
+	float max_2 = -1;
+
+	float min_3 = 999.9; 
+	float max_3 = -1;
+
 	for(uint16_t i = 0; i < sample_length; i++){
-		float y_filter = Butterworth_applyBandPassFilter(a_band1, b, i, &filter_buffer);
+		/* Applied filter */
+		float y_filter_1 = Butterworth_applyBandPassFilter(a_band1, b, i, &filter_buffer_1);
+		float y_filter_2 = Butterworth_applyBandPassFilter(a_band2, b, i, &filter_buffer_2);
+		float y_filter_3 = Butterworth_applyBandPassFilter(a_band3, b, i, &filter_buffer_3);
+
+		filtered_audio[i] = y_filter_1; /* Do we need filtered audio ? */
+		/* */
+		if(count % hop_length == 0  && count + frame_length < sample_length){
+			envelope_1[i] = y_filter_1 * y_filter_1;
+			envelope_2[i] = y_filter_2 * y_filter_2;
+			envelope_3[i] = y_filter_3 * y_filter_3;
+
+		}
+		for(uint16_t j=0; j<div(count, hop_length).quot; j++){
+			envelope_1[j] += y_filter_1*y_filter_1;
+			envelope_2[j] += y_filter_2*y_filter_2;
+			envelope_3[j] += y_filter_3*y_filter_3;
+		}
+		if(count - count_frame * hop_length == frame_length){
+			envelope_1[count_frame] = sqrt(envelope_1[count_frame]/frame_length);
+			envelope_2[count_frame] = sqrt(envelope_2[count_frame]/frame_length);
+			envelope_3[count_frame] = sqrt(envelope_3[count_frame]/frame_length);
+			count_frame++;
+		}
+		count++;
+		if(envelope_1[count_frame] < min_1){
+			min_1 = envelope_1[count_frame];
+		}
+		if(envelope_1[count_frame] > max_1){
+			max_1 = envelope_1[count_frame];
+		}
+
+		if(envelope_2[count_frame] < min_2){
+			min_2 = envelope_2[count_frame];
+		}
+		if(envelope_2[count_frame] > max_2){
+			max_2 = envelope_2[count_frame];
+		}
+
+		if(envelope_3[count_frame] < min_3){
+			min_3 = envelope_3[count_frame];
+		}
+		if(envelope_3[count_frame] > max_3){
+			max_3 = envelope_3[count_frame];
+		}
+	}
+	/* Normalize */
+	for(uint8_t j=0; j<87; j++){
+		envelope_1[j] = (envelope_1[j] - min_1) / (max_1 - min_1);
+		envelope_2[j] = (envelope_2[j] - min_2) / (max_2 - min_2);
+		envelope_3[j] = (envelope_3[j] - min_3) / (max_3 - min_3);
 	}
 	TerminateTask();
 }
