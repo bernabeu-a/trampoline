@@ -71,7 +71,7 @@ CPU blink {
   
   TASK preprocess {
     PRIORITY = 3;
-    AUTOSTART = FALSE;
+    AUTOSTART = TRUE{APPMODE = std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
   };

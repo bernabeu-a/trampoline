@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include "em_device.h"
 #include "em_chip.h"
@@ -29,6 +30,9 @@
 #include "neural_network_struct.h"
 #include "fixed_point_ops.h"
 #include "layers.h"
+
+/* Input Audio for pre-processing */
+#include "audio_input_librosa.h"
 
 #define ROUNDED_DIV(a, b)                         (((a) + ((b)/2)) / (b))
 #define MIN(a, b)                                 ((a) < (b) ? (a) : (b))
@@ -684,8 +688,8 @@ typedef struct {
 } BW_filter_t;
 
 VAR(float, AUTOMATIC) envelope_1 [87] = {0};
-VAR(float, AUTOMATIC) envelope_2 [87] = {0};
-VAR(float, AUTOMATIC) envelope_3 [87] = {0};
+// VAR(float, AUTOMATIC) envelope_2 [87] = {0};
+// VAR(float, AUTOMATIC) envelope_3 [87] = {0};
 
 CONST(float, AUTOMATIC) a_band1 [11] = {
 	0.15321141,
@@ -701,33 +705,33 @@ CONST(float, AUTOMATIC) a_band1 [11] = {
 	1.
 };
 
-CONST(float, AUTOMATIC) a_band2 [11] = {
-	0.15321141,
-	0.26168753,
-	1.22782599,
-	1.51382384,
-	3.70608462,
-	3.28072692,
-	5.35124787,
-	3.1793689,
-	3.7219365,
-	1.17771582,
-	1.
-};
+// CONST(float, AUTOMATIC) a_band2 [11] = {
+// 	0.15321141,
+// 	0.26168753,
+// 	1.22782599,
+// 	1.51382384,
+// 	3.70608462,
+// 	3.28072692,
+// 	5.35124787,
+// 	3.1793689,
+// 	3.7219365,
+// 	1.17771582,
+// 	1.
+// };
 
-CONST(float, AUTOMATIC) a_band3 [11]= {
-	0.15321141,
-	1.23019342,
-	5.03014405,
-	13.32784841,
-	25.13192442,
-	35.0384834,
-	36.5651516,
-	28.23264406,
-	15.52834643,
-	5.5364437,
-	1.
-};
+// CONST(float, AUTOMATIC) a_band3 [11]= {
+// 	0.15321141,
+// 	1.23019342,
+// 	5.03014405,
+// 	13.32784841,
+// 	25.13192442,
+// 	35.0384834,
+// 	36.5651516,
+// 	28.23264406,
+// 	15.52834643,
+// 	5.5364437,
+// 	1.
+// };
 
 CONST(float, AUTOMATIC) b [11] = {
 	-0.00084414,
@@ -764,7 +768,7 @@ float Butterworth_applyBandPassFilter(float *a, float *b, float sample, BW_filte
 
 	/* sum(y[n-k] * a[k]) */
 	float feed_bck = 0;
-	for(i = 0; i < 11; i++){
+	for(i = 0; i < 11-1; i++){
 		feed_bck += a[i] * filter->yv[i];
 	}
 
@@ -782,83 +786,87 @@ TASK(preprocess){
 	// const float sample_rate = 22050;
 	// const float time_audio = 0.5;
 
-	/* Sample length is sample rate times audio length --> 22.05KHz and 0.5s */
-	const uint16_t sample_length = 11025; 
+	/* Sample length is sample rate times audio length --> 22.05KHz and 0.5s + padding (frame_length/2 start and end) */
+	const uint16_t sample_length = 11025 + 1048; 
 
 	BW_filter_t filter_buffer_1 = {{0}, {0}};
-	BW_filter_t filter_buffer_2 = {{0}, {0}};
-	BW_filter_t filter_buffer_3 = {{0}, {0}};
+	// BW_filter_t filter_buffer_2 = {{0}, {0}};
+	// BW_filter_t filter_buffer_3 = {{0}, {0}};
 
 	uint16_t count = 0; 
 	uint16_t count_frame = 0;
-	
-	float filtered_audio[11025] = {0};
+	uint16_t env_count = 0;
+	// float filtered_audio[11025] = {0};
 
 	float min_1 = 999.9; 
 	float max_1 = -1;
 
-	float min_2 = 999.9; 
-	float max_2 = -1;
+	// float min_2 = 999.9; 
+	// float max_2 = -1;
 
-	float min_3 = 999.9; 
-	float max_3 = -1;
+	// float min_3 = 999.9; 
+	// float max_3 = -1;
 
 	for(uint16_t i = 0; i < sample_length; i++){
 		/* Applied filter */
-		float y_filter_1 = Butterworth_applyBandPassFilter(a_band1, b, i, &filter_buffer_1);
-		float y_filter_2 = Butterworth_applyBandPassFilter(a_band2, b, i, &filter_buffer_2);
-		float y_filter_3 = Butterworth_applyBandPassFilter(a_band3, b, i, &filter_buffer_3);
+		float y_filter_1 = Butterworth_applyBandPassFilter(a_band1, b, data_input[i], &filter_buffer_1);
+		// float y_filter_2 = Butterworth_applyBandPassFilter(a_band2, b, data_input[i], &filter_buffer_2);
+		// float y_filter_3 = Butterworth_applyBandPassFilter(a_band3, b, data_input[i], &filter_buffer_3);
 
-		filtered_audio[i] = y_filter_1; /* Do we need filtered audio ? */
+		// filtered_audio[i] = y_filter_1; /* Do we need filtered audio ? */
 		/* */
 		if(count % hop_length == 0  && count + frame_length < sample_length){
 			envelope_1[i] = y_filter_1 * y_filter_1;
-			envelope_2[i] = y_filter_2 * y_filter_2;
-			envelope_3[i] = y_filter_3 * y_filter_3;
+			// envelope_2[i] = y_filter_2 * y_filter_2;
+			// envelope_3[i] = y_filter_3 * y_filter_3;
+			env_count++;
 
 		}
-		for(uint16_t j=0; j<div(count, hop_length).quot; j++){
+		// for(uint16_t j=count_frame; j<div(count, hop_length).quot; j++){
+		for(uint16_t j=count_frame; j < env_count; j++){
 			envelope_1[j] += y_filter_1*y_filter_1;
-			envelope_2[j] += y_filter_2*y_filter_2;
-			envelope_3[j] += y_filter_3*y_filter_3;
+			// envelope_2[j] += y_filter_2*y_filter_2;
+			// envelope_3[j] += y_filter_3*y_filter_3;
 		}
 		if(count - count_frame * hop_length == frame_length){
 			envelope_1[count_frame] = sqrt(envelope_1[count_frame]/frame_length);
-			envelope_2[count_frame] = sqrt(envelope_2[count_frame]/frame_length);
-			envelope_3[count_frame] = sqrt(envelope_3[count_frame]/frame_length);
+			// envelope_2[count_frame] = sqrt(envelope_2[count_frame]/frame_length);
+			// envelope_3[count_frame] = sqrt(envelope_3[count_frame]/frame_length);
 			count_frame++;
 		}
 		count++;
-		if(envelope_1[count_frame] < min_1){
-			min_1 = envelope_1[count_frame];
-		}
-		if(envelope_1[count_frame] > max_1){
-			max_1 = envelope_1[count_frame];
-		}
 
-		if(envelope_2[count_frame] < min_2){
-			min_2 = envelope_2[count_frame];
-		}
-		if(envelope_2[count_frame] > max_2){
-			max_2 = envelope_2[count_frame];
-		}
+		// if(envelope_2[count_frame] < min_2){
+		// 	min_2 = envelope_2[count_frame];
+		// }
+		// if(envelope_2[count_frame] > max_2){
+		// 	max_2 = envelope_2[count_frame];
+		// }
 
-		if(envelope_3[count_frame] < min_3){
-			min_3 = envelope_3[count_frame];
-		}
-		if(envelope_3[count_frame] > max_3){
-			max_3 = envelope_3[count_frame];
-		}
+		// if(envelope_3[count_frame] < min_3){
+		// 	min_3 = envelope_3[count_frame];
+		// }
+		// if(envelope_3[count_frame] > max_3){
+		// 	max_3 = envelope_3[count_frame];
+		// }
 	}
 	/* Normalize */
+	// A way to find min/max in previous loop ?
+	for(uint8_t i=0; i<87; i++){
+		if(envelope_1[i] < min_1){
+			min_1 = envelope_1[i];
+		}
+		if(envelope_1[i] > max_1){
+			max_1 = envelope_1[i];
+		}
+	}
 	for(uint8_t j=0; j<87; j++){
 		envelope_1[j] = (envelope_1[j] - min_1) / (max_1 - min_1);
-		envelope_2[j] = (envelope_2[j] - min_2) / (max_2 - min_2);
-		envelope_3[j] = (envelope_3[j] - min_3) / (max_3 - min_3);
+		// envelope_2[j] = (envelope_2[j] - min_2) / (max_2 - min_2);
+		// envelope_3[j] = (envelope_3[j] - min_3) / (max_3 - min_3);
 	}
 	TerminateTask();
 }
-
 #define APP_Task_preprocess_STOP_SEC_CODE
 #include "tpl_memmap.h"
 
