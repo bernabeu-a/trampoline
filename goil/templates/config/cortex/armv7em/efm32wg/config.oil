@@ -435,6 +435,7 @@ CPU efm32wg {
     CHEADER = "integer.h";
     CFILE = "ffunicode.c";    
   };
+
 };
 
 IMPLEMENTATION audiomoth {

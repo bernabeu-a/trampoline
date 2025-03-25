@@ -508,6 +508,17 @@ TASK(copyDMAtoSRAM){
 
 static FATFS fatfs;
 
+static void setTime(uint32_t time, uint32_t milliseconds) {
+	/* 1024 tick per seconds */
+    uint32_t ticks = ROUNDED_DIV(1024 * milliseconds, 1000);
+    uint64_t intendedCounter = 1024 * (uint64_t)time + ticks;
+    uint64_t offset = intendedCounter - (uint64_t)BURTC_CounterGet();
+    BURTC_RetRegSet(1, (uint32_t)(offset >> 32));
+    BURTC_RetRegSet(0, (uint32_t)(offset & 0xFFFFFFFF));
+    BURTC_RetRegSet(2, 0x11223344);
+	return;
+}
+
 static void getTime(uint32_t *time, uint32_t *milliseconds) {
 
     uint64_t offset =  (uint64_t)BURTC_RetRegGet(1) << 32;
@@ -522,6 +533,7 @@ static void getTime(uint32_t *time, uint32_t *milliseconds) {
         uint32_t ticks = currentCounter % 1024;
         *milliseconds = ROUNDED_DIV(1000 * ticks, 1024);
     }
+	return;
 }
 
 static void handleTimeOverflow(void) {
@@ -549,15 +561,15 @@ DWORD get_fattime(void) {
     time_t fatTime = currentTime + timezoneHours * 60 * 60 + timezoneMinutes * 60;
 
     struct tm timePtr;
-	return 0;
-    // gmtime_r(&fatTime, &timePtr);
+	// return 0;
+    gmtime_r(&fatTime, &timePtr);
 
-    // return (((unsigned int)timePtr.tm_year - 208) << 25) |
-    //         (((unsigned int)timePtr.tm_mon + 1 ) << 21) |
-    //         ((unsigned int)timePtr.tm_mday << 16) |
-    //         ((unsigned int)timePtr.tm_hour << 11) |
-    //         ((unsigned int)timePtr.tm_min << 5) |
-    //         ((unsigned int)timePtr.tm_sec >> 1);
+    return (((unsigned int)timePtr.tm_year - 208) << 25) |
+            (((unsigned int)timePtr.tm_mon + 1 ) << 21) |
+            ((unsigned int)timePtr.tm_mday << 16) |
+            ((unsigned int)timePtr.tm_hour << 11) |
+            ((unsigned int)timePtr.tm_min << 5) |
+            ((unsigned int)timePtr.tm_sec >> 1);
 }
 
 
@@ -650,7 +662,6 @@ ISR(isr_dma){
 	else if (interruptMask == DMA_IF_CH1DONE){
 		/* nothing to do on DMA ch 1 ? */
 	}
-	
 }
 #define APP_ISR_isr_dma_STOP_SEC_CODE
 #include "tpl_memmap.h"
