@@ -79,7 +79,8 @@ CPU thumb2_ressource {
   };
 
   PLATFORM_FILES cortex_cmsis {
-    PATH = "cortex/CMSIS/Include";
+//    PATH = "cortex/CMSIS/Include";
+    PATH = "cortex/CMSIS_5/CMSIS/Core/Include";
   };
 
   INTERRUPT InitialSPValue {

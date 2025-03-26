@@ -4,6 +4,8 @@ CPU efm32wg {
 
   BUILDOPTIONS buildOptions {
      COMMONFLAGS = "-DEFM32WG380F256=1"; //processor def
+     COMMONFLAGS = "-DARM_MATH_CM4=1";
+     COMMONFLAGS = "-D__FPU_PRESENT=1";
   };
 
   OS features {
@@ -433,9 +435,180 @@ CPU efm32wg {
     CFILE   = "ff.c";
     CHEADER = "ffconf.h";
     CHEADER = "integer.h";
-    CFILE = "ffunicode.c";    
+    CFILE   = "ffunicode.c";    
   };
-
+ 
+ PLATFORM_FILES cmsis_dsp_inc {
+    PATH    = "cortex/CMSIS-DSP/Include";
+  };
+  
+ PLATFORM_FILES cmsis_dsp_private_inc {
+    PATH    = "cortex/CMSIS-DSP/PrivateInclude";
+  };
+  
+ LIBRARY cmsisdsp {
+   PATH = "cortex/CMSIS-DSP";
+   CFILE = "Source/MatrixFunctions/MatrixFunctionsF16.c";
+   CFILE = "Source/MatrixFunctions/MatrixFunctions.c";
+//   CFILE = "Source/MatrixFunctions/_arm_mat_mult_neon.c";
+   CFILE = "Source/TransformFunctions/TransformFunctions.c";
+   CFILE = "Source/TransformFunctions/TransformFunctionsF16.c";
+   CFILE = "Source/CommonTables/CommonTablesF16.c";
+   CFILE = "Source/CommonTables/CommonTables.c";
+   CFILE = "Source/FilteringFunctions/FilteringFunctionsF16.c";
+   CFILE = "Source/FilteringFunctions/FilteringFunctions.c";
+   CFILE = "Source/StatisticsFunctions/StatisticsFunctionsF16.c";
+   CFILE = "Source/StatisticsFunctions/StatisticsFunctions.c";
+   CFILE = "Source/BasicMathFunctions/BasicMathFunctions.c";
+   CFILE = "Source/BasicMathFunctions/BasicMathFunctionsF16.c";
+   CFILE = "Source/InterpolationFunctions/InterpolationFunctions.c";
+   CFILE = "Source/InterpolationFunctions/InterpolationFunctionsF16.c";
+   CFILE = "Source/SupportFunctions/SupportFunctionsF16.c";
+   CFILE = "Source/SupportFunctions/SupportFunctions.c";
+   CFILE = "Source/DistanceFunctions/DistanceFunctions.c";
+   CFILE = "Source/DistanceFunctions/DistanceFunctionsF16.c";
+   CFILE = "Source/ControllerFunctions/ControllerFunctions.c";
+   CFILE = "Source/FastMathFunctions/FastMathFunctions.c";
+   CFILE = "Source/FastMathFunctions/FastMathFunctionsF16.c";
+   CFILE = "Source/WindowFunctions/WindowFunctions.c";
+   CFILE = "Source/BayesFunctions/BayesFunctionsF16.c";
+   CFILE = "Source/BayesFunctions/BayesFunctions.c";
+   CFILE = "Source/SVMFunctions/SVMFunctions.c";
+   CFILE = "Source/SVMFunctions/SVMFunctionsF16.c";
+   CFILE = "Source/QuaternionMathFunctions/QuaternionMathFunctions.c";
+   CFILE = "Source/ComplexMathFunctions/ComplexMathFunctions.c";
+   CFILE = "Source/ComplexMathFunctions/ComplexMathFunctionsF16.c";
+ };
+ 
+ 
+ PLATFORM_FILES cmsis_nn_inc {
+    PATH    = "cortex/CMSIS-NN/Include";
+  };
+  
+// PLATFORM_FILES cmsis_dsp_private_inc {
+//    PATH    = "cortex/CMSIS-DSP/PrivateInclude";
+//  };
+  
+ LIBRARY cmsisnn {
+   PATH = "cortex/CMSIS-NN";
+   CFILE = "Source/PoolingFunctions/arm_avgpool_s8.c";
+   CFILE = "Source/PoolingFunctions/arm_avgpool_get_buffer_sizes_s8.c";
+   CFILE = "Source/PoolingFunctions/arm_max_pool_s16.c";
+   CFILE = "Source/PoolingFunctions/arm_avgpool_s16.c";
+   CFILE = "Source/PoolingFunctions/arm_avgpool_get_buffer_sizes_s16.c";
+   CFILE = "Source/PoolingFunctions/arm_max_pool_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mult_nt_interleaved_t_even_s4.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_transpose_conv_row_s8_s32.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_depthwise_conv_nt_t_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_svdf_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mul_core_1x_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_lstm_step_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_depthwise_conv_nt_t_padded_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_lstm_calculate_gate_s8_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mult_nt_t_s8_s32.c";
+   CFILE = "Source/NNSupportFunctions/arm_nntables.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mul_core_4x_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mult_nt_t_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_per_ch_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_lstm_calculate_gate_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mul_result_acc_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_depthwise_conv_nt_t_s4.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_lstm_step_s8.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mul_core_1x_s4.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mult_nt_t_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_depthwise_conv_nt_t_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mul_result_acc_s8_s16.c";
+   CFILE = "Source/NNSupportFunctions/arm_q7_to_q15_with_offset.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_s4.c";
+   CFILE = "Source/NNSupportFunctions/arm_s8_to_s16_unordered_with_offset.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_mat_mult_nt_t_s4.c";
+   CFILE = "Source/NNSupportFunctions/arm_nn_vec_mat_mult_t_s16_s16.c";
+   CFILE = "Source/PadFunctions/arm_pad_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_get_buffer_sizes_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_per_channel_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_s16.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_get_buffer_sizes_s16.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_vector_sum_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_batch_matmul_s16.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_batch_matmul_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_wrapper_s8.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_fully_connected_s4.c";
+   CFILE = "Source/FullyConnectedFunctions/arm_vector_sum_s8_s64.c";
+   CFILE = "Source/ConcatenationFunctions/arm_concatenation_s8_x.c";
+   CFILE = "Source/ConcatenationFunctions/arm_concatenation_s8_w.c";
+   CFILE = "Source/ConcatenationFunctions/arm_concatenation_s8_y.c";
+   CFILE = "Source/ConcatenationFunctions/arm_concatenation_s8_z.c";
+   CFILE = "Source/SoftmaxFunctions/arm_softmax_u8.c";
+   CFILE = "Source/SoftmaxFunctions/arm_nn_softmax_common_s8.c";
+   CFILE = "Source/SoftmaxFunctions/arm_softmax_s8.c";
+   CFILE = "Source/SoftmaxFunctions/arm_softmax_s16.c";
+   CFILE = "Source/SoftmaxFunctions/arm_softmax_s8_s16.c";
+   CFILE = "Source/SVDFunctions/arm_svdf_get_buffer_sizes_s8.c";
+   CFILE = "Source/SVDFunctions/arm_svdf_state_s16_s8.c";
+   CFILE = "Source/SVDFunctions/arm_svdf_s8.c";
+   CFILE = "Source/ActivationFunctions/arm_relu_q15.c";
+   CFILE = "Source/ActivationFunctions/arm_nn_activation_s16.c";
+   CFILE = "Source/ActivationFunctions/arm_relu6_s8.c";
+   CFILE = "Source/ActivationFunctions/arm_relu_q7.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_mul_s16.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_add_s8.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_mul_s16_s8.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_mul_acc_s16.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_mul_s8.c";
+   CFILE = "Source/BasicMathFunctions/arm_maximum_s8.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_mul_s16_batch_offset.c";
+   CFILE = "Source/BasicMathFunctions/arm_elementwise_add_s16.c";
+   CFILE = "Source/BasicMathFunctions/arm_minimum_s8.c";
+   CFILE = "Source/LSTMFunctions/arm_lstm_unidirectional_s8.c";
+   CFILE = "Source/LSTMFunctions/arm_lstm_unidirectional_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_get_buffer_sizes_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_mat_mult_kernel_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_mat_mult_kernel_s4_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_get_buffer_sizes_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_transpose_conv_get_buffer_sizes_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1_x_n_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_s4_opt.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1x1_s4_fast.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1x1_s8_fast.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1x1_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_wrapper_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_3x3_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_get_buffer_sizes_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_wrapper_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_mat_mult_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_get_buffer_sizes_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_transpose_conv_wrapper_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_depthwise_conv_s8_core.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1_x_n_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_s8_opt.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_fast_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_transpose_conv_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_even_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_1x1_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_get_buffer_sizes_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_mat_mult_kernel_row_offset_s8_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_wrapper_s8.c";
+   CFILE = "Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s16.c";
+   CFILE = "Source/ConvolutionFunctions/arm_convolve_get_buffer_sizes_s4.c";
+   CFILE = "Source/ConvolutionFunctions/arm_nn_mat_mult_kernel_s8_s16.c";
+   CFILE = "Source/TransposeFunctions/arm_transpose_s8.c";
+   CFILE = "Source/ReshapeFunctions/arm_reshape_s8.c";
+ };
+ 
+  LIBRARY tflite {
+  
+  };
 };
 
 IMPLEMENTATION audiomoth {
@@ -444,7 +617,10 @@ IMPLEMENTATION audiomoth {
       TRUE {
         ENUM [
           dmactrl,
-          microsd
+          microsd,
+          cmsisdsp,
+          cmsisnn,
+          tflite
         ] LIBRARY[];
       },
       FALSE

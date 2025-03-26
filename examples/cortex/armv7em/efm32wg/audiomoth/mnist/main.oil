@@ -21,11 +21,14 @@ CPU blink {
 
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
-      APP_SRC = "main.c";
+      APP_SRC = "main.cpp";
       APP_NAME = "main_exe";
+      LIBRARY = cmsisdsp;
+      LIBRARY = cmsisnn;
       CFLAGS  = "-O0 -DEFM32WG380F256=1";
       LDFLAGS = "-Map=main.map";
       COMPILER = "arm-none-eabi-gcc";
+      CPPCOMPILER = "arm-none-eabi-g++";
       ASSEMBLER = "arm-none-eabi-as";
       LINKER = "arm-none-eabi-ld";
       COPIER = "arm-none-eabi-objcopy";
@@ -40,11 +43,11 @@ CPU blink {
     };
   };
 
-  APPMODE std {};
+  APPMODE Std {};
 
   TASK mnist {
     PRIORITY = 1;
-    AUTOSTART = TRUE {APPMODE=std;};
+    AUTOSTART = TRUE {APPMODE=Std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
   };
