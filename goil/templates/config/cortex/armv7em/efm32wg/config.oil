@@ -606,8 +606,21 @@ CPU efm32wg {
    CFILE = "Source/ReshapeFunctions/arm_reshape_s8.c";
  };
  
-  LIBRARY tflite {
+ 
+// PLATFORM_FILES tflite_micro_inc {
+//    PATH    = "cortex/armv7em/efm32wg/tensorflow-microlite/include";
+//  };
   
+  LIBRARY tflite {
+   PATH = "cortex/armv7em/efm32wg/tensorflow-microlite/include";
+//   CHEADER = "common.h";
+//   CHEADER = "micro_interpreter.h";
+//   CHEADER = "micro_log.h";
+//   CHEADER = "micro_mutable_op_resolver.h";
+//   CHEADER = "micro_profiler.h";
+//   CHEADER = "recording_micro_interpreter.h";
+//   CHEADER = "schema_generated.h";
+//   CHEADER = "system_setup.h";
   };
 };
 

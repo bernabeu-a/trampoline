@@ -1,0 +1,34 @@
+gen/cortex_m_generic_cortex-m4+fp_default_cmsis_nn_gcc/obj/core/tensorflow/lite/kernels/internal/runtime_shape.o: \
+ tensorflow/lite/kernels/internal/runtime_shape.cc \
+ tensorflow/lite/kernels/internal/runtime_shape.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstring \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/c++config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/os_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/cpu_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/pstl/pstl_config.h \
+ /Applications/ARM/arm-none-eabi/include/string.h \
+ /Applications/ARM/arm-none-eabi/include/_ansi.h \
+ /Applications/ARM/arm-none-eabi/include/newlib.h \
+ /Applications/ARM/arm-none-eabi/include/_newlib_version.h \
+ /Applications/ARM/arm-none-eabi/include/sys/config.h \
+ /Applications/ARM/arm-none-eabi/include/machine/ieeefp.h \
+ /Applications/ARM/arm-none-eabi/include/sys/features.h \
+ /Applications/ARM/arm-none-eabi/include/sys/reent.h \
+ /Applications/ARM/arm-none-eabi/include/_ansi.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_types.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_types.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_default_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/lock.h \
+ /Applications/ARM/arm-none-eabi/include/sys/cdefs.h \
+ /Applications/ARM/arm-none-eabi/include/sys/string.h \
+ tensorflow/lite/kernels/internal/compatibility.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstdint \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_intsup.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_stdint.h \
+ tensorflow/lite/kernels/op_macros.h tensorflow/lite/micro/micro_log.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstdarg \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstddef

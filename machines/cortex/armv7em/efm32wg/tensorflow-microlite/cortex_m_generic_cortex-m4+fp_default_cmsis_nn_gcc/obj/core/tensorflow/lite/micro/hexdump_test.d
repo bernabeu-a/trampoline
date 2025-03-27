@@ -1,0 +1,51 @@
+gen/cortex_m_generic_cortex-m4+fp_default_cmsis_nn_gcc/obj/core/tensorflow/lite/micro/hexdump_test.o: \
+ tensorflow/lite/micro/hexdump_test.cc tensorflow/lite/micro/hexdump.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstddef \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/c++config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/os_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/cpu_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/pstl/pstl_config.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ tensorflow/lite/micro/span.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/array \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/utility \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_relops.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_pair.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/move.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/type_traits \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/initializer_list \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/functexcept.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/exception_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_algobase.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/cpp_type_traits.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/ext/type_traits.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/ext/numeric_traits.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_iterator_base_types.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_iterator_base_funcs.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/concept_check.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/debug/assertions.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_iterator.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/ptr_traits.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/debug/debug.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/predefined_ops.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/range_access.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/iterator_concepts.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/concepts \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/range_cmp.h \
+ tensorflow/lite/micro/testing/micro_test.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/limits \
+ tensorflow/lite/c/common.h tensorflow/lite/core/c/common.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_default_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/features.h \
+ /Applications/ARM/arm-none-eabi/include/_newlib_version.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_intsup.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_stdint.h \
+ tensorflow/lite/core/c/c_api_types.h \
+ tensorflow/compiler/mlir/lite/core/c/tflite_types.h \
+ tensorflow/lite/micro/micro_log.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/cstdarg \
+ tensorflow/lite/micro/system_setup.h

@@ -1,0 +1,26 @@
+gen/cortex_m_generic_cortex-m4+fp_default_cmsis_nn_gcc/obj/kernels/tensorflow/lite/micro/kernels/ethosu.o: \
+ tensorflow/lite/micro/kernels/ethosu.cc \
+ tensorflow/lite/micro/micro_common.h tensorflow/lite/c/common.h \
+ tensorflow/lite/core/c/common.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_default_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/features.h \
+ /Applications/ARM/arm-none-eabi/include/_newlib_version.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_intsup.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_stdint.h \
+ tensorflow/lite/core/c/c_api_types.h \
+ tensorflow/compiler/mlir/lite/core/c/tflite_types.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/utility \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/c++config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/os_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/cpu_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/pstl/pstl_config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_relops.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_pair.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/move.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/type_traits \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/initializer_list

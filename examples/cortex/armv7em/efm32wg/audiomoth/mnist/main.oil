@@ -21,12 +21,34 @@ CPU blink {
 
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
-      APP_SRC = "main.cpp";
+      APP_CPPSRC = "main.cpp";
+      APP_CPPSRC = "hello_world_float_model_data.cc";
+      APP_CPPSRC = "hello_world_int8_model_data.cc";
       APP_NAME = "main_exe";
       LIBRARY = cmsisdsp;
       LIBRARY = cmsisnn;
-      CFLAGS  = "-O0 -DEFM32WG380F256=1";
+      // LIBRARY = tflite;
+      CFLAGS  = "-Os -DEFM32WG380F256=1";
+      CPPFLAGS = "-Os -DEFM32WG380F256=1";
+      CPPFLAGS = "-std=c++17";
+      CPPFLAGS = "-DTF_LITE_STATIC_MEMORY -DTF_LITE_DISABLE_X86_NEON";
+      CPPFLAGS = "-DCMSIS_NN -DKERNELS_OPTIMIZED_FOR_SPEED";
+      CPPFLAGS = "-DTF_LITE_MCU_DEBUG_LOG";
+      CPPFLAGS = "-mfpu=auto";
+      CPPFLAGS = "--specs=nosys.specs";
+      CPPFLAGS = "-Wnon-virtual-dtor";
+      CPPFLAGS = "-fno-unwind-tables";
+      CPPFLAGS = "-fno-asynchronous-unwind-tables";
+      CPPFLAGS = "-Wsign-compare -Wdouble-promotion -Wunused-variable -Wunused-function -Wswitch -Wvla -Wall -Wextra -Wmissing-field-initializers -Wstrict-aliasing -Wno-unused-parameter"; 
+      CPPFLAGS = "-mlittle-endian -Wno-type-limits -Wno-unused-private-field -fomit-frame-pointer";
+      CPPFLAGS  = "-I/Users/bernabeu-a/bin/tflite-micro";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gemmlowp";
       LDFLAGS = "-Map=main.map";
+      LDFLAGS = "-nostdlib";
+      LDFLAGS = "-L/Users/bernabeu-a/tpl_audiomoth/trampoline/machines/cortex/armv7em/efm32wg/tensorflow-microlite/cortex_m_generic_cortex-m4+fp_default_cmsis_nn_gcc/lib";
+      LDFLAGS = "-ltensorflow-microlite";
+      LDFLAGS = "-L/Applications/ARM/arm-none-eabi/lib/thumb/v7e-m+fp/hard";
       COMPILER = "arm-none-eabi-gcc";
       CPPCOMPILER = "arm-none-eabi-g++";
       ASSEMBLER = "arm-none-eabi-as";
