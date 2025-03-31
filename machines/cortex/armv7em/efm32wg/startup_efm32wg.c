@@ -133,3 +133,5 @@ void __attribute__((section(".after_vectors"))) system_init()
   // Call the system initialisation routine
   SystemInit_efm32wg();
 }
+
+void __cxa_pure_virtual() { while (1); }
