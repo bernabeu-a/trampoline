@@ -35,7 +35,6 @@ CPU blink {
       CPPFLAGS = "-DCMSIS_NN -DKERNELS_OPTIMIZED_FOR_SPEED";
       CPPFLAGS = "-DTF_LITE_MCU_DEBUG_LOG";
       CPPFLAGS = "-mfpu=auto";
-      CPPFLAGS = "--specs=nosys.specs";
       CPPFLAGS = "-Wnon-virtual-dtor";
       CPPFLAGS = "-fno-unwind-tables";
       CPPFLAGS = "-fno-asynchronous-unwind-tables";

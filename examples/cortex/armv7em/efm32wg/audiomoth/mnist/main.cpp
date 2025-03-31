@@ -62,9 +62,9 @@ TfLiteStatus ProfileMemoryAndLatency() {
 	interpreter.input(0)->data.f[0] = 1.f;
 	TF_LITE_ENSURE_STATUS(interpreter.Invoke());
   
-	profiler.LogTicksPerTagCsv();
+	// profiler.LogTicksPerTagCsv();
   
-	interpreter.GetMicroAllocator().PrintAllocations();
+	// interpreter.GetMicroAllocator().PrintAllocations();
 	return kTfLiteOk;
   }
 
@@ -152,7 +152,7 @@ TfLiteStatus ProfileMemoryAndLatency() {
   }
 
 TASK(mnist){
-	tflite::InitializeTarget();
+	// tflite::InitializeTarget();
 	ProfileMemoryAndLatency();
 	LoadFloatModelAndPerformInference();
 	LoadQuantModelAndPerformInference();
