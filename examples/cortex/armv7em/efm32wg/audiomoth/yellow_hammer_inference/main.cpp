@@ -33,7 +33,35 @@ void setup_model(){
 	model = tflite::GetModel(model_data);
 	// Check some stuff ? version etc ?
 
-	static tflite::MicroMutableOpResolver<>;
+	static tflite::MicroMutableOpResolver<23> micro_op_resolver;
+	micro_op_resolver.AddExpandDims();
+	micro_op_resolver.AddConv2D();
+	micro_op_resolver.AddMul();
+	micro_op_resolver.AddAdd();
+	micro_op_resolver.AddReshape();
+	micro_op_resolver.AddExpandDims();
+	micro_op_resolver.AddMaxPool2D();
+	micro_op_resolver.AddReshape();
+	micro_op_resolver.AddExpandDims();
+	micro_op_resolver.AddConv2D();
+	micro_op_resolver.AddMul();
+	micro_op_resolver.AddAdd();
+	micro_op_resolver.AddReshape();
+	micro_op_resolver.AddExpandDims();
+	micro_op_resolver.AddMaxPool2D();
+	micro_op_resolver.AddReshape();
+	micro_op_resolver.AddExpandDims();
+	micro_op_resolver.AddConv2D();
+	micro_op_resolver.AddReshape();
+	micro_op_resolver.AddMean();
+	micro_op_resolver.AddFullyConnected();
+	micro_op_resolver.AddFullyConnected();
+	micro_op_resolver.AddLogistic();
+
+	static tflite::MicroInterpreter static_interpreter(model, micro_op_resolver, tensor_arena, kTensorArenaSize);
+	interpreter = &static_interpreter;
+	TfLiteSatus allocate_status = interpreter->AllocateTensors();
+	input = interpreter->input(0);
 	return;
 }
 
@@ -52,6 +80,11 @@ FUNC(int, OS_APPL_CODE) main(void){
 }
 
 TASK(inference){
+	// Get data for input
+	input->data.int8 = envelop_data;
+	interpreter->Invoke();
+	TfLiteTensor* output = interpreter->output(0);
+	uint8_t final_output = output->data.uint8_t[0];
 	GPIO->P[gpioPortC].DOUT ^= 1<<4;
 	ChainTask(inference);
 }
