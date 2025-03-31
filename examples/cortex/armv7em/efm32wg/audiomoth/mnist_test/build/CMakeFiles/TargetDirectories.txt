@@ -1,0 +1,3 @@
+/Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/build/CMakeFiles/main_exe.dir
+/Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/build/CMakeFiles/edit_cache.dir
+/Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/build/CMakeFiles/rebuild_cache.dir

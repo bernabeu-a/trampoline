@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+129409a8baf0eba06a62e8fa76cba7c6 /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/main/tpl_app_config.c

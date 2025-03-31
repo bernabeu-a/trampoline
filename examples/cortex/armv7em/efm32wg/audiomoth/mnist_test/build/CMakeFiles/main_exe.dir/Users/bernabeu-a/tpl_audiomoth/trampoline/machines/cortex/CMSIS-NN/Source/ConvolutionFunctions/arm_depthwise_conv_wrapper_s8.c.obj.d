@@ -1,0 +1,35 @@
+CMakeFiles/main_exe.dir/Users/bernabeu-a/tpl_audiomoth/trampoline/machines/cortex/CMSIS-NN/Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s8.c.obj: \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/machines/cortex/CMSIS-NN/Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s8.c \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/cortex/CMSIS-NN/Include/arm_nnfunctions.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/cortex/CMSIS-NN/Include/arm_nn_math_types.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include-fixed/limits.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include-fixed/syslimits.h \
+ /Applications/ARM/arm-none-eabi/include/limits.h \
+ /Applications/ARM/arm-none-eabi/include/newlib.h \
+ /Applications/ARM/arm-none-eabi/include/_newlib_version.h \
+ /Applications/ARM/arm-none-eabi/include/sys/cdefs.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_default_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/features.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /Applications/ARM/arm-none-eabi/include/sys/syslimits.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_intsup.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_stdint.h \
+ /Applications/ARM/arm-none-eabi/include/string.h \
+ /Applications/ARM/arm-none-eabi/include/_ansi.h \
+ /Applications/ARM/arm-none-eabi/include/sys/config.h \
+ /Applications/ARM/arm-none-eabi/include/machine/ieeefp.h \
+ /Applications/ARM/arm-none-eabi/include/sys/reent.h \
+ /Applications/ARM/arm-none-eabi/include/_ansi.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_types.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/lock.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_locale.h \
+ /Applications/ARM/arm-none-eabi/include/strings.h \
+ /Applications/ARM/arm-none-eabi/include/sys/string.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/cortex/CMSIS-NN/Include/arm_nn_types.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/cortex/CMSIS-NN/Include/arm_nnsupportfunctions.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/cortex/CMSIS-NN/Include/Internal/arm_nn_compiler.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/arm_acle.h

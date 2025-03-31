@@ -1,0 +1,30 @@
+CMakeFiles/main_exe.dir/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/memory_planner/greedy_memory_planner.cc.obj: \
+ /Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/memory_planner/greedy_memory_planner.cc \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/micro/memory_planner/greedy_memory_planner.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/micro/compatibility.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/micro/memory_planner/micro_memory_planner.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/c/common.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/core/c/common.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /Applications/ARM/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/stdint.h \
+ /Applications/ARM/arm-none-eabi/include/machine/_default_types.h \
+ /Applications/ARM/arm-none-eabi/include/sys/features.h \
+ /Applications/ARM/arm-none-eabi/include/_newlib_version.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_intsup.h \
+ /Applications/ARM/arm-none-eabi/include/sys/_stdint.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/core/c/c_api_types.h \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/compiler/mlir/lite/core/c/tflite_types.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/utility \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/c++config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/os_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/cpu_defines.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/pstl/pstl_config.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_relops.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/stl_pair.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/bits/move.h \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/type_traits \
+ /Applications/ARM/arm-none-eabi/include/c++/10.3.1/initializer_list \
+ /Users/bernabeu-a/tpl_audiomoth/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/mnist_test/../../../../../../machines/../../../bin/tflite-micro/tensorflow/lite/micro/micro_log.h
