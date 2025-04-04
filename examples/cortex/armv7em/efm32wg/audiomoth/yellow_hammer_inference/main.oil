@@ -4,7 +4,7 @@ IMPLEMENTATION trampoline {
 
     /* This fix the default STACKSIZE of tasks */
     TASK {
-        UINT32 STACKSIZE = 2000 ;
+        UINT32 STACKSIZE = 18000 ;
     } ;
 
     /* This fix the default STACKSIZE of ISRs */
@@ -22,8 +22,7 @@ CPU blink {
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
       APP_CPPSRC = "main.cpp";
-      APP_CPPSRC = "hello_world_float_model_data.cc";
-      APP_CPPSRC = "hello_world_int8_model_data.cc";
+      APP_CPPSRC = "model/bands_int8_model_model_data.cc";
       APP_NAME = "main_exe";
       LIBRARY = cmsisdsp;
       LIBRARY = cmsisnn;
@@ -37,39 +36,41 @@ CPU blink {
       CPPFLAGS = "-mfpu=auto";
       CPPFLAGS = "-Wnon-virtual-dtor";
       CPPFLAGS = "-fno-unwind-tables";
+      CPPFLAGS = "-fno-use-cxa-atexit";
       CPPFLAGS = "-fno-asynchronous-unwind-tables";
       CPPFLAGS = "-Wsign-compare -Wdouble-promotion -Wunused-variable -Wunused-function -Wswitch -Wvla -Wall -Wextra -Wmissing-field-initializers -Wstrict-aliasing -Wno-unused-parameter"; 
       CPPFLAGS = "-mlittle-endian -Wno-type-limits -Wno-unused-private-field -fomit-frame-pointer";
-      CPPFLAGS  = "-I/home/bernabeu-a/Source/tflite-micro";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gemmlowp";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/c";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core/api";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core/c";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels/internal";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels/internal/reference";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/kernels/internal";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/core/api";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/core/c";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/schema";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/kernels";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/arena_allocator";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/memory_planner";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tflite_bridge";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/make/downloads";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/kissfft";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/ruy/";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/src/kiss_fft_wrappers/";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/micro/kernels";
-      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/src";
+      CPPFLAGS  = "-I/Users/bernabeu-a/bin/tflite-micro";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gemmlowp";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/c";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/core";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/core/api";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/core/c";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/kernels";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/kernels/internal";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/kernels/internal/reference";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/compiler/mlir/lite/kernels/internal";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/compiler/mlir/lite/core/api";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/compiler/mlir/lite/core/c";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/compiler/mlir/lite/schema";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/kernels";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/arena_allocator";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/memory_planner";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tflite_bridge";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/make/downloads";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/kissfft";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/ruy/";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/src/kiss_fft_wrappers/";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/micro/kernels";
+      CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/src";
       LDFLAGS = "-Map=main.map";
+      LDFLAGS = "--print-memory-usage";
       LDFLAGS = "-nostdlib";
-      LDFLAGS = "-L/home/bernabeu-a/Source/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/arm-none-eabi/lib/thumb/v7e-m+fp/hard";
+      LDFLAGS = "-L/Applications/ARM/arm-none-eabi/lib/thumb/v7e-m+fp/hard";
       COMPILER = "arm-none-eabi-gcc";
       CPPCOMPILER = "arm-none-eabi-g++";
       ASSEMBLER = "arm-none-eabi-as";
@@ -88,7 +89,7 @@ CPU blink {
 
   APPMODE Std {};
 
-  TASK mnist {
+  TASK inference {
     PRIORITY = 1;
     AUTOSTART = TRUE {APPMODE=Std;};
     ACTIVATION = 1;
