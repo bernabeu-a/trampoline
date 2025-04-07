@@ -95,4 +95,5 @@ CPU blink {
     ACTIVATION = 1;
     SCHEDULE = FULL;
   };
+
 };
