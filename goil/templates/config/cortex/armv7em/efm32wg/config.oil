@@ -442,6 +442,10 @@ CPU efm32wg {
     PATH    = "cortex/CMSIS-DSP/Include";
   };
   
+  PLATFORM_FILES cmsis_dsp_dsp_inc {
+    PATH    = "cortex/CMSIS-DSP/Include/dsp";
+  };
+   
  PLATFORM_FILES cmsis_dsp_private_inc {
     PATH    = "cortex/CMSIS-DSP/PrivateInclude";
   };
@@ -485,9 +489,9 @@ CPU efm32wg {
     PATH    = "cortex/CMSIS-NN/Include";
   };
   
-// PLATFORM_FILES cmsis_dsp_private_inc {
-//    PATH    = "cortex/CMSIS-DSP/PrivateInclude";
-//  };
+ PLATFORM_FILES cmsis_dsp_private_inc {
+    PATH    = "cortex/CMSIS-DSP/PrivateInclude";
+  };
   
  LIBRARY cmsisnn {
    PATH = "cortex/CMSIS-NN";
