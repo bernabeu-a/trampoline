@@ -4,12 +4,12 @@ IMPLEMENTATION trampoline {
 
     /* This fix the default STACKSIZE of tasks */
     TASK {
-        UINT32 STACKSIZE = 200 ;
+        UINT32 STACKSIZE = 300 ;
     } ;
 
     /* This fix the default STACKSIZE of ISRs */
     ISR {
-        UINT32 STACKSIZE = 200 ;
+        UINT32 STACKSIZE = 300 ;
     } ;
 };
 
@@ -21,18 +21,23 @@ CPU blink {
 
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
-      APP_CPPSRC = "main.cpp";
+      APP_SRC = "main.c";
       APP_CPPSRC = "model/bands_int8_model_model_data.cc";
+      APP_CPPSRC = "inference.cpp";
       APP_NAME = "main_exe";
+      LIBRARY = dmactrl;
+      LIBRARY = microsd;
       LIBRARY = cmsisdsp;
       LIBRARY = cmsisnn;
       LIBRARY = tflite;
       CFLAGS  = "-Os -DEFM32WG380F256=1";
       CPPFLAGS = "-Os -DEFM32WG380F256=1";
       CPPFLAGS = "-std=c++17";
+      // Define for TFLM
       CPPFLAGS = "-DTF_LITE_STATIC_MEMORY -DTF_LITE_DISABLE_X86_NEON -DNDEBUG";
       CPPFLAGS = "-DCMSIS_NN -DKERNELS_OPTIMIZED_FOR_SPEED";
       CPPFLAGS = "-DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_STRIP_ERROR_STRINGS";
+      // Flags same as tflite-micro example with cortex-m4
       CPPFLAGS = "-mfpu=auto";
       CPPFLAGS = "-Wnon-virtual-dtor";
       CPPFLAGS = "-fno-unwind-tables";
@@ -40,6 +45,7 @@ CPU blink {
       CPPFLAGS = "-fno-asynchronous-unwind-tables";
       CPPFLAGS = "-Wsign-compare -Wdouble-promotion -Wunused-variable -Wunused-function -Wswitch -Wvla -Wall -Wextra -Wmissing-field-initializers -Wstrict-aliasing -Wno-unused-parameter"; 
       CPPFLAGS = "-mlittle-endian -Wno-type-limits -Wno-unused-private-field -fomit-frame-pointer";
+      // Include TFLM --> change path as required
       CPPFLAGS  = "-I/Users/bernabeu-a/bin/tflite-micro";
       CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include";
       CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gemmlowp";
@@ -67,10 +73,9 @@ CPU blink {
       CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/src/kiss_fft_wrappers/";
       CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/micro/kernels";
       CPPFLAGS = "-I/Users/bernabeu-a/bin/tflite-micro/signal/src";
+      // Linker flags
       LDFLAGS = "-Map=main.map";
       LDFLAGS = "--print-memory-usage";
-      LDFLAGS = "-nostdlib";
-      // LDFLAGS = "-L/home/bernabeu-a/Source/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/arm-none-eabi/lib/thumb/v7e-m+fp/hard";
       COMPILER = "arm-none-eabi-gcc";
       CPPCOMPILER = "arm-none-eabi-g++";
       ASSEMBLER = "arm-none-eabi-as";
@@ -89,20 +94,98 @@ CPU blink {
 
   APPMODE Std {};
 
+  TASK start_sdcard {
+    PRIORITY = 4;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 500;
+  };
+
+  TASK start_audio {
+    PRIORITY = 2;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+  };
+
+  TASK start_dma {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+  };
+  
+  // TASK normalize {
+  //   PRIORITY = 3;
+  //   AUTOSTART = TRUE{APPMODE = Std;};
+  //   // AUTOSTART = FALSE;
+  //   ACTIVATION = 1;
+  //   SCHEDULE = FULL;
+  //   EVENT = ev_NORMALIZE;
+  // };
+
+  EVENT ev_NORMALIZE {
+    MASK = AUTO;
+  };
+
   TASK inference {
-    PRIORITY = 1;
+    PRIORITY = 3;
     AUTOSTART = FALSE;
     ACTIVATION = 1;
     SCHEDULE = FULL;
     STACKSIZE = 1200;
+    EVENT = ev_NORMALIZE;
+  };
+
+  TASK copyDMAtoSRAM {
+    PRIORITY = 3;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = ev_DMAtoSRAM;
+  };
+
+  EVENT ev_DMAtoSRAM {
+    MASK = AUTO;
   };
 
   TASK setup_inference {
-    PRIORITY = 1;
+    PRIORITY = 5;
     AUTOSTART = TRUE {APPMODE = Std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
     STACKSIZE = 13500;
   };
 
+  TASK blink {
+    PRIORITY = 1;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+  };
+
+  ALARM blink_blink {
+    COUNTER = SystemCounter;
+    ACTION = ACTIVATETASK {
+      TASK = blink;
+    };
+    AUTOSTART = TRUE {
+      APPMODE = Std;
+      ALARMTIME = 100;
+      CYCLETIME = 100;
+    };
+  };
+
+  // ISR isr_adc {
+  //   CATEGORY = 1;
+  //   PRIORITY = 1;
+  //   SOURCE = ADC0_IRQ;
+  // };
+
+  ISR isr_dma {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = DMA_IRQ;
+  };
 };
