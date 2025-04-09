@@ -11,7 +11,8 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 /* ----- Model TFLM ----- */
-#include "model/bands_int8_model_model_data.h"
+// #include "model/bands_int8_model_model_data.h"
+#include "model/cmsis_bands_rms_int8_model.h"
 
 /* W eonly share envelopes between both src files */
 extern VAR(float, AUTOMATIC) envelope_1 [80];
@@ -53,7 +54,9 @@ TfLiteStatus ProcessInference(){
 #include "tpl_memmap.h"
 TASK(setup_inference){
 	/* Get Model */
-	model = ::tflite::GetModel(bands_int8_model_tflite);
+	// model = ::tflite::GetModel(bands_int8_model_tflite);
+	model = ::tflite::GetModel(cmsis_bands_rms_int8_model_tflite);
+
 	if(model->version() != TFLITE_SCHEMA_VERSION){
 		while(1);
 	}
@@ -154,13 +157,13 @@ TASK(inference){
 	/* Now put quantized data on input of NN */
 	// input->data.int8[0] = *quantized_value;
 	/* Process NN */
-	GPIO->P[gpioPortB].DOUT |= 1<<9;
+	// GPIO->P[gpioPortB].DOUT |= 1<<9;
 
 	myStatus = ProcessInference();
 	if(myStatus != kTfLiteOk){
 		while(1);
 	}
-	GPIO->P[gpioPortB].DOUT &= ~(1<<9);
+	// GPIO->P[gpioPortB].DOUT &= ~(1<<9);
 
 	// // int8_t final_output;
 	// // std::copy_n(tflite::GetTensorData<int8_t>(output), 1, &final_output);
