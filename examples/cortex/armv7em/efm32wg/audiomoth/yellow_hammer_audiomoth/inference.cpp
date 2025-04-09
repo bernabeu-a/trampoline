@@ -76,7 +76,7 @@ TASK(setup_inference){
 	output = interpreter->output(0);
 	TFLITE_CHECK_NE(output, nullptr);
 
-	TerminateTask();
+	ChainTask(inference);
 }
 #define APP_Task_setup_inference_STOP_SEC_CODE
 #include "tpl_memmap.h"
@@ -87,11 +87,11 @@ TASK(setup_inference){
 static float input_inference[240];
 
 TASK(inference){
+
 	EventMaskType ev1;
 	WaitEvent(ev_NORMALIZE);
 	GetEvent(inference, &ev1);
 	ClearEvent(ev1);
-	// GPIO->P[gpioPortA].DOUT |= 1<<7;
 	float min_band1 = 999.0;
 	float max_band1 = 0;
 
@@ -154,10 +154,14 @@ TASK(inference){
 	/* Now put quantized data on input of NN */
 	// input->data.int8[0] = *quantized_value;
 	/* Process NN */
+	GPIO->P[gpioPortB].DOUT |= 1<<9;
+
 	myStatus = ProcessInference();
 	if(myStatus != kTfLiteOk){
 		while(1);
 	}
+	GPIO->P[gpioPortB].DOUT &= ~(1<<9);
+
 	// // int8_t final_output;
 	// // std::copy_n(tflite::GetTensorData<int8_t>(output), 1, &final_output);
 	int8_t final_output = output->data.int8[0];
@@ -167,7 +171,6 @@ TASK(inference){
 		// GPIO->P[gpioPortA].DOUT |= (1<<7);
 		// GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	}
-	// GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	ChainTask(inference);
 	// TerminateTask();
 }

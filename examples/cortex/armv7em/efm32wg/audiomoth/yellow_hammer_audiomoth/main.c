@@ -95,9 +95,8 @@ chunk_t data;
 FIL fileaudio;
 static UINT bw;
 
-#define APP_Task_blink_START_SEC_CODE
+#define APP_COMMON_START_SEC_CODE
 #include "tpl_memmap.h"
-
 VAR(float, AUTOMATIC) envelope_1 [80] = {0};
 VAR(float, AUTOMATIC) envelope_2 [80] = {0};
 VAR(float, AUTOMATIC) envelope_3 [80] = {0};
@@ -202,19 +201,25 @@ FUNC(int, OS_APPL_CODE) main(void){
 	GPIO->P[gpioPortC].MODEL |= 4 << (20);
 	// Set A7 to ouput for debug
 	GPIO->P[gpioPortA].MODEL |= 4 << (7*4);
+	// Set A8 to ouput for debug
+	// GPIO->P[gpioPortA].MODEL |= 4 << (8*4);
+	// Set B10 to ouput for debug
+	// GPIO->P[gpioPortB].MODEL |= 4 << (10*4);
+	// Set B9 to ouput for debug
+	// GPIO->P[gpioPortB].MODEL |= 4 << (9*4);
 	/* Start Trampoline */
 	StartOS(OSDEFAULTAPPMODE);
 	return 0;
 }
 
-TASK(blink){
-	//Red Led
-	GPIO->P[gpioPortC].DOUT ^= 1<<4;
-	// Green Led
-	GPIO->P[gpioPortC].DOUT ^= 1<<5;
-	TerminateTask();
-}
-#define APP_Task_blink_STOP_SEC_CODE
+// TASK(blink){
+// 	//Red Led
+// 	GPIO->P[gpioPortC].DOUT ^= 1<<4;
+// 	// Green Led
+// 	GPIO->P[gpioPortC].DOUT ^= 1<<5;
+// 	TerminateTask();
+// }
+#define APP_COMMON_STOP_SEC_CODE
 #include "tpl_memmap.h"
 
 #define APP_Task_start_audio_START_SEC_CODE
@@ -445,6 +450,10 @@ TASK(start_dma){
 #define APP_Task_copyDMAtoSRAM_START_SEC_CODE
 #include "tpl_memmap.h"
 
+// P2VAR(int16_t, AUTOMATIC, OS_VAR) buffer_sram;
+// VAR(float, AUTOMATIC) buffer_float_sound [1024] = {0.0f};
+
+VAR(uint8_t,AUTOMATIC) count_env = 0;
 /* EBI region 0 */
 #define SRAM_EXT_START_ADDR 0x80000000
 /* We have 2 buffer of 1024 int16 in SRAM EXT --> START AT + 0x800 */
@@ -482,33 +491,14 @@ static float32_t firStateF32_band3 [2*3] = {0};
 
 
 TASK(copyDMAtoSRAM){
-	/* Configure DMA Channel 1 to transfer from DMA buffer to SRAM Extern */
-	/* Initialise the DMA structure */
-	// DMA_Init_TypeDef dmaInit1;
-	// dmaInit1.hprot = 0;
-	// dmaInit1.controlBlock = dmaControlBlock;
-	// DMA_Init(&dmaInit1);
-	// /* Setup channel */
-	// DMA_CfgChannel_TypeDef chnlCfg1;
-	// chnlCfg1.highPri = false;
-    // chnlCfg1.enableInt = true;
-	// chnlCfg1.select = 0; /* 0 because memory to memory transfer */
-	// DMA_CfgChannel(1, &chnlCfg1);
-	// /* Setting up channel descriptor */
-    // DMA_CfgDescr_TypeDef descrCfg1;
-	// descrCfg1.dstInc = dmaDataIncNone;
-    // descrCfg1.srcInc = dmaDataIncNone;
-    // descrCfg1.size = 1024;
-	// descrCfg1.arbRate = dmaArbitrate1;
-    // descrCfg1.hprot = 0;
-	// /* Set up both the primary and the secondary transfers */
-    // DMA_CfgDescr(1, true, &descrCfg1);
+	GPIO->P[gpioPortA].DOUT ^= 1<<7;
 	/* Wait for event to transfer audio to sram */
 	EventMaskType ev;
 	WaitEvent(ev_DMAtoSRAM);
 	GetEvent(copyDMAtoSRAM, ev);
 	ClearEvent(ev);
-	// GPIO->P[gpioPortA].DOUT |= 1<<7;
+	GPIO->P[gpioPortB].DOUT |= 1<<10;
+
 	int16_t *buffer_dma;
 	if(isPrimaryDMABuffer){
 		buffer_dma = secondaryBuffer;
@@ -517,13 +507,12 @@ TASK(copyDMAtoSRAM){
 		buffer_dma = primaryBuffer;
 	}
 
-	float buffer_float_sound [1024] = {0.0f};
-	*buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
+	buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
 	for(uint16_t i = 0; i < 1024; i++){
-		*buffer_sram = *buffer_dma++;
-		buffer_float_sound[i] = *buffer_sram++;
+		*buffer_sram++ = *buffer_dma++;
+		// buffer_float_sound[i] = *buffer_sram++;
 	}
-
+	buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
 	// float32_t *input_float_test = data_input;
 	// static float32_t filtered_rms_band1 [1024];
 	arm_biquad_cascade_df2T_instance_f32 instFilter1;
@@ -555,11 +544,15 @@ TASK(copyDMAtoSRAM){
 
 	float32_t result_rms;
 	float32_t *ptr_result_rms = &result_rms;
-	static uint8_t count_env = 0;
+	
 	if(isPrimaryDMABuffer){
-		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_pong_buffer_filtered_band1, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_pong_buffer_filtered_band2, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_pong_buffer_filtered_band3, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_pong_buffer_filtered_band1, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_pong_buffer_filtered_band2, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_pong_buffer_filtered_band3, 1024);
+
+		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_sram, prev_pong_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_sram, prev_pong_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_sram, prev_pong_buffer_filtered_band3, 1024);
 
 		for(uint8_t i = 0; i < 8; i++){
 			/* RMS on previous and current buffer with hop length of 128 */
@@ -571,15 +564,20 @@ TASK(copyDMAtoSRAM){
 			envelope_3[count_env] = result_rms;
 			count_env++;
 			if(count_env >= 80) {
+				GPIO->P[gpioPortA].DOUT ^= 1<<8;
 				count_env = 0;
 				SetEvent(inference, ev_NORMALIZE);
 			}		
 		}
 	}
 	else{
-		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_ping_buffer_filtered_band1, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_ping_buffer_filtered_band2, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_ping_buffer_filtered_band3, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_ping_buffer_filtered_band1, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_ping_buffer_filtered_band2, 1024);
+		// arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_ping_buffer_filtered_band3, 1024);
+
+		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_sram, prev_ping_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_sram, prev_ping_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_sram, prev_ping_buffer_filtered_band3, 1024);
 
 		for(uint16_t i = 0; i < 1024; i++){
 			*prev_ping_buffer_filtered_band1_bis++ = *prev_ping_buffer_filtered_band1++;
@@ -625,6 +623,7 @@ TASK(copyDMAtoSRAM){
 	// 	*buffer_dma,				/* src */
 	// 	1							/* 1 transfert */
 	// );
+	GPIO->P[gpioPortB].DOUT &= ~(1<<10);
 	ChainTask(copyDMAtoSRAM);
 }
 #define APP_Task_copyDMAtoSRAM_STOP_SEC_CODE
