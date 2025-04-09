@@ -22,7 +22,7 @@ CPU blink {
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
       APP_SRC = "main.c";
-      APP_CPPSRC = "model/bands_int8_model_model_data.cc";
+      APP_CPPSRC = "model/cmsis_bands_rms_int8_model.cc";
       APP_CPPSRC = "inference.cpp";
       APP_NAME = "main_exe";
       LIBRARY = dmactrl;
@@ -157,6 +157,14 @@ CPU blink {
     SCHEDULE = FULL;
     STACKSIZE = 13500;
   };
+
+  // TASK write_audio {
+  //   PRIORITY = 6;
+  //   AUTOSTART = FALSE;
+  //   ACTIVATION = 1;
+  //   SCHEDULE = FULL;
+  //   STACKSIZE = 200;
+  // };
 
   // TASK blink {
   //   PRIORITY = 1;
