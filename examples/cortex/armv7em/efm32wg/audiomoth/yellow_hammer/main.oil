@@ -9,7 +9,7 @@ IMPLEMENTATION trampoline {
 
     /* This fix the default STACKSIZE of ISRs */
     ISR {
-        UINT32 STACKSIZE = 300 ;
+        UINT32 STACKSIZE = 200 ;
     } ;
 };
 
@@ -22,16 +22,17 @@ CPU blink {
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
       APP_SRC = "main.c";
-      APP_SRC = "fixed_point_ops.c";
-      APP_SRC = "matrix_ops.c";
-      APP_SRC = "layers.c";
       APP_NAME = "main_exe";
       LIBRARY = dmactrl;
       LIBRARY = microsd;
-      CFLAGS  = "-O0 -DEFM32WG380F256=1";
+      LIBRARY = cmsisdsp;
+      // LIBRARY = cmsisnn;
+      CFLAGS  = "-Og -g -DEFM32WG380F256=1";
+      // Linker flags
       LDFLAGS = "-Map=main.map";
       LDFLAGS = "--print-memory-usage";
       COMPILER = "arm-none-eabi-gcc";
+      CPPCOMPILER = "arm-none-eabi-g++";
       ASSEMBLER = "arm-none-eabi-as";
       LINKER = "arm-none-eabi-ld";
       COPIER = "arm-none-eabi-objcopy";
@@ -46,18 +47,18 @@ CPU blink {
     };
   };
 
-  APPMODE std {};
+  APPMODE Std {};
 
   TASK start_sdcard {
-    PRIORITY = 4;
-    AUTOSTART = TRUE {APPMODE = std;};
+    PRIORITY = 5;
+    AUTOSTART = TRUE {APPMODE = Std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
   };
 
   TASK start_audio {
     PRIORITY = 2;
-    AUTOSTART = TRUE {APPMODE = std;};
+    AUTOSTART = TRUE {APPMODE = Std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
   };
@@ -69,30 +70,29 @@ CPU blink {
     SCHEDULE = FULL;
   };
   
-  TASK preprocess {
-    PRIORITY = 3;
-    AUTOSTART = TRUE{APPMODE = std;};
+  TASK normalize {
+    PRIORITY = 4;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    // AUTOSTART = FALSE;
     ACTIVATION = 1;
     SCHEDULE = FULL;
+    EVENT = ev_NORMALIZE;
   };
 
-  TASK inference {
-    PRIORITY = 3;
-    AUTOSTART = FALSE;
-    ACTIVATION = 1;
-    SCHEDULE = FULL;
-  };
-
-  TASK copyDMAtoSRAM {
-    PRIORITY = 3;
-    AUTOSTART = TRUE {APPMODE = std;};
-    ACTIVATION = 1;
-    SCHEDULE = FULL;
-    EVENT = ev_DMAtoSRAM;
+  EVENT ev_NORMALIZE {
+    MASK = AUTO;
   };
 
   EVENT ev_DMAtoSRAM {
     MASK = AUTO;
+  };
+
+  TASK copyDMAtoSRAM {
+    PRIORITY = 3;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = ev_DMAtoSRAM;
   };
 
   TASK blink {
@@ -108,7 +108,7 @@ CPU blink {
       TASK = blink;
     };
     AUTOSTART = TRUE {
-      APPMODE = std;
+      APPMODE = Std;
       ALARMTIME = 100;
       CYCLETIME = 100;
     };

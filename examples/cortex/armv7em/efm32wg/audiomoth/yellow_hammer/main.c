@@ -19,24 +19,16 @@
 #include "em_burtc.h"
 #include "em_opamp.h"
 
-#include "dmactrl.h"
-#include "diskio.h"
-
-/* ----- Inference header ----- */
-#include "matrix.h"
-#include "model.h"
-
-#include "neural_network_parameters_tpl.h"
-#include "neural_network_struct.h"
-#include "fixed_point_ops.h"
-#include "layers.h"
-
 /* Input Audio for pre-processing */
-#include "audio_input_librosa.h"
+// #include "audio_input_librosa.h"
+
+/* Filter coefficients */
+#include "fir_coeffs.h"
+
+/* ARM CMSISDSP */
+#include "arm_math.h"
 
 #define ROUNDED_DIV(a, b)                         (((a) + ((b)/2)) / (b))
-#define MIN(a, b)                                 ((a) < (b) ? (a) : (b))
-#define MAX(a, b)                                 ((a) > (b) ? (a) : (b))
 
 typedef struct {
 	char id[4];
@@ -96,6 +88,7 @@ static UINT bw;
 
 #define APP_Task_blink_START_SEC_CODE
 #include "tpl_memmap.h"
+
 FUNC(int, OS_APPL_CODE) main(void){
 	CHIP_Init();
 	// Enable Clock to GPIO
@@ -188,13 +181,15 @@ FUNC(int, OS_APPL_CODE) main(void){
 	GPIO_PinModeSet(gpioPortF, 8, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortF, 9, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortF, 12, gpioModeDisabled, 0);
-
 	// Set GPIO Red Led to Output
 	// Red Led on PC4
 	GPIO->P[gpioPortC].MODEL |= 4 << (16);
 	// Set GPIO Green Led to Output
 	// Green Led on PC5
 	GPIO->P[gpioPortC].MODEL |= 4 << (20);
+	// Set A7 to ouput for debug
+	GPIO->P[gpioPortA].MODEL |= 4 << (7*4);
+	/* Start Trampoline */
 	StartOS(OSDEFAULTAPPMODE);
 	return 0;
 }
@@ -211,7 +206,12 @@ TASK(blink){
 
 #define APP_Task_start_audio_START_SEC_CODE
 #include "tpl_memmap.h"
-
+VAR(float, AUTOMATIC) envelope_1 [80];
+VAR(float, AUTOMATIC) envelope_2 [80];
+VAR(float, AUTOMATIC) envelope_3 [80];
+// static float envelope_1 [80];
+// static float envelope_2 [80];
+// static float envelope_3 [80];
 
 TASK(start_audio){
 
@@ -423,7 +423,7 @@ TASK(start_dma){
 	timerInit.enable = false;
 	TIMER_Init(TIMER2, &timerInit);
 	/* Configure TIMER to trigger on sampling rate */
-	TIMER_TopSet(TIMER2,  CMU_ClockFreqGet(cmuClock_TIMER2) / 8000 - 1);
+	TIMER_TopSet(TIMER2,  CMU_ClockFreqGet(cmuClock_TIMER2) / 20480 - 1);
 	/* Enable Timer on ADC */
 	TIMER_Enable(TIMER2, true);
 	/* Start ADC sample */
@@ -437,9 +437,42 @@ TASK(start_dma){
 #define APP_Task_copyDMAtoSRAM_START_SEC_CODE
 #include "tpl_memmap.h"
 
-#define SRAM_EXT_START_ADDR 0x80000000				/* EBI region 0 */
+VAR(float, AUTOMATIC) buffer_float_sound [1024] = {0.0f};
 
-static int16_t buffer_sram[1024];
+/* EBI region 0 */
+#define SRAM_EXT_START_ADDR 0x80000000
+/* We have 2 buffer of 1024 int16 in SRAM EXT --> START AT + 0x800 */
+#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR 	0x80001000
+/* + 1024 FLOAT --> + 4*1024 BYTES */
+#define SRAM_EXT_START_FILTERED_PONG_BAND1_ADDR 	0x80002000
+#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR_BIS 0x80003000
+
+#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR 	0x80004000
+#define SRAM_EXT_START_FILTERED_PONG_BAND2_ADDR 	0x80005000
+#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR_BIS 0x80006000
+
+#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR 	0x80007000
+#define SRAM_EXT_START_FILTERED_PONG_BAND3_ADDR 	0x80008000
+#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR_BIS 0x80009000
+
+int16_t *buffer_sram;
+float32_t *prev_ping_buffer_filtered_band1;
+float32_t *prev_pong_buffer_filtered_band1;
+float32_t *prev_ping_buffer_filtered_band1_bis;
+
+float32_t *prev_ping_buffer_filtered_band2;
+float32_t *prev_pong_buffer_filtered_band2;
+float32_t *prev_ping_buffer_filtered_band2_bis;
+
+float32_t *prev_ping_buffer_filtered_band3;
+float32_t *prev_pong_buffer_filtered_band3;
+float32_t *prev_ping_buffer_filtered_band3_bis;
+
+/* Number of 2nd order stage in filter, order is 2*numStagesIIR */
+const uint32_t numStagesIIR = 3;
+static float32_t firStateF32_band1 [2*3] = {0};
+static float32_t firStateF32_band2 [2*3] = {0};
+static float32_t firStateF32_band3 [2*3] = {0};
 
 TASK(copyDMAtoSRAM){
 	/* Configure DMA Channel 1 to transfer from DMA buffer to SRAM Extern */
@@ -464,10 +497,11 @@ TASK(copyDMAtoSRAM){
 	// /* Set up both the primary and the secondary transfers */
     // DMA_CfgDescr(1, true, &descrCfg1);
 	/* Wait for event to transfer audio to sram */
-	EventMaskType ev;
+	EventMaskType ev2;
 	WaitEvent(ev_DMAtoSRAM);
-	GetEvent(copyDMAtoSRAM, ev);
-	ClearEvent(ev);
+	GetEvent(copyDMAtoSRAM, &ev2);
+	ClearEvent(ev2);
+	// GPIO->P[gpioPortA].DOUT |= 1<<7;
 	int16_t *buffer_dma;
 	if(isPrimaryDMABuffer){
 		buffer_dma = secondaryBuffer;
@@ -475,29 +509,107 @@ TASK(copyDMAtoSRAM){
 	else{
 		buffer_dma = primaryBuffer;
 	}
-	*buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
+
+	buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
 	for(uint16_t i = 0; i < 1024; i++){
-		buffer_sram[i] = *buffer_dma++;
+		*buffer_sram = *buffer_dma++;
+		buffer_float_sound[i] = *buffer_sram++;
 	}
 
+	// float32_t *input_float_test = data_input;
+	// static float32_t filtered_rms_band1 [1024];
+	arm_biquad_cascade_df2T_instance_f32 instFilter1;
+	arm_biquad_cascade_df2T_instance_f32 instFilter2;
+	arm_biquad_cascade_df2T_instance_f32 instFilter3;
 
-	static int16_t check_buffer_sram[1024];
-	for(uint16_t i = 0; i < 1024; i++){
-		check_buffer_sram[i] = buffer_sram[i];
-	}
+	arm_biquad_cascade_df2T_init_f32(&instFilter1, numStagesIIR, &firCoefF32_band1[0], &firStateF32_band1[0]);
+	arm_biquad_cascade_df2T_init_f32(&instFilter2, numStagesIIR, &firCoefF32_band2[0], &firStateF32_band2[0]);
+	arm_biquad_cascade_df2T_init_f32(&instFilter3, numStagesIIR, &firCoefF32_band3[0], &firStateF32_band3[0]);
 
+	// arm_biquad_cascade_df2T_f32(&instFilter1, input_float_test, filtered_band1, 1024);
 
-	/* For testing only, we write 1 min to sd card, 8KHz --> 1024 points --> 469 buffers to write */
-	static uint16_t cnt_write = 0;
-	if(cnt_write < 1000){
-		cnt_write++;
-		f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
-		f_write(&fileaudio, check_buffer_sram, 2*1024, &bw);
-		f_close(&fileaudio);
+	// arm_biquad_cascade_df2T_f32(&instFilter2, pSrc, pDst, blocksize);
+	// arm_biquad_cascade_df2T_f32(&instFilter3, pSrc, pDst, blocksize);
+
+	// static float32_t check_buffer_sram[1024];
+
+	prev_ping_buffer_filtered_band1 = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND1_ADDR;
+	prev_pong_buffer_filtered_band1 = (float32_t *) SRAM_EXT_START_FILTERED_PONG_BAND1_ADDR;
+	prev_ping_buffer_filtered_band1_bis = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND1_ADDR_BIS;
+
+	prev_ping_buffer_filtered_band2 = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND2_ADDR;
+	prev_pong_buffer_filtered_band2 = (float32_t *) SRAM_EXT_START_FILTERED_PONG_BAND2_ADDR;
+	prev_ping_buffer_filtered_band2_bis = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND2_ADDR_BIS;
+
+	prev_ping_buffer_filtered_band3 = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND3_ADDR;
+	prev_pong_buffer_filtered_band3 = (float32_t *) SRAM_EXT_START_FILTERED_PONG_BAND3_ADDR;
+	prev_ping_buffer_filtered_band3_bis = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND3_ADDR_BIS;
+
+	float32_t result_rms;
+	float32_t *ptr_result_rms = &result_rms;
+	static uint8_t count_env = 0;
+	if(isPrimaryDMABuffer){
+		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_pong_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_pong_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_pong_buffer_filtered_band3, 1024);
+
+		for(uint8_t i = 0; i < 8; i++){
+			/* RMS on previous and current buffer with hop length of 128 */
+			arm_rms_f32(prev_ping_buffer_filtered_band1+(128*i), 1024, ptr_result_rms);
+			envelope_1[count_env] = result_rms;
+			arm_rms_f32(prev_ping_buffer_filtered_band2+(128*i), 1024, ptr_result_rms);
+			envelope_2[count_env] = result_rms;
+			arm_rms_f32(prev_ping_buffer_filtered_band3+(128*i), 1024, ptr_result_rms);
+			envelope_3[count_env] = result_rms;
+			count_env++;
+			if(count_env >= 80) {
+				count_env = 0;
+				SetEvent(normalize, ev_NORMALIZE);
+			}		
+		}
 	}
 	else{
-		TerminateTask();
+		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_ping_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_ping_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_ping_buffer_filtered_band3, 1024);
+
+		for(uint16_t i = 0; i < 1024; i++){
+			*prev_ping_buffer_filtered_band1_bis++ = *prev_ping_buffer_filtered_band1++;
+			*prev_ping_buffer_filtered_band2_bis++ = *prev_ping_buffer_filtered_band2++;
+			*prev_ping_buffer_filtered_band3_bis++ = *prev_ping_buffer_filtered_band3++;
+		}
+
+		for(uint8_t i = 0; i < 8; i++){
+			/* RMS on previous and current buffer with hop length of 128 */
+			arm_rms_f32(prev_pong_buffer_filtered_band1+(128*i), 1024, ptr_result_rms);
+			envelope_1[count_env] = result_rms;
+			arm_rms_f32(prev_pong_buffer_filtered_band2+(128*i), 1024, ptr_result_rms);
+			envelope_2[count_env] = result_rms;
+			arm_rms_f32(prev_pong_buffer_filtered_band3+(128*i), 1024, ptr_result_rms);
+			envelope_3[count_env] = result_rms;
+			count_env++;
+			if(count_env >= 80) {
+				count_env = 0;
+				SetEvent(normalize, ev_NORMALIZE);
+			}
+		}
 	}
+
+	/* For testing only, we write 128 sec to sd card, 8KHz --> 1024 points --> 0.128 s --> x1000 */
+	/* For testing only, we write 465 sec to sd card, 22KHz --> 1024 points --> 0.0465 s --> x10000 */
+
+	// static uint16_t cnt_write = 0;
+	// if(cnt_write < 1000){
+	// 	cnt_write++;
+	// 	f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
+	// 	f_write(&fileaudio, check_buffer_sram, 2*1024, &bw);
+	// 	f_close(&fileaudio);
+	// }
+	// else{
+	// 	TerminateTask();
+	// }
+	// GPIO->P[gpioPortA].DOUT &= ~1<<7;
+
 	// DMA_ActivateBasic(1,			/* Channel 1*/
 	// 	true,						/* primary cfg */
 	// 	false,						/* no burst */
@@ -505,13 +617,7 @@ TASK(copyDMAtoSRAM){
 	// 	*buffer_dma,				/* src */
 	// 	1							/* 1 transfert */
 	// );
-
-	// static int16_t check_buffer_sram[1024];
-	// for(uint16_t i = 0; i < 1024; i++){
-	// 	check_buffer_sram[i] = buffer_sram[i];
-	// }
 	ChainTask(copyDMAtoSRAM);
-	// TerminateTask();
 }
 #define APP_Task_copyDMAtoSRAM_STOP_SEC_CODE
 #include "tpl_memmap.h"
@@ -587,6 +693,7 @@ DWORD get_fattime(void) {
 
 
 TASK(start_sdcard){
+	const uint16_t samplerate = 20480;
 	GPIO_PinModeSet(gpioPortD, 12, gpioModePushPull, 1);
 	/* Turn on SD card (PortD 12)*/
 	GPIO_PinOutClear(gpioPortD, 12);
@@ -613,8 +720,8 @@ TASK(start_sdcard){
 		.fmt = {.id = "fmt ", .size = sizeof(wavFormat_t)},
 		.wavFormat = {.format = 1,							/* PCM format */
 					  .numberOfChannels = 1,
-					  .samplesPerSecond = 8000,				/* 8 KHz */
-					  .bytesPerSecond = 2*8000,
+					  .samplesPerSecond = samplerate,				/* 8 KHz */
+					  .bytesPerSecond = 2*samplerate,
 					  .bytesPerCapture = 2,
 					  .bitsPerSample = 16},
 		.list = {.id = "LIST",
@@ -625,10 +732,10 @@ TASK(start_sdcard){
 		.data = {.id = "data", .size = 0}
 	};
 
-	wavHeader.wavFormat.samplesPerSecond = 8000;
-	wavHeader.wavFormat.bytesPerSecond = 2 * 8000;
-	wavHeader.data.size = 2 * 8000 * duration_in_second;
-	wavHeader.riff.size = 2 * 8000 * duration_in_second +
+	wavHeader.wavFormat.samplesPerSecond = samplerate;
+	wavHeader.wavFormat.bytesPerSecond = 2 * samplerate;
+	wavHeader.data.size = 2 * samplerate * duration_in_second;
+	wavHeader.riff.size = 2 * samplerate * duration_in_second +
 						   sizeof(wavHeader_t) - sizeof(chunk_t);
 	f_write(&fileaudio, &wavHeader, sizeof(wavHeader_t), &bw);
 	f_close(&fileaudio);
@@ -679,481 +786,347 @@ ISR(isr_dma){
 #define APP_ISR_isr_dma_STOP_SEC_CODE
 #include "tpl_memmap.h"
 
-#define APP_Task_preprocess_START_SEC_CODE
+#define APP_Task_normalize_START_SEC_CODE
 #include "tpl_memmap.h"
 
-typedef struct {
-	float xv[11];
-	float yv[11];
-} BW_filter_t;
+VAR(float32_t, AUTOMATIC) input_inference[240];
 
-VAR(float, AUTOMATIC) envelope_1 [87] = {0};
-// VAR(float, AUTOMATIC) envelope_2 [87] = {0};
-// VAR(float, AUTOMATIC) envelope_3 [87] = {0};
+TASK(normalize){
+	EventMaskType ev1;
+	WaitEvent(ev_NORMALIZE);
+	GetEvent(normalize, &ev1);
+	ClearEvent(ev1);
+	// GPIO->P[gpioPortA].DOUT |= 1<<7;
+	float min_band1 = 999.0;
+	float max_band1 = 0;
 
-CONST(float, AUTOMATIC) a_band1 [11] = {
-	0.15321141,
-	-0.5377237,
-	1.8085212,
-	-3.52529355,
-	6.34467972,
-	-7.95807998,
-	9.18825376,
-	-7.42000549,
-	5.52502756,
-	-2.42000723,
-	1.
-};
+	float min_band2 = 999.0;
+	float max_band2 = 0;
 
-// CONST(float, AUTOMATIC) a_band2 [11] = {
-// 	0.15321141,
-// 	0.26168753,
-// 	1.22782599,
-// 	1.51382384,
-// 	3.70608462,
-// 	3.28072692,
-// 	5.35124787,
-// 	3.1793689,
-// 	3.7219365,
-// 	1.17771582,
-// 	1.
+	float min_band3 = 999.0;
+	float max_band3 = 0;
+
+	/* If we are here, it means we have 80 data in envelopes */
+	/* We normalize for inference input */
+	/* First get min/max */
+	for(uint8_t i = 0; i < 80; i++){
+		if(envelope_1[i] < min_band1) {
+			min_band1 = envelope_1[i];
+		}
+		if(envelope_1[i] > max_band1) {
+			max_band1 = envelope_1[i];
+		}
+
+		if(envelope_2[i] < min_band2) {
+			min_band2 = envelope_2[i];
+		}
+		if(envelope_2[i] > max_band2) {
+			max_band2 = envelope_2[i];
+		}
+
+		if(envelope_3[i] < min_band3) {
+			min_band3 = envelope_3[i];
+		}
+		if(envelope_3[i] > max_band3) {
+			max_band3 = envelope_3[i];
+		}
+	}
+	/* Then normalize */
+	for(uint8_t i = 0; i < 80; i++){
+		input_inference[3*i] = (envelope_1[i] - min_band1) / (max_band1 - min_band1);
+		input_inference[3*i+1] = (envelope_2[i] - min_band2) / (max_band2 - min_band2);
+		input_inference[3*i+2] = (envelope_3[i] - min_band3) / (max_band3 - min_band3);
+	}
+	// GPIO->P[gpioPortA].DOUT &= ~1<<7;
+	ChainTask(normalize);
+}
+#define APP_Task_normalize_STOP_SEC_CODE
+#include "tpl_memmap.h"
+
+// #define APP_Task_inference_START_SEC_CODE
+// #include "tpl_memmap.h"
+// /* Output of a layer should not exceed 2720 bytes, ie AA0*/
+// VAR(dtype, AUTOMATIC) MODEL_ARRAY_OUTPUT[0xAA0] = {0};
+// VAR(dtype, AUTOMATIC) MODEL_ARRAY_TEMP[0xAA0] = {0};
+// VAR(dtype, AUTOMATIC) input_buffer[1] = {0};
+// VAR(dtype, AUTOMATIC) output_buffer[1] = {0};
+// VAR(dtype, AUTOMATIC) label;
+
+// void input_output(matrix *output, matrix *input, uint16_t numFilters){
+//     /* copy output matrix and reference input to copied output */
+//     dma_load(MODEL_ARRAY_TEMP, output->data, output->numRows * output->numCols * numFilters);
+//     input->data = MODEL_ARRAY_TEMP;
+//     input->numRows = output->numRows;
+//     input->numCols = output->numCols;
+// }
+
+// int dma_load(int16_t* dest, int16_t* src, int n){
+//     int16_t i;
+//     for(i=n-1; i>=0; i--){
+//         dest[i] = src[i];
+//     }
+//     return n;
+// }
+
+
+// VAR(matrix, AUTOMATIC) inputFeatures = {
+//     .numRows = 1,
+//     .numCols = 1,
+//     .data = input_buffer,
 // };
 
-// CONST(float, AUTOMATIC) a_band3 [11]= {
-// 	0.15321141,
-// 	1.23019342,
-// 	5.03014405,
-// 	13.32784841,
-// 	25.13192442,
-// 	35.0384834,
-// 	36.5651516,
-// 	28.23264406,
-// 	15.52834643,
-// 	5.5364437,
-// 	1.
+// VAR(matrix, AUTOMATIC) outputLabels = {
+//     .numRows = 1,
+//     .numCols = 1,
+//     .data = output_buffer,
 // };
 
-CONST(float, AUTOMATIC) b [11] = {
-	-0.00084414,
-	0.,
-	0.00422071,
-	0.,
-	-0.00844141,
-	0.,
-	0.00844141,
-	0.,
-	-0.00422071,
-	0.,
-	0.00084414
-};
 
-float Butterworth_applyBandPassFilter(float *a, float *b, float sample, BW_filter_t *filter){
-	/* Shift x filter buffer */
-	uint8_t i;
-	for(i = 0; i < 11-1; i++){
-		filter->xv[i] = filter->xv[i+1];
-	}
-	filter->xv[10] = sample;
+// TASK(inference){
+// 	inputFeatures.data = input_buffer;
+// 	inputFeatures.numRows = 1;
+// 	inputFeatures.numCols = 1;
 
-	/* sum(x[n-k] * b[k]) */
-	float feed_fwd = 0;
-	for(i = 0; i < 11; i++){
-		feed_fwd += b[i] * filter->xv[i];
-	}
+// 	outputLabels.data = output_buffer;
+// 	outputLabels.numRows = 1;
+// 	outputLabels.numCols = 1;
 
-	/* Shift y filter buffer */
-	for(i = 0; i < 11-1; i++){
-		filter->yv[i] = filter->yv[i+1];
-	}
+// 	matrix *input = &inputFeatures;
+// 	matrix *output = &outputLabels;
 
-	/* sum(y[n-k] * a[k]) */
-	float feed_bck = 0;
-	for(i = 0; i < 11-1; i++){
-		feed_bck += a[i] * filter->yv[i];
-	}
+// 	int16_t *bias_array;
 
-	filter->yv[10] = feed_fwd - feed_bck;
+// 	matrix kernel;
+// 	matrix bias;
+// 	uint16_t layer_class, activation, numChannels, filter_numRows, filter_numCols, stride_numRows, stride_numCols, filters_length, padding;
+//     uint16_t numFilters;
 
-	/* Need to return value ? */
-	return filter->yv[10];
+// 	/* ----- Conv1D_2 ----- */
+// 	activation = conv1d_2_layer.activation;
+// 	numFilters = conv1d_2_layer.numFilter;
+// 	numChannels = conv1d_2_layer.numChannels;
+// 	filter_numRows = conv1d_2_layer.filterRows;
+// 	filter_numCols = conv1d_2_layer.filterCols;
+// 	stride_numRows = conv1d_2_layer.strideRows;
+// 	stride_numCols = conv1d_2_layer.strideCols;
+// 	filters_length = conv1d_2_layer.filterLen;
+// 	padding = conv1d_2_layer.padding;
 
-}
+// 	if(padding==1){
+// 		output->numRows = input->numRows / stride_numRows;
+// 		if(input->numRows % stride_numRows > 0){
+// 			output->numRows++;
+// 		}
+// 		output->numCols = input->numCols / stride_numCols;
+// 		if(input->numCols % stride_numCols > 0){
+// 			output->numCols++;
+// 		}
+// 	}
+// 	else{
+// 		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
+//         if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
+//             output->numRows ++;
+//         }
+//         output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
+//         if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
+//             output->numCols ++;
+//         }
+// 	}
+// 	int16_t *filters_array = conv1d_2_layer.weight;
+//     matrix filters = {filters_array, filter_numRows, filter_numCols};
+//     bias_array = conv1d_2_layer.bias;
+// 	// execute conv1d layer
+//     if (activation == RELU_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else if (activation == SIGMOID_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else{
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+// 	input_output(output, input, numFilters);
 
-TASK(preprocess){
-	const int frame_length = 1048;
-	const int hop_length = 128;
+// 	/* ----- MAX POOLING_2 ----- */
+// 	uint16_t pool_numRows = max_pooling1d_2_layer.poolRows;
+//     uint16_t pool_numCols = max_pooling1d_2_layer.poolCols;
+//     stride_numRows = max_pooling1d_2_layer.strideRows;
+//     stride_numCols = max_pooling1d_2_layer.strideCols;
+//     padding = max_pooling1d_2_layer.padding;
 
-	// const float sample_rate = 22050;
-	// const float time_audio = 0.5;
+//     output->numRows = input->numRows / pool_numRows;
+//     output->numCols = input->numCols / pool_numCols;
+// 	maxpooling_filters(output, input, numFilters, pool_numRows, pool_numCols);
+//     input_output(output, input, numFilters);
 
-	/* Sample length is sample rate times audio length --> 22.05KHz and 0.5s + padding (frame_length/2 start and end) */
-	const uint16_t sample_length = 11025 + 1048; 
+// 	/* ----- Conv1D_3 ----- */
+// 	activation = conv1d_3_layer.activation;
+// 	numFilters = conv1d_3_layer.numFilter;
+// 	numChannels = conv1d_3_layer.numChannels;
+// 	filter_numRows = conv1d_3_layer.filterRows;
+// 	filter_numCols = conv1d_3_layer.filterCols;
+// 	stride_numRows = conv1d_3_layer.strideRows;
+// 	stride_numCols = conv1d_3_layer.strideCols;
+// 	filters_length = conv1d_3_layer.filterLen;
+// 	padding = conv1d_3_layer.padding;
 
-	BW_filter_t filter_buffer_1 = {{0}, {0}};
-	// BW_filter_t filter_buffer_2 = {{0}, {0}};
-	// BW_filter_t filter_buffer_3 = {{0}, {0}};
+// 	if(padding==1){
+// 		output->numRows = input->numRows / stride_numRows;
+// 		if(input->numRows % stride_numRows > 0){
+// 			output->numRows++;
+// 		}
+// 		output->numCols = input->numCols / stride_numCols;
+// 		if(input->numCols % stride_numCols > 0){
+// 			output->numCols++;
+// 		}
+// 	}
+// 	else{
+// 		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
+//         if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
+//             output->numRows ++;
+//         }
+//         output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
+//         if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
+//             output->numCols ++;
+//         }
+// 	}
+// 	filters_array = conv1d_3_layer.weight;
+// 	filters.data = filters_array;
+//     filters.numRows = filter_numRows;
+//     filters.numCols = filter_numCols;    
+// 	bias_array = conv1d_3_layer.bias;
+// 	// execute conv1d layer
+//     if (activation == RELU_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else if (activation == SIGMOID_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else{
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+// 	input_output(output, input, numFilters);
 
-	uint16_t count = 0; 
-	uint16_t count_frame = 0;
-	uint16_t env_count = 0;
-	// float filtered_audio[11025] = {0};
+// 	/* ----- MAX POOLING_3 ----- */
+// 	pool_numRows = max_pooling1d_3_layer.poolRows;
+//     pool_numCols = max_pooling1d_3_layer.poolCols;
+//     stride_numRows = max_pooling1d_3_layer.strideRows;
+//     stride_numCols = max_pooling1d_3_layer.strideCols;
+//     padding = max_pooling1d_3_layer.padding;
 
-	float min_1 = 999.9; 
-	float max_1 = -1;
+//     output->numRows = input->numRows / pool_numRows;
+//     output->numCols = input->numCols / pool_numCols;
+// 	maxpooling_filters(output, input, numFilters, pool_numRows, pool_numCols);
+//     input_output(output, input, numFilters);
 
-	// float min_2 = 999.9; 
-	// float max_2 = -1;
+// 	/* ----- Conv1D_4 ----- */
+// 	activation = conv1d_4_layer.activation;
+// 	numFilters = conv1d_4_layer.numFilter;
+// 	numChannels = conv1d_4_layer.numChannels;
+// 	filter_numRows = conv1d_4_layer.filterRows;
+// 	filter_numCols = conv1d_4_layer.filterCols;
+// 	stride_numRows = conv1d_4_layer.strideRows;
+// 	stride_numCols = conv1d_4_layer.strideCols;
+// 	filters_length = conv1d_4_layer.filterLen;
+// 	padding = conv1d_4_layer.padding;
 
-	// float min_3 = 999.9; 
-	// float max_3 = -1;
+// 	if(padding==1){
+// 		output->numRows = input->numRows / stride_numRows;
+// 		if(input->numRows % stride_numRows > 0){
+// 			output->numRows++;
+// 		}
+// 		output->numCols = input->numCols / stride_numCols;
+// 		if(input->numCols % stride_numCols > 0){
+// 			output->numCols++;
+// 		}
+// 	}
+// 	else{
+// 		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
+//         if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
+//             output->numRows ++;
+//         }
+//         output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
+//         if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
+//             output->numCols ++;
+//         }
+// 	}
+// 	filters_array = conv1d_4_layer.weight;
+// 	filters.data = filters_array;
+//     filters.numRows = filter_numRows;
+//     filters.numCols = filter_numCols;    
+// 	bias_array = conv1d_4_layer.bias;
+// 	// execute conv1d layer
+//     if (activation == RELU_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else if (activation == SIGMOID_ACTIVATION){
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+//     else{
+//         conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
+//     }
+// 	input_output(output, input, numFilters);
 
-	for(uint16_t i = 0; i < sample_length; i++){
-		/* Applied filter */
-		float y_filter_1 = Butterworth_applyBandPassFilter(a_band1, b, data_input[i], &filter_buffer_1);
-		// float y_filter_2 = Butterworth_applyBandPassFilter(a_band2, b, data_input[i], &filter_buffer_2);
-		// float y_filter_3 = Butterworth_applyBandPassFilter(a_band3, b, data_input[i], &filter_buffer_3);
+// 	/* ----- Global Average Pooling 1D -----*/
+// 	output->numRows = numFilters;
+// 	output->numCols = 1;
+// 	globalAveragePooling(output, input, numFilters);
+//     numFilters = 1;
+//     input_output(output, input, numFilters);
+// 	/* ----- DENSE_4 -----*/
+//     numFilters = 1;
+//     activation = dense_4_layer.activation;
 
-		// filtered_audio[i] = y_filter_1; /* Do we need filtered audio ? */
-		/* */
-		if(count % hop_length == 0  && count + frame_length < sample_length){
-			envelope_1[i] = y_filter_1 * y_filter_1;
-			// envelope_2[i] = y_filter_2 * y_filter_2;
-			// envelope_3[i] = y_filter_3 * y_filter_3;
-			env_count++;
+//     output->numRows = dense_4_layer.kernel_numRows;
+//     output->numCols = input->numCols;
 
-		}
-		// for(uint16_t j=count_frame; j<div(count, hop_length).quot; j++){
-		for(uint16_t j=count_frame; j < env_count; j++){
-			envelope_1[j] += y_filter_1*y_filter_1;
-			// envelope_2[j] += y_filter_2*y_filter_2;
-			// envelope_3[j] += y_filter_3*y_filter_3;
-		}
-		if(count - count_frame * hop_length == frame_length){
-			envelope_1[count_frame] = sqrt(envelope_1[count_frame]/frame_length);
-			// envelope_2[count_frame] = sqrt(envelope_2[count_frame]/frame_length);
-			// envelope_3[count_frame] = sqrt(envelope_3[count_frame]/frame_length);
-			count_frame++;
-		}
-		count++;
+//     kernel.data = dense_4_layer.weight;
+//     kernel.numRows = dense_4_layer.kernel_numRows;
+//     kernel.numCols = dense_4_layer.kernel_numCols;
 
-		// if(envelope_2[count_frame] < min_2){
-		// 	min_2 = envelope_2[count_frame];
-		// }
-		// if(envelope_2[count_frame] > max_2){
-		// 	max_2 = envelope_2[count_frame];
-		// }
+//     bias.data = dense_4_layer.bias;
+//     bias.numRows = dense_4_layer.bias_numRows;
+//     bias.numCols = dense_4_layer.bias_numCols;
 
-		// if(envelope_3[count_frame] < min_3){
-		// 	min_3 = envelope_3[count_frame];
-		// }
-		// if(envelope_3[count_frame] > max_3){
-		// 	max_3 = envelope_3[count_frame];
-		// }
-	}
-	/* Normalize */
-	// A way to find min/max in previous loop ?
-	for(uint8_t i=0; i<87; i++){
-		if(envelope_1[i] < min_1){
-			min_1 = envelope_1[i];
-		}
-		if(envelope_1[i] > max_1){
-			max_1 = envelope_1[i];
-		}
-	}
-	for(uint8_t j=0; j<87; j++){
-		envelope_1[j] = (envelope_1[j] - min_1) / (max_1 - min_1);
-		// envelope_2[j] = (envelope_2[j] - min_2) / (max_2 - min_2);
-		// envelope_3[j] = (envelope_3[j] - min_3) / (max_3 - min_3);
-	}
-	TerminateTask();
-}
-#define APP_Task_preprocess_STOP_SEC_CODE
-#include "tpl_memmap.h"
+//     if (activation == RELU_ACTIVATION){
+//         dense(output, input, &kernel, &bias, &fp_relu, FIXED_POINT_PRECISION);
+//     }
+//     else if (activation == SIGMOID_ACTIVATION){
+//         dense(output, input, &kernel, &bias, &fp_sigmoid, FIXED_POINT_PRECISION);
+//     }
+//     else{
+//         dense(output, input, &kernel, &bias, &fp_linear, FIXED_POINT_PRECISION);
+//     }
+//     input_output(output, input, numFilters);
+// 	/* ----- DENSE_5 -----*/
+//     numFilters = 1;
+//     activation = dense_5_layer.activation;
 
-#define APP_Task_inference_START_SEC_CODE
-#include "tpl_memmap.h"
-/* Output of a layer should not exceed 2720 bytes, ie AA0*/
-VAR(dtype, AUTOMATIC) MODEL_ARRAY_OUTPUT[0xAA0] = {0};
-VAR(dtype, AUTOMATIC) MODEL_ARRAY_TEMP[0xAA0] = {0};
-VAR(dtype, AUTOMATIC) input_buffer[1] = {0};
-VAR(dtype, AUTOMATIC) output_buffer[1] = {0};
-VAR(dtype, AUTOMATIC) label;
+//     output->numRows = dense_5_layer.kernel_numRows;
+//     output->numCols = input->numCols;
 
-void input_output(matrix *output, matrix *input, uint16_t numFilters){
-    /* copy output matrix and reference input to copied output */
-    dma_load(MODEL_ARRAY_TEMP, output->data, output->numRows * output->numCols * numFilters);
-    input->data = MODEL_ARRAY_TEMP;
-    input->numRows = output->numRows;
-    input->numCols = output->numCols;
-}
+//     kernel.data = dense_5_layer.weight;
+//     kernel.numRows = dense_5_layer.kernel_numRows;
+//     kernel.numCols = dense_5_layer.kernel_numCols;
 
-int dma_load(int16_t* dest, int16_t* src, int n){
-    int16_t i;
-    for(i=n-1; i>=0; i--){
-        dest[i] = src[i];
-    }
-    return n;
-}
+//     bias.data = dense_5_layer.bias;
+//     bias.numRows = dense_5_layer.bias_numRows;
+//     bias.numCols = dense_5_layer.bias_numCols;
 
+//     if (activation == RELU_ACTIVATION){
+//         dense(output, input, &kernel, &bias, &fp_relu, FIXED_POINT_PRECISION);
+//     }
+//     else if (activation == SIGMOID_ACTIVATION){
+//         dense(output, input, &kernel, &bias, &fp_sigmoid, FIXED_POINT_PRECISION);
+//     }
+//     else{
+//         dense(output, input, &kernel, &bias, &fp_linear, FIXED_POINT_PRECISION);
+//     }
+//     input_output(output, input, numFilters);
 
-VAR(matrix, AUTOMATIC) inputFeatures = {
-    .numRows = 1,
-    .numCols = 1,
-    .data = input_buffer,
-};
-
-VAR(matrix, AUTOMATIC) outputLabels = {
-    .numRows = 1,
-    .numCols = 1,
-    .data = output_buffer,
-};
-
-
-TASK(inference){
-	inputFeatures.data = input_buffer;
-	inputFeatures.numRows = 1;
-	inputFeatures.numCols = 1;
-
-	outputLabels.data = output_buffer;
-	outputLabels.numRows = 1;
-	outputLabels.numCols = 1;
-
-	matrix *input = &inputFeatures;
-	matrix *output = &outputLabels;
-
-	int16_t *bias_array;
-
-	matrix kernel;
-	matrix bias;
-	uint16_t layer_class, activation, numChannels, filter_numRows, filter_numCols, stride_numRows, stride_numCols, filters_length, padding;
-    uint16_t numFilters;
-
-	/* ----- Conv1D_2 ----- */
-	activation = conv1d_2_layer.activation;
-	numFilters = conv1d_2_layer.numFilter;
-	numChannels = conv1d_2_layer.numChannels;
-	filter_numRows = conv1d_2_layer.filterRows;
-	filter_numCols = conv1d_2_layer.filterCols;
-	stride_numRows = conv1d_2_layer.strideRows;
-	stride_numCols = conv1d_2_layer.strideCols;
-	filters_length = conv1d_2_layer.filterLen;
-	padding = conv1d_2_layer.padding;
-
-	if(padding==1){
-		output->numRows = input->numRows / stride_numRows;
-		if(input->numRows % stride_numRows > 0){
-			output->numRows++;
-		}
-		output->numCols = input->numCols / stride_numCols;
-		if(input->numCols % stride_numCols > 0){
-			output->numCols++;
-		}
-	}
-	else{
-		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
-        if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
-            output->numRows ++;
-        }
-        output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
-        if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
-            output->numCols ++;
-        }
-	}
-	int16_t *filters_array = conv1d_2_layer.weight;
-    matrix filters = {filters_array, filter_numRows, filter_numCols};
-    bias_array = conv1d_2_layer.bias;
-	// execute conv1d layer
-    if (activation == RELU_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else if (activation == SIGMOID_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else{
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-	input_output(output, input, numFilters);
-
-	/* ----- MAX POOLING_2 ----- */
-	uint16_t pool_numRows = max_pooling1d_2_layer.poolRows;
-    uint16_t pool_numCols = max_pooling1d_2_layer.poolCols;
-    stride_numRows = max_pooling1d_2_layer.strideRows;
-    stride_numCols = max_pooling1d_2_layer.strideCols;
-    padding = max_pooling1d_2_layer.padding;
-
-    output->numRows = input->numRows / pool_numRows;
-    output->numCols = input->numCols / pool_numCols;
-	maxpooling_filters(output, input, numFilters, pool_numRows, pool_numCols);
-    input_output(output, input, numFilters);
-
-	/* ----- Conv1D_3 ----- */
-	activation = conv1d_3_layer.activation;
-	numFilters = conv1d_3_layer.numFilter;
-	numChannels = conv1d_3_layer.numChannels;
-	filter_numRows = conv1d_3_layer.filterRows;
-	filter_numCols = conv1d_3_layer.filterCols;
-	stride_numRows = conv1d_3_layer.strideRows;
-	stride_numCols = conv1d_3_layer.strideCols;
-	filters_length = conv1d_3_layer.filterLen;
-	padding = conv1d_3_layer.padding;
-
-	if(padding==1){
-		output->numRows = input->numRows / stride_numRows;
-		if(input->numRows % stride_numRows > 0){
-			output->numRows++;
-		}
-		output->numCols = input->numCols / stride_numCols;
-		if(input->numCols % stride_numCols > 0){
-			output->numCols++;
-		}
-	}
-	else{
-		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
-        if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
-            output->numRows ++;
-        }
-        output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
-        if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
-            output->numCols ++;
-        }
-	}
-	filters_array = conv1d_3_layer.weight;
-	filters.data = filters_array;
-    filters.numRows = filter_numRows;
-    filters.numCols = filter_numCols;    
-	bias_array = conv1d_3_layer.bias;
-	// execute conv1d layer
-    if (activation == RELU_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else if (activation == SIGMOID_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else{
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-	input_output(output, input, numFilters);
-
-	/* ----- MAX POOLING_3 ----- */
-	pool_numRows = max_pooling1d_3_layer.poolRows;
-    pool_numCols = max_pooling1d_3_layer.poolCols;
-    stride_numRows = max_pooling1d_3_layer.strideRows;
-    stride_numCols = max_pooling1d_3_layer.strideCols;
-    padding = max_pooling1d_3_layer.padding;
-
-    output->numRows = input->numRows / pool_numRows;
-    output->numCols = input->numCols / pool_numCols;
-	maxpooling_filters(output, input, numFilters, pool_numRows, pool_numCols);
-    input_output(output, input, numFilters);
-
-	/* ----- Conv1D_4 ----- */
-	activation = conv1d_4_layer.activation;
-	numFilters = conv1d_4_layer.numFilter;
-	numChannels = conv1d_4_layer.numChannels;
-	filter_numRows = conv1d_4_layer.filterRows;
-	filter_numCols = conv1d_4_layer.filterCols;
-	stride_numRows = conv1d_4_layer.strideRows;
-	stride_numCols = conv1d_4_layer.strideCols;
-	filters_length = conv1d_4_layer.filterLen;
-	padding = conv1d_4_layer.padding;
-
-	if(padding==1){
-		output->numRows = input->numRows / stride_numRows;
-		if(input->numRows % stride_numRows > 0){
-			output->numRows++;
-		}
-		output->numCols = input->numCols / stride_numCols;
-		if(input->numCols % stride_numCols > 0){
-			output->numCols++;
-		}
-	}
-	else{
-		output->numRows = (input->numRows - filter_numRows + 1) / stride_numRows;
-        if ((input->numRows - filter_numRows + 1) % stride_numRows > 0){
-            output->numRows ++;
-        }
-        output->numCols = (input->numCols - filter_numCols + 1) / stride_numCols;
-        if ((input->numCols - filter_numCols + 1) % stride_numCols > 0){
-            output->numCols ++;
-        }
-	}
-	filters_array = conv1d_4_layer.weight;
-	filters.data = filters_array;
-    filters.numRows = filter_numRows;
-    filters.numCols = filter_numCols;    
-	bias_array = conv1d_4_layer.bias;
-	// execute conv1d layer
-    if (activation == RELU_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_relu, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else if (activation == SIGMOID_ACTIVATION){
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_sigmoid, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-    else{
-        conv2d(output, input, &filters, numFilters, numChannels, bias_array, &fp_linear, FIXED_POINT_PRECISION, stride_numRows, stride_numCols, padding);
-    }
-	input_output(output, input, numFilters);
-
-	/* ----- Global Average Pooling 1D -----*/
-	output->numRows = numFilters;
-	output->numCols = 1;
-	globalAveragePooling(output, input, numFilters);
-    numFilters = 1;
-    input_output(output, input, numFilters);
-	/* ----- DENSE_4 -----*/
-    numFilters = 1;
-    activation = dense_4_layer.activation;
-
-    output->numRows = dense_4_layer.kernel_numRows;
-    output->numCols = input->numCols;
-
-    kernel.data = dense_4_layer.weight;
-    kernel.numRows = dense_4_layer.kernel_numRows;
-    kernel.numCols = dense_4_layer.kernel_numCols;
-
-    bias.data = dense_4_layer.bias;
-    bias.numRows = dense_4_layer.bias_numRows;
-    bias.numCols = dense_4_layer.bias_numCols;
-
-    if (activation == RELU_ACTIVATION){
-        dense(output, input, &kernel, &bias, &fp_relu, FIXED_POINT_PRECISION);
-    }
-    else if (activation == SIGMOID_ACTIVATION){
-        dense(output, input, &kernel, &bias, &fp_sigmoid, FIXED_POINT_PRECISION);
-    }
-    else{
-        dense(output, input, &kernel, &bias, &fp_linear, FIXED_POINT_PRECISION);
-    }
-    input_output(output, input, numFilters);
-	/* ----- DENSE_5 -----*/
-    numFilters = 1;
-    activation = dense_5_layer.activation;
-
-    output->numRows = dense_5_layer.kernel_numRows;
-    output->numCols = input->numCols;
-
-    kernel.data = dense_5_layer.weight;
-    kernel.numRows = dense_5_layer.kernel_numRows;
-    kernel.numCols = dense_5_layer.kernel_numCols;
-
-    bias.data = dense_5_layer.bias;
-    bias.numRows = dense_5_layer.bias_numRows;
-    bias.numCols = dense_5_layer.bias_numCols;
-
-    if (activation == RELU_ACTIVATION){
-        dense(output, input, &kernel, &bias, &fp_relu, FIXED_POINT_PRECISION);
-    }
-    else if (activation == SIGMOID_ACTIVATION){
-        dense(output, input, &kernel, &bias, &fp_sigmoid, FIXED_POINT_PRECISION);
-    }
-    else{
-        dense(output, input, &kernel, &bias, &fp_linear, FIXED_POINT_PRECISION);
-    }
-    input_output(output, input, numFilters);
-
-	/* Classification */
-	label = argmax(output);
-	TerminateTask();
-}
-#define APP_Task_inference_STOP_SEC_CODE
-#include "tpl_memmap.h"
+// 	/* Classification */
+// 	label = argmax(output);
+// 	TerminateTask();
+// }
+// #define APP_Task_inference_STOP_SEC_CODE
+// #include "tpl_memmap.h"

@@ -104,7 +104,7 @@ FUNC(int, OS_APPL_CODE) main(void){
 }
 
 TASK(inference){	// 500ms
-	GPIO->P[gpioPortA].DOUT |= (1<<7);
+
 
 	// Get data for input
 	uint16_t i;
@@ -127,10 +127,12 @@ TASK(inference){	// 500ms
 	/* Now put quantized data on input of NN */
 	// input->data.int8[0] = *quantized_value;
 	/* Process NN */
+	GPIO->P[gpioPortA].DOUT |= (1<<7);
 	myStatus = ProcessInference();
 	if(myStatus != kTfLiteOk){
 		while(1);
 	}
+	GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	// // int8_t final_output;
 	// // std::copy_n(tflite::GetTensorData<int8_t>(output), 1, &final_output);
 	int8_t final_output = output->data.int8[0];
@@ -138,9 +140,8 @@ TASK(inference){	// 500ms
 
 	if(output_score > 0.6f){
 		// GPIO->P[gpioPortA].DOUT |= (1<<7);
-		GPIO->P[gpioPortA].DOUT &= ~(1<<7);
+		// GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	}
-	GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	ChainTask(inference);
 }
 #define APP_Task_inference_STOP_SEC_CODE
