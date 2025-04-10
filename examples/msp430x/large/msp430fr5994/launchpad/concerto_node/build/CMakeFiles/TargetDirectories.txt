@@ -1,0 +1,3 @@
+/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/concerto_node/build/CMakeFiles/bootloader.out.dir
+/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/concerto_node/build/CMakeFiles/edit_cache.dir
+/home/bernabeu-a/Code/trampoline/examples/msp430x/large/msp430fr5994/launchpad/concerto_node/build/CMakeFiles/rebuild_cache.dir
