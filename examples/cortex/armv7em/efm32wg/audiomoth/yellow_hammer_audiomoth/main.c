@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #include "em_device.h"
 #include "em_chip.h"
@@ -17,6 +18,7 @@
 #include "em_gpio.h"
 #include "em_ebi.h"
 #include "em_burtc.h"
+#include "em_rtc.h"
 #include "em_opamp.h"
 
 /* Filter coefficients */
@@ -26,6 +28,9 @@
 #include "arm_math.h"
 
 #define ROUNDED_DIV(a, b)                         (((a) + ((b)/2)) / (b))
+
+// #define PRE_PROCESSING_RMS
+#define PRE_PROCESSING_MAX
 
 typedef struct {
 	char id[4];
@@ -66,11 +71,58 @@ typedef struct {
 FIL fileaudio;
 static UINT bw;
 
+typedef struct {
+	// uint8_t seconds;
+	// uint8_t minutes;
+	// uint8_t hours;
+	// uint8_t days;
+	uint32_t unix_timestamp;
+} timekeeper_t;
+
+
+const int duration_in_second = 3;
+const uint16_t samplerate = 20480;
+
+/* Header detail of wav file */
+const wavHeader_t wavHeader = {
+	.riff = {.id = "RIFF", .size = 2 * samplerate * duration_in_second +
+		sizeof(wavHeader_t) - sizeof(chunk_t)},
+	.format = "WAVE",
+	.fmt = {.id = "fmt ", .size = sizeof(wavFormat_t)},
+	.wavFormat = {.format = 1,							/* PCM format */
+					.numberOfChannels = 1,
+					.samplesPerSecond = samplerate,
+					.bytesPerSecond = 2*samplerate,
+					.bytesPerCapture = 2,
+					.bitsPerSample = 16},
+	.list = {.id = "LIST",
+				.size = 4 + sizeof(icmt_t) + sizeof(iart_t)},
+	.info = "INFO",
+	.icmt = {.icmt.id = "ICMT", .icmt.size = 0, .comment = ""},
+	.iart = {.iart.id = "IART", .iart.size = 0, .artist = ""},
+	.data = {.id = "data", 
+			 .size = 2 * samplerate * duration_in_second}
+};
+
+#define APP_Task_write_audio_START_SEC_VAR_NOINIT_UNSPECIFIED
+#include "tpl_memmap.h"
+VAR(timekeeper_t, AUTOMATIC) timekeeper;
+#define APP_Task_write_audio_STOP_SEC_VAR_NOINIT_UNSPECIFIED
+#include "tpl_memmap.h"
+
 #define APP_COMMON_START_SEC_CODE
 #include "tpl_memmap.h"
 VAR(float, AUTOMATIC) envelope_1 [80] = {0};
 VAR(float, AUTOMATIC) envelope_2 [80] = {0};
 VAR(float, AUTOMATIC) envelope_3 [80] = {0};
+
+P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope1;
+P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope2;
+P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope3;
+
+P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope1;
+P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope2;
+P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope3;
 
 FUNC(int, OS_APPL_CODE) main(void){
 	CHIP_Init();
@@ -83,12 +135,26 @@ FUNC(int, OS_APPL_CODE) main(void){
     CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
 	/* Enable clock to Low energy module */
 	CMU_ClockEnable(cmuClock_CORELE, true);
-	/* Setup NVIC for ADC */ 
-    // NVIC_ClearPendingIRQ(ADC0_IRQn);
-    // NVIC_EnableIRQ(ADC0_IRQn);
 	/* Setup NVIC for DMA */
 	NVIC_ClearPendingIRQ(DMA_IRQn);
   	NVIC_EnableIRQ(DMA_IRQn);
+	/* Setup RTCC */
+	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+    CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
+	CMU_ClockEnable(cmuClock_RTC, true);
+	RTC_Init_TypeDef rtcInit = RTC_INIT_DEFAULT;
+	rtcInit.enable = false;
+	rtcInit.debugRun = true;
+	RTC_Init(&rtcInit);
+	RTC_CompareSet(0, 32768);
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+	NVIC_EnableIRQ(RTC_IRQn);
+	RTC_IntEnable(RTC_IF_COMP0);
+    RTC_Enable(true);
+	// timekeeper.seconds = 0;
+	// timekeeper.minutes = 0;
+	// timekeeper.hours = 0;
+	// timekeeper.days = 0;
 	/* GPIO A */
 	GPIO_PinModeSet(gpioPortA, 0, gpioModeDisabled, 0);
 	GPIO_PinModeSet(gpioPortA, 1, gpioModeDisabled, 0);
@@ -266,6 +332,8 @@ static int16_t secondaryBuffer[1024];
 const uint16_t numberOfSamplesPerTransfer = 1024;
 static bool isPrimaryDMABuffer = true;
 
+VAR(bool,AUTOMATIC) envelop_ping_rdy = true;
+
 static void dma_callback(void){
 	/* Switch buffer */
 	// isPrimaryDMABuffer = !isPrimaryDMABuffer;
@@ -419,42 +487,50 @@ TASK(start_dma){
 
 VAR(uint8_t,AUTOMATIC) count_env = 0;
 /* EBI region 0 */
-#define SRAM_EXT_START_ADDR 0x80000000
+#define SRAM_EXT_START_ADDR 	0x80000000
 
-#define SRAM_EXT_START_ADDR_1 0x80000000
-#define SRAM_EXT_START_ADDR_2 0x80000000
-#define SRAM_EXT_START_ADDR_3 0x80000000
-#define SRAM_EXT_START_ADDR_4 0x80000000
-#define SRAM_EXT_START_ADDR_5 0x80000000
-#define SRAM_EXT_START_ADDR_6 0x80000000
-#define SRAM_EXT_START_ADDR_7 0x80000000
-#define SRAM_EXT_START_ADDR_8 0x80000000
-#define SRAM_EXT_START_ADDR_9 0x80000000
-#define SRAM_EXT_START_ADDR_10 0x80000000
-#define SRAM_EXT_START_ADDR_11 0x80000000
-#define SRAM_EXT_START_ADDR_12 0x80000000
-#define SRAM_EXT_START_ADDR_13 0x80000000
-#define SRAM_EXT_START_ADDR_14 0x80000000
-#define SRAM_EXT_START_ADDR_15 0x80000000
-#define SRAM_EXT_START_ADDR_16 0x80000000
-#define SRAM_EXT_START_ADDR_17 0x80000000
-#define SRAM_EXT_START_ADDR_18 0x80000000
-#define SRAM_EXT_START_ADDR_19 0x80000000
-#define SRAM_EXT_START_ADDR_20 0x80000000
+#define SRAM_EXT_START_ADDR_1 	0x80001000
+#define SRAM_EXT_START_ADDR_2 	0x80002000
+#define SRAM_EXT_START_ADDR_3 	0x80003000
+#define SRAM_EXT_START_ADDR_4 	0x80004000
+#define SRAM_EXT_START_ADDR_5 	0x80005000
+#define SRAM_EXT_START_ADDR_6 	0x80006000
+#define SRAM_EXT_START_ADDR_7 	0x80007000
+#define SRAM_EXT_START_ADDR_8 	0x80008000
+#define SRAM_EXT_START_ADDR_9 	0x80009000
+#define SRAM_EXT_START_ADDR_10 	0x8000A000
+#define SRAM_EXT_START_ADDR_11 	0x8000B000
+#define SRAM_EXT_START_ADDR_12 	0x8000C000
+#define SRAM_EXT_START_ADDR_13 	0x8000D000
+#define SRAM_EXT_START_ADDR_14 	0x8000E000
+#define SRAM_EXT_START_ADDR_15 	0x8000F000
+#define SRAM_EXT_START_ADDR_16 	0x80010000
+#define SRAM_EXT_START_ADDR_17 	0x80011000
+#define SRAM_EXT_START_ADDR_18 	0x80012000
+#define SRAM_EXT_START_ADDR_19 	0x80013000
+#define SRAM_EXT_START_ADDR_20 	0x80014000
 
 /* We have 2 buffer of 1024 int16 in SRAM EXT --> START AT + 0x800 */
-#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR 	0x80001000
+#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR 	0x80015000
 /* + 1024 FLOAT --> + 4*1024 BYTES */
-#define SRAM_EXT_START_FILTERED_PONG_BAND1_ADDR 	0x80002000
-#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR_BIS 0x80003000
+#define SRAM_EXT_START_FILTERED_PONG_BAND1_ADDR 	0x80016000
+#define SRAM_EXT_START_FILTERED_PING_BAND1_ADDR_BIS 0x80017000
 
-#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR 	0x80004000
-#define SRAM_EXT_START_FILTERED_PONG_BAND2_ADDR 	0x80005000
-#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR_BIS 0x80006000
+#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR 	0x80018000
+#define SRAM_EXT_START_FILTERED_PONG_BAND2_ADDR 	0x80019000
+#define SRAM_EXT_START_FILTERED_PING_BAND2_ADDR_BIS 0x8001A000
 
-#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR 	0x80007000
-#define SRAM_EXT_START_FILTERED_PONG_BAND3_ADDR 	0x80008000
-#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR_BIS 0x80009000
+#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR 	0x8001B000
+#define SRAM_EXT_START_FILTERED_PONG_BAND3_ADDR 	0x8001C000
+#define SRAM_EXT_START_FILTERED_PING_BAND3_ADDR_BIS 0x8001D000
+
+#define SRAM_EXT_PING_ENVELOPE1						0x80020000
+#define SRAM_EXT_PING_ENVELOPE2						0x80021000
+#define SRAM_EXT_PING_ENVELOPE3						0x80022000
+
+#define SRAM_EXT_PONG_ENVELOPE1						0x80023000
+#define SRAM_EXT_PONG_ENVELOPE2						0x80024000
+#define SRAM_EXT_PONG_ENVELOPE3						0x80025000
 
 int16_t *buffer_sram;
 float32_t *prev_ping_buffer_filtered_band1;
@@ -471,10 +547,15 @@ float32_t *prev_ping_buffer_filtered_band3_bis;
 
 /* Number of 2nd order stage in filter, order is 2*numStagesIIR */
 const uint32_t numStagesIIR = 3;
-static float32_t firStateF32_band1 [2*3] = {0};
-static float32_t firStateF32_band2 [2*3] = {0};
+
+float32_t firStateF32_band2 [2*3] = {0};
 static float32_t firStateF32_band3 [2*3] = {0};
 
+#ifdef PRE_PROCESSING_MAX
+static float32_t firStateF32_low1 [2*2] = {0};
+static float32_t firStateF32_low2 [2*2] = {0};
+static float32_t firStateF32_low3 [2*2] = {0};
+#endif
 
 P2VAR(int16_t, AUTOMATIC, OS_APPL_DATA) buffer_ptr_sram[20] = {
 	(int16_t *) SRAM_EXT_START_ADDR_1,
@@ -499,8 +580,21 @@ P2VAR(int16_t, AUTOMATIC, OS_APPL_DATA) buffer_ptr_sram[20] = {
 	(int16_t *) SRAM_EXT_START_ADDR_20
 };
 
+VAR(uint8_t, AUTOMATIC) count_ptr_buffer = 0;
+
+VAR(uint8_t, AUTOMATIC) is_writting_audio = 0;
+
+VAR(float32_t, AUTOMATIC) max_pool_for_low_pass1 [80] = {0};
+uint32_t *indexMax1;
+VAR(float32_t, AUTOMATIC) max_pool_for_low_pass2 [80] = {0};
+uint32_t *indexMax2;
+VAR(float32_t, AUTOMATIC) max_pool_for_low_pass3 [80] = {0};
+uint32_t *indexMax3;
+
+// VAR(uint8_t, AUTOMATIC) init_filter = 1;
+
 TASK(copyDMAtoSRAM){
-	GPIO->P[gpioPortA].DOUT ^= 1<<7;
+	// GPIO->P[gpioPortA].DOUT ^= 1<<7;
 	/* Wait for event to transfer audio to sram */
 	EventMaskType ev;
 	WaitEvent(ev_DMAtoSRAM);
@@ -508,7 +602,7 @@ TASK(copyDMAtoSRAM){
 	ClearEvent(ev);
 	GPIO->P[gpioPortB].DOUT |= 1<<10;
 	/* We have 20 buffer of sound ie --> 1s of sound */
-	static count_ptr_buffer = 0;
+	// static uint8_t count_ptr_buffer = 0;
 
 	int16_t *buffer_dma;
 	if(isPrimaryDMABuffer){
@@ -519,20 +613,23 @@ TASK(copyDMAtoSRAM){
 	}
 
 	buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
+	int16_t *tmp_data_buffer_ptr_sram = buffer_ptr_sram[count_ptr_buffer];
 	for(uint16_t i = 0; i < 1024; i++){
-		// *buffer_sram++ = *buffer_dma++;
-		*buffer_ptr_sram[count_ptr_buffer]++ = *buffer_dma++;
-		// buffer_float_sound[i] = *buffer_sram++;
+		// *buffer_ptr_sram[count_ptr_buffer]++ = *buffer_dma++;
+		*tmp_data_buffer_ptr_sram++ = *buffer_dma++;
 	}
-	count_ptr_buffer++;
-	if(count_ptr_buffer == 20) count_ptr_buffer = 0;
+
+	if(is_writting_audio){
+		SetEvent(write_audio, ev_write_audio);
+		ChainTask(copyDMAtoSRAM);
+	}
 	// buffer_sram = (int16_t *) SRAM_EXT_START_ADDR;
 	// float32_t *input_float_test = data_input;
 	// static float32_t filtered_rms_band1 [1024];
 	arm_biquad_cascade_df2T_instance_f32 instFilter1;
 	arm_biquad_cascade_df2T_instance_f32 instFilter2;
 	arm_biquad_cascade_df2T_instance_f32 instFilter3;
-
+	float32_t firStateF32_band1 [2*3] = {0};
 	arm_biquad_cascade_df2T_init_f32(&instFilter1, numStagesIIR, &firCoefF32_band1[0], &firStateF32_band1[0]);
 	arm_biquad_cascade_df2T_init_f32(&instFilter2, numStagesIIR, &firCoefF32_band2[0], &firStateF32_band2[0]);
 	arm_biquad_cascade_df2T_init_f32(&instFilter3, numStagesIIR, &firCoefF32_band3[0], &firStateF32_band3[0]);
@@ -549,37 +646,97 @@ TASK(copyDMAtoSRAM){
 	prev_pong_buffer_filtered_band3 = (float32_t *) SRAM_EXT_START_FILTERED_PONG_BAND3_ADDR;
 	prev_ping_buffer_filtered_band3_bis = (float32_t *) SRAM_EXT_START_FILTERED_PING_BAND3_ADDR_BIS;
 
+	ping_ptr_envelope1 = (float32_t *) SRAM_EXT_PING_ENVELOPE1;
+	ping_ptr_envelope2 = (float32_t *) SRAM_EXT_PING_ENVELOPE2;
+	ping_ptr_envelope3 = (float32_t *) SRAM_EXT_PING_ENVELOPE3;
+
+	pong_ptr_envelope1 = (float32_t *) SRAM_EXT_PONG_ENVELOPE1;
+	pong_ptr_envelope2 = (float32_t *) SRAM_EXT_PONG_ENVELOPE2;
+	pong_ptr_envelope3 = (float32_t *) SRAM_EXT_PONG_ENVELOPE3;
+
+	
+	
+	float *tmp_ptr_envelope1;
+	float *tmp_ptr_envelope2;
+	float *tmp_ptr_envelope3;
+
+	if(envelop_ping_rdy){
+		tmp_ptr_envelope1 = pong_ptr_envelope1;
+		tmp_ptr_envelope2 = pong_ptr_envelope2;
+		tmp_ptr_envelope3 = pong_ptr_envelope3;
+	}
+	else{
+		tmp_ptr_envelope1 = ping_ptr_envelope1;
+		tmp_ptr_envelope2 = ping_ptr_envelope2;
+		tmp_ptr_envelope3 = ping_ptr_envelope3;
+	}
+
+#ifdef PRE_PROCESSING_RMS 
 	float32_t result_rms;
 	float32_t *ptr_result_rms = &result_rms;
-	
+#endif
+#ifdef PRE_PROCESSING_MAX
+	float32_t *maxpool_1;
+	float32_t *maxpool_2;
+	float32_t *maxpool_3;
+
+	arm_biquad_cascade_df2T_instance_f32 instFilter_low1;
+	arm_biquad_cascade_df2T_instance_f32 instFilter_low2;
+	arm_biquad_cascade_df2T_instance_f32 instFilter_low3;
+
+	// if(init_filter){
+		arm_biquad_cascade_df2T_init_f32(&instFilter_low1, 2, &firCoefF32_low[0], &firStateF32_low1[0]);
+		arm_biquad_cascade_df2T_init_f32(&instFilter_low2, 2, &firCoefF32_low[0], &firStateF32_low2[0]);
+		arm_biquad_cascade_df2T_init_f32(&instFilter_low3, 2, &firCoefF32_low[0], &firStateF32_low3[0]);
+	// 	init_filter = 0;
+	// }
+#endif
 	if(isPrimaryDMABuffer){
 		// arm_biquad_cascade_df2T_f32(&instFilter1, buffer_float_sound, prev_pong_buffer_filtered_band1, 1024);
 		// arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_pong_buffer_filtered_band2, 1024);
 		// arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_pong_buffer_filtered_band3, 1024);
 
-		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_ptr_sram[0], prev_pong_buffer_filtered_band1, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_ptr_sram[0], prev_pong_buffer_filtered_band2, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_ptr_sram[0], prev_pong_buffer_filtered_band3, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter1, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_ping_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_ping_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_ping_buffer_filtered_band3, 1024);
 
 		GPIO->P[gpioPortB].DOUT |= 1<<9;
-
-		for(uint8_t i = 0; i < 8; i++){
-			
+#ifdef PRE_PROCESSING_MAX
+			arm_abs_f32 (prev_ping_buffer_filtered_band1, prev_ping_buffer_filtered_band1, 1024);
+			arm_abs_f32 (prev_ping_buffer_filtered_band2, prev_ping_buffer_filtered_band2, 1024);
+			arm_abs_f32 (prev_ping_buffer_filtered_band3, prev_ping_buffer_filtered_band3, 1024);
+#endif
+		for(uint8_t i = 0; i < 8; i++){	
+#ifdef PRE_PROCESSING_RMS 
 			/* RMS on previous and current buffer with hop length of 128 */
 			arm_rms_f32(prev_ping_buffer_filtered_band1+(128*i), 1024, ptr_result_rms);
-			envelope_1[count_env] = result_rms;
+			*tmp_ptr_envelope1++ = result_rms;
+			// envelope_1[count_env] = result_rms;
 			arm_rms_f32(prev_ping_buffer_filtered_band2+(128*i), 1024, ptr_result_rms);
-			envelope_2[count_env] = result_rms;
+			*tmp_ptr_envelope2++ = result_rms;
+			// envelope_2[count_env] = result_rms;
 			arm_rms_f32(prev_ping_buffer_filtered_band3+(128*i), 1024, ptr_result_rms);
-			envelope_3[count_env] = result_rms;
+			*tmp_ptr_envelope3++ = result_rms;
+			// envelope_3[count_env] = result_rms;
+#endif
+#ifdef PRE_PROCESSING_MAX
+			arm_max_f32(prev_ping_buffer_filtered_band1+128*i, 128, max_pool_for_low_pass1+count_env, indexMax1);
+			arm_max_f32(prev_ping_buffer_filtered_band2+128*i, 128, max_pool_for_low_pass2+count_env, indexMax2);
+			arm_max_f32(prev_ping_buffer_filtered_band3+128*i, 128, max_pool_for_low_pass3+count_env, indexMax3);
+#endif
 			count_env++;
 			if(count_env >= 80) {
+#ifdef PRE_PROCESSING_MAX
+				arm_biquad_cascade_df2T_f32(&instFilter_low1, max_pool_for_low_pass1, tmp_ptr_envelope1, 80);
+				arm_biquad_cascade_df2T_f32(&instFilter_low2, max_pool_for_low_pass2, tmp_ptr_envelope2, 80);
+				arm_biquad_cascade_df2T_f32(&instFilter_low3, max_pool_for_low_pass3, tmp_ptr_envelope3, 80);
+#endif
+				envelop_ping_rdy ^= true;
 				GPIO->P[gpioPortA].DOUT ^= 1<<8;
 				count_env = 0;
 				SetEvent(inference, ev_NORMALIZE);
 			}		
 		}
-		GPIO->P[gpioPortB].DOUT &= ~(1<<9);
 
 	}
 	else{
@@ -587,47 +744,57 @@ TASK(copyDMAtoSRAM){
 		// arm_biquad_cascade_df2T_f32(&instFilter2, buffer_float_sound, prev_ping_buffer_filtered_band2, 1024);
 		// arm_biquad_cascade_df2T_f32(&instFilter3, buffer_float_sound, prev_ping_buffer_filtered_band3, 1024);
 
-		arm_biquad_cascade_df2T_f32(&instFilter1, buffer_ptr_sram[0], prev_ping_buffer_filtered_band1, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter2, buffer_ptr_sram[0], prev_ping_buffer_filtered_band2, 1024);
-		arm_biquad_cascade_df2T_f32(&instFilter3, buffer_ptr_sram[0], prev_ping_buffer_filtered_band3, 1024);
-
+		arm_biquad_cascade_df2T_f32(&instFilter1, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_pong_buffer_filtered_band1, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter2, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_pong_buffer_filtered_band2, 1024);
+		arm_biquad_cascade_df2T_f32(&instFilter3, (float32_t *) buffer_ptr_sram[count_ptr_buffer], prev_pong_buffer_filtered_band3, 1024);
+#ifdef PRE_PROCESSING_RMS 
 		for(uint16_t i = 0; i < 1024; i++){
 			*prev_ping_buffer_filtered_band1_bis++ = *prev_ping_buffer_filtered_band1++;
 			*prev_ping_buffer_filtered_band2_bis++ = *prev_ping_buffer_filtered_band2++;
 			*prev_ping_buffer_filtered_band3_bis++ = *prev_ping_buffer_filtered_band3++;
 		}
-		GPIO->P[gpioPortB].DOUT |= 1<<9;
+#endif
+#ifdef PRE_PROCESSING_MAX
+			arm_abs_f32 (prev_pong_buffer_filtered_band1, prev_pong_buffer_filtered_band1, 1024);
+			arm_abs_f32 (prev_pong_buffer_filtered_band2, prev_pong_buffer_filtered_band2, 1024);
+			arm_abs_f32 (prev_pong_buffer_filtered_band3, prev_pong_buffer_filtered_band3, 1024);
+#endif
 		for(uint8_t i = 0; i < 8; i++){
+#ifdef PRE_PROCESSING_RMS 
 			/* RMS on previous and current buffer with hop length of 128 */
 			arm_rms_f32(prev_pong_buffer_filtered_band1+(128*i), 1024, ptr_result_rms);
-			envelope_1[count_env] = result_rms;
+			*tmp_ptr_envelope1++ = result_rms;
+			// envelope_1[count_env] = result_rms;
 			arm_rms_f32(prev_pong_buffer_filtered_band2+(128*i), 1024, ptr_result_rms);
-			envelope_2[count_env] = result_rms;
+			*tmp_ptr_envelope2++ = result_rms;
+			// envelope_2[count_env] = result_rms;
 			arm_rms_f32(prev_pong_buffer_filtered_band3+(128*i), 1024, ptr_result_rms);
-			envelope_3[count_env] = result_rms;
+			*tmp_ptr_envelope3++ = result_rms;
+			// envelope_3[count_env] = result_rms;
+#endif
+#ifdef PRE_PROCESSING_MAX
+			arm_max_f32(prev_pong_buffer_filtered_band1+128*i, 128, max_pool_for_low_pass1+count_env, indexMax1);
+			arm_max_f32(prev_pong_buffer_filtered_band2+128*i, 128, max_pool_for_low_pass1+count_env, indexMax2);
+			arm_max_f32(prev_pong_buffer_filtered_band3+128*i, 128, max_pool_for_low_pass1+count_env, indexMax3);
+#endif
 			count_env++;
 			if(count_env >= 80) {
+#ifdef PRE_PROCESSING_MAX
+				arm_biquad_cascade_df2T_f32(&instFilter_low1, max_pool_for_low_pass1, tmp_ptr_envelope1, 80);
+				arm_biquad_cascade_df2T_f32(&instFilter_low2, max_pool_for_low_pass2, tmp_ptr_envelope2, 80);
+				arm_biquad_cascade_df2T_f32(&instFilter_low3, max_pool_for_low_pass3, tmp_ptr_envelope3, 80);
+#endif
+				// envelop_ping_rdy = false;
 				count_env = 0;
 				SetEvent(inference, ev_NORMALIZE);
 			}
 		}
-		GPIO->P[gpioPortB].DOUT &= ~(1<<9);
+		// GPIO->P[gpioPortB].DOUT &= ~(1<<9);
 
 	}
 
-	/* For testing only, we write 128 sec to sd card, 8KHz --> 1024 points --> 0.128 s --> x1000 */
-	/* For testing only, we write 465 sec to sd card, 22KHz --> 1024 points --> 0.0465 s --> x10000 */
-
-	// static uint16_t cnt_write = 0;
-	// if(cnt_write < 1000){
-	// 	cnt_write++;
-	// 	f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
-	// 	f_write(&fileaudio, check_buffer_sram, 2*1024, &bw);
-	// 	f_close(&fileaudio);
-	// }
-	// else{
-	// 	TerminateTask();
-	// }
+	count_ptr_buffer++;
+	if(count_ptr_buffer == 20) count_ptr_buffer = 0;
 
 	GPIO->P[gpioPortB].DOUT &= ~(1<<10);
 	ChainTask(copyDMAtoSRAM);
@@ -720,55 +887,77 @@ TASK(start_sdcard){
     if (f_mount(&fatfs, "", 1) != FR_OK) {
         while(1);
     }
+
+	/* Debug */
+
 	TerminateTask();
 
 }
 #define APP_Task_start_sdcard_STOP_SEC_CODE
 #include "tpl_memmap.h"
 
-// #define APP_Task_write_audio_START_SEC_CODE
-// #include "tpl_memmap.h"
-// TASK(write_audio){
-// 	/* We are here from inference hit */
-// 	/* First Terminate copyDMAtoSRAM Task */
-// 	TerminateTask(copyDMAtoSRAM);
-// 	/* Variable to write */
-// 	/* Create a file */
-// 	const int duration_in_second = 2;				/* For example 1024/8000 = 0.128 s */
-// 	const uint16_t samplerate = 20480;
+#define APP_Task_write_audio_START_SEC_CODE
+#include "tpl_memmap.h"
 
-// 	/* Header detail of wav file */
-// 	static wavHeader_t wavHeader = {
-// 	 .riff = {.id = "RIFF", .size = 0},
-// 		.format = "WAVE",
-// 		.fmt = {.id = "fmt ", .size = sizeof(wavFormat_t)},
-// 		.wavFormat = {.format = 1,							/* PCM format */
-// 					  .numberOfChannels = 1,
-// 					  .samplesPerSecond = samplerate,				/* 8 KHz */
-// 					  .bytesPerSecond = 2*samplerate,
-// 					  .bytesPerCapture = 2,
-// 					  .bitsPerSample = 16},
-// 		.list = {.id = "LIST",
-// 				 .size = 4 + sizeof(icmt_t) + sizeof(iart_t)},
-// 		.info = "INFO",
-// 		.icmt = {.icmt.id = "ICMT", .icmt.size = 0, .comment = ""},
-// 		.iart = {.iart.id = "IART", .iart.size = 0, .artist = ""},
-// 		.data = {.id = "data", .size = 0}
-// 	};
+void update_timekeeper(void){
+	timekeeper.unix_timestamp++;
+}
 
-// 	wavHeader.wavFormat.samplesPerSecond = samplerate;
-// 	wavHeader.wavFormat.bytesPerSecond = 2 * samplerate;
-// 	wavHeader.data.size = 2 * samplerate * duration_in_second;
-// 	wavHeader.riff.size = 2 * samplerate * duration_in_second +
-// 						   sizeof(wavHeader_t) - sizeof(chunk_t);
-
-//    	f_open(&fileaudio, "audio.wav", FA_OPEN_APPEND | FA_WRITE);
-// 	f_write(&fileaudio, &wavHeader, sizeof(wavHeader_t), &bw);
-// 	while()
-// 	f_close(&fileaudio);
+// void timekeeper_fron_unix(void){
+// 	uint32_t temp_timestamp = timekeeper.unix_timestamp;
+// 	timekeeper.days = temp_timestamp / 86400;
+// 	temp_timestamp %= 86400;
+// 	timekeeper.hours = temp_timestamp / 3600;
+// 	temp_timestamp %= 3600;
+// 	timekeeper.minutes = temp_timestamp / 60;
+// 	timekeeper.seconds = temp_timestamp % 60;
 // }
-// #define APP_Task_write_audio_STOP_SEC_CODE
-// #include "tpl_memmap.h"
+
+TASK(write_audio){
+	/* We are here from inference hit */
+
+	/* First set writting_variable */
+	is_writting_audio = 1;
+	/* Create a file */
+	char *filename;
+	char filename_buffer[15];
+	/* Count number of digit in timestamp for offset extension of file */
+	uint8_t count_digit = 0;
+	uint32_t tmp_timestamp = timekeeper.unix_timestamp;
+    while(tmp_timestamp>0){
+        count_digit++;
+        tmp_timestamp = tmp_timestamp/10;
+    }
+
+	filename = __itoa(timekeeper.unix_timestamp, filename_buffer, 10);
+	strcpy(filename+count_digit, ".wav");
+	f_open(&fileaudio, filename, FA_OPEN_APPEND | FA_WRITE);
+	f_write(&fileaudio, &wavHeader, sizeof(wavHeader_t), &bw);
+	/* Current audio buffer to write is count_ptr_buffer */
+	/* First write previous buffers */
+	uint8_t read_count_ptr_buffer = count_ptr_buffer + 1;
+	if(read_count_ptr_buffer == 20) read_count_ptr_buffer = 0;
+	while(read_count_ptr_buffer != count_ptr_buffer){
+		f_write(&fileaudio, buffer_ptr_sram[read_count_ptr_buffer], 2*1024, &bw);
+		read_count_ptr_buffer++;
+		if(read_count_ptr_buffer == 20) read_count_ptr_buffer = 0;
+	}
+	/* Now write next 2s of sound */
+	uint8_t count_write_audio_post_inference = 0; 
+	while(count_write_audio_post_inference != 40){
+		EventMaskType ev_wr;
+		WaitEvent(ev_write_audio);
+		GetEvent(write_audio, &ev_wr);
+		ClearEvent(ev_wr);
+		f_write(&fileaudio, buffer_ptr_sram[count_ptr_buffer-1], 2*1024, &bw);
+		count_write_audio_post_inference++;
+	}
+	is_writting_audio = 0;
+	f_close(&fileaudio);
+	TerminateTask();
+}
+#define APP_Task_write_audio_STOP_SEC_CODE
+#include "tpl_memmap.h"
 
 #define APP_ISR_isr_dma_START_SEC_CODE
 #include "tpl_memmap.h"
@@ -794,4 +983,16 @@ ISR(isr_dma){
 	}
 }
 #define APP_ISR_isr_dma_STOP_SEC_CODE
+#include "tpl_memmap.h"
+
+#define APP_ISR_isr_rtc_START_SEC_CODE
+#include "tpl_memmap.h"
+ISR(isr_rtc){
+	GPIO->P[gpioPortB].DOUT ^= (1<<9);
+	RTC_IntClear(RTC_IF_COMP0);
+	RTC_CounterReset();
+	update_timekeeper();
+	RTC_CompareSet(0, 32768);
+}
+#define APP_ISR_isr_rtc_STOP_SEC_CODE
 #include "tpl_memmap.h"
