@@ -22,7 +22,7 @@ CPU blink {
     BUILD = TRUE {
       TRAMPOLINE_BASE_PATH = "../../../../../..";
       APP_SRC = "main.c";
-      APP_CPPSRC = "model/cmsis_bands_rms_int8_model.cc";
+      APP_CPPSRC = "model/cmsis_bands_max_low_int8_model.cc";
       APP_CPPSRC = "inference.cpp";
       APP_NAME = "main_exe";
       LIBRARY = dmactrl;
@@ -144,6 +144,7 @@ CPU blink {
     ACTIVATION = 1;
     SCHEDULE = FULL;
     EVENT = ev_DMAtoSRAM;
+    STACKSIZE = 650;
   };
 
   EVENT ev_DMAtoSRAM {
@@ -155,16 +156,21 @@ CPU blink {
     AUTOSTART = TRUE {APPMODE = Std;};
     ACTIVATION = 1;
     SCHEDULE = FULL;
-    STACKSIZE = 13500;
+    STACKSIZE = 13000;
   };
 
-  // TASK write_audio {
-  //   PRIORITY = 6;
-  //   AUTOSTART = FALSE;
-  //   ACTIVATION = 1;
-  //   SCHEDULE = FULL;
-  //   STACKSIZE = 200;
-  // };
+  TASK write_audio {
+    PRIORITY = 6;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 200;
+    EVENT = ev_write_audio;
+  };
+
+  EVENT ev_write_audio {
+    MASK = AUTO;
+  };
 
   // TASK blink {
   //   PRIORITY = 1;
@@ -195,5 +201,11 @@ CPU blink {
     CATEGORY = 2;
     PRIORITY = 1;
     SOURCE = DMA_IRQ;
+  };
+
+  ISR isr_rtc {
+    CATEGORY = 1;
+    PRIORITY = 1;
+    SOURCE = RTC_IRQ;
   };
 };

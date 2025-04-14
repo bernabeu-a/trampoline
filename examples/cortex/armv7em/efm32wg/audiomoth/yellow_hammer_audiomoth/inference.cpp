@@ -12,12 +12,23 @@
 
 /* ----- Model TFLM ----- */
 // #include "model/bands_int8_model_model_data.h"
-#include "model/cmsis_bands_rms_int8_model.h"
+#include "model/cmsis_bands_max_low_int8_model.h"
 
-/* W eonly share envelopes between both src files */
+/* We only share envelopes between both src files */
 extern VAR(float, AUTOMATIC) envelope_1 [80];
 extern VAR(float, AUTOMATIC) envelope_2 [80];
 extern VAR(float, AUTOMATIC) envelope_3 [80];
+
+/* Envelopes are in SRAM ext, we only share pointers */
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope1;
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope2;
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) ping_ptr_envelope3;
+
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope1;
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope2;
+extern P2VAR(float, AUTOMATIC, AUTOMATIC) pong_ptr_envelope3;
+
+extern VAR(bool, AUTOMATIC) envelop_ping_rdy;
 
 namespace {
 	using YellowHammerOpResolver = tflite::MicroMutableOpResolver<9>;
@@ -55,7 +66,7 @@ TfLiteStatus ProcessInference(){
 TASK(setup_inference){
 	/* Get Model */
 	// model = ::tflite::GetModel(bands_int8_model_tflite);
-	model = ::tflite::GetModel(cmsis_bands_rms_int8_model_tflite);
+	model = ::tflite::GetModel(cmsis_bands_max_low_int8_model_tflite);
 
 	if(model->version() != TFLITE_SCHEMA_VERSION){
 		while(1);
@@ -87,14 +98,21 @@ TASK(setup_inference){
 #define APP_Task_inference_START_SEC_CODE
 #include "tpl_memmap.h"
 
-static float input_inference[240];
+VAR(float, AUTOMATIC) input_inference[240];
 
 TASK(inference){
+
+	float *tmp_ptr_envelope1_inference;
+	float *tmp_ptr_envelope2_inference;
+	float *tmp_ptr_envelope3_inference;
 
 	EventMaskType ev1;
 	WaitEvent(ev_NORMALIZE);
 	GetEvent(inference, &ev1);
 	ClearEvent(ev1);
+
+	GPIO->P[gpioPortA].DOUT |= (1<<7);
+
 	float min_band1 = 999.0;
 	float max_band1 = 0;
 
@@ -107,33 +125,58 @@ TASK(inference){
 	/* If we are here, it means we have 80 data in envelopes */
 	/* We normalize for inference input */
 	/* First get min/max */
+	if(envelop_ping_rdy){
+		tmp_ptr_envelope1_inference = ping_ptr_envelope1;
+		tmp_ptr_envelope2_inference = ping_ptr_envelope2;
+		tmp_ptr_envelope3_inference = ping_ptr_envelope3;
+	}
+	else{
+		tmp_ptr_envelope1_inference = pong_ptr_envelope1;
+		tmp_ptr_envelope2_inference = pong_ptr_envelope2;
+		tmp_ptr_envelope3_inference = pong_ptr_envelope3;
+	}
+
 	for(uint8_t i = 0; i < 80; i++){
-		if(envelope_1[i] < min_band1) {
-			min_band1 = envelope_1[i];
+		if(*tmp_ptr_envelope1_inference < min_band1) {
+			min_band1 = *tmp_ptr_envelope1_inference;
 		}
-		if(envelope_1[i] > max_band1) {
-			max_band1 = envelope_1[i];
+		if(*tmp_ptr_envelope1_inference > max_band1) {
+			max_band1 = *tmp_ptr_envelope1_inference;
 		}
-
-		if(envelope_2[i] < min_band2) {
-			min_band2 = envelope_2[i];
+		tmp_ptr_envelope1_inference++;
+		if(*tmp_ptr_envelope2_inference < min_band2) {
+			min_band2 = *tmp_ptr_envelope2_inference;
 		}
-		if(envelope_2[i] > max_band2) {
-			max_band2 = envelope_2[i];
+		if(*tmp_ptr_envelope2_inference > max_band2) {
+			max_band2 = *tmp_ptr_envelope2_inference;
 		}
-
-		if(envelope_3[i] < min_band3) {
-			min_band3 = envelope_3[i];
+		tmp_ptr_envelope2_inference++;
+		if(*tmp_ptr_envelope3_inference < min_band3) {
+			min_band3 = *tmp_ptr_envelope3_inference;
 		}
-		if(envelope_3[i] > max_band3) {
-			max_band3 = envelope_3[i];
+		if(*tmp_ptr_envelope3_inference > max_band3) {
+			max_band3 = *tmp_ptr_envelope3_inference;
 		}
+		tmp_ptr_envelope3_inference++;
+		// *tmp_ptr_envelope1_inference++;
+		// *tmp_ptr_envelope1_inference++;
+		// *tmp_ptr_envelope1_inference++;
 	}
 	/* Then normalize */
+	if(envelop_ping_rdy){
+		tmp_ptr_envelope1_inference = ping_ptr_envelope1;
+		tmp_ptr_envelope2_inference = ping_ptr_envelope2;
+		tmp_ptr_envelope3_inference = ping_ptr_envelope3;
+	}
+	else{
+		tmp_ptr_envelope1_inference = pong_ptr_envelope1;
+		tmp_ptr_envelope2_inference = pong_ptr_envelope2;
+		tmp_ptr_envelope3_inference = pong_ptr_envelope3;
+	}
 	for(uint8_t i = 0; i < 80; i++){
-		input_inference[3*i] = (envelope_1[i] - min_band1) / (max_band1 - min_band1);
-		input_inference[3*i+1] = (envelope_2[i] - min_band2) / (max_band2 - min_band2);
-		input_inference[3*i+2] = (envelope_3[i] - min_band3) / (max_band3 - min_band3);
+		input_inference[3*i] = (*tmp_ptr_envelope1_inference++ - min_band1) / (max_band1 - min_band1);
+		input_inference[3*i+1] = (*tmp_ptr_envelope2_inference++ - min_band2) / (max_band2 - min_band2);
+		input_inference[3*i+2] = (*tmp_ptr_envelope3_inference++ - min_band3) / (max_band3 - min_band3);
 	}
 
 	// Get data for input
@@ -171,9 +214,9 @@ TASK(inference){
 	float output_score = static_cast<float>(static_cast<int>(final_output) - output_zero_point) * output_scale;
 
 	if(output_score > 0.6f){
-		// GPIO->P[gpioPortA].DOUT |= (1<<7);
-		// GPIO->P[gpioPortA].DOUT &= ~(1<<7);
+		ActivateTask(write_audio);
 	}
+	GPIO->P[gpioPortA].DOUT &= ~(1<<7);
 	ChainTask(inference);
 	// TerminateTask();
 }
