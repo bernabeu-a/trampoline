@@ -1,0 +1,3 @@
+/home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/build/CMakeFiles/main_exe.dir
+/home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/build/CMakeFiles/edit_cache.dir
+/home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/build/CMakeFiles/rebuild_cache.dir

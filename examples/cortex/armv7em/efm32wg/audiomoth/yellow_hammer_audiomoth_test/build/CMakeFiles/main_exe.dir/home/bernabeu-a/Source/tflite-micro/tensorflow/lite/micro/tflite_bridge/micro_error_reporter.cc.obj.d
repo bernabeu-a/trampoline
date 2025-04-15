@@ -1,0 +1,27 @@
+CMakeFiles/main_exe.dir/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tflite_bridge/micro_error_reporter.cc.obj: \
+ /home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tflite_bridge/micro_error_reporter.cc \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/../../../Source/tflite-micro/tensorflow/lite/micro/tflite_bridge/micro_error_reporter.h \
+ /usr/include/newlib/c++/10.3.1/cstdarg \
+ /usr/include/newlib/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/c++config.h \
+ /usr/include/newlib/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/os_defines.h \
+ /usr/include/newlib/c++/10.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/cpu_defines.h \
+ /usr/include/newlib/c++/10.3.1/pstl/pstl_config.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/../../../Source/tflite-micro/tensorflow/lite/core/api/error_reporter.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/../../../Source/tflite-micro/tensorflow/compiler/mlir/lite/core/api/error_reporter.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/../../../Source/tflite-micro/tensorflow/lite/micro/compatibility.h \
+ /usr/include/newlib/c++/10.3.1/cstdint \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /usr/include/newlib/c++/10.3.1/new \
+ /usr/include/newlib/c++/10.3.1/exception \
+ /usr/include/newlib/c++/10.3.1/bits/exception.h \
+ /usr/include/newlib/c++/10.3.1/bits/exception_ptr.h \
+ /usr/include/newlib/c++/10.3.1/bits/exception_defines.h \
+ /usr/include/newlib/c++/10.3.1/bits/cxxabi_init_exception.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /usr/include/newlib/c++/10.3.1/typeinfo \
+ /usr/include/newlib/c++/10.3.1/bits/hash_bytes.h \
+ /usr/include/newlib/c++/10.3.1/bits/nested_exception.h \
+ /usr/include/newlib/c++/10.3.1/bits/move.h \
+ /usr/include/newlib/c++/10.3.1/type_traits \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/../../../Source/tflite-micro/tensorflow/lite/micro/micro_log.h

@@ -1,0 +1,174 @@
+CMakeFiles/main_exe.dir/main.c.obj: \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main.c \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/tpl_os.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_definitions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_application_def.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/tpl_app_define.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_config_def.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_config_check.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_application_def.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_error.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_internal_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_os_std_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_custom_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/tpl_app_custom_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_compiler.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/Compiler.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/Compiler_Cfg.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_machine.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_machine_cortex.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_os_std_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_internal_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_custom_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_machine.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/tpl_os_kernel_stack.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/cmsis_wrapper.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/em_device.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg380f256.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/core_cm4.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/cmsis_version.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/cmsis_compiler.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/mpu_armv7.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/system_efm32wg.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dma_ch.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dma.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_aes.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_usb_hc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_usb_diep.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_usb_doep.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_usb.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_msc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_emu.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_rmu.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_lesense_st.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_lesense_buf.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_lesense_ch.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_lesense.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_ebi.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_fpueh.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_usart.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_timer_cc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_timer.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_acmp.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_leuart.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_rtc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_letimer.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_pcnt.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_i2c.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_gpio_p.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_gpio.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_vcmp.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_prs_ch.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_prs.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_adc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dac.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_burtc_ret.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_burtc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_wdog.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_etm.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dma_descriptor.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_devinfo.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_romtable.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_calibrate.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_prs_signals.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dmareq.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_dmactrl.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_uart.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_af_ports.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/inc/efm32wg_af_pins.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_compiler.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_memmap.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/main/MemMap.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/dmactrl/dmactrl.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/microsd.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_gpio.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_bus.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_assert.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/integer.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/ff.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/ffconf.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/diskio.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/ff.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/ffconf.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/driver/microsd/integer.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_os.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_interrupt.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_task.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_resource.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_os_event.h \
+ /usr/include/newlib/stdlib.h /usr/include/newlib/machine/ieeefp.h \
+ /usr/include/newlib/_ansi.h /usr/include/newlib/newlib.h \
+ /usr/include/newlib/_newlib_version.h /usr/include/newlib/sys/config.h \
+ /usr/include/newlib/sys/features.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stddef.h \
+ /usr/include/newlib/sys/reent.h /usr/include/newlib/_ansi.h \
+ /usr/include/newlib/sys/_types.h /usr/include/newlib/machine/_types.h \
+ /usr/include/newlib/machine/_default_types.h \
+ /usr/include/newlib/sys/lock.h /usr/include/newlib/sys/cdefs.h \
+ /usr/include/newlib/machine/stdlib.h /usr/include/newlib/alloca.h \
+ /usr/include/newlib/time.h /usr/include/newlib/machine/time.h \
+ /usr/include/newlib/sys/types.h /usr/include/newlib/sys/_stdint.h \
+ /usr/include/newlib/machine/endian.h \
+ /usr/include/newlib/machine/_endian.h /usr/include/newlib/sys/select.h \
+ /usr/include/newlib/sys/_sigset.h /usr/include/newlib/sys/_timeval.h \
+ /usr/include/newlib/sys/timespec.h /usr/include/newlib/sys/_timespec.h \
+ /usr/include/newlib/sys/_pthreadtypes.h /usr/include/newlib/sys/sched.h \
+ /usr/include/newlib/machine/types.h /usr/include/newlib/sys/_locale.h \
+ /usr/include/newlib/math.h /usr/include/newlib/string.h \
+ /usr/include/newlib/strings.h /usr/include/newlib/sys/string.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_chip.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_system.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_gpio.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_cmu.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_adc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_prs.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_timer.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_dma.h \
+ /usr/include/newlib/stdio.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
+ /usr/include/newlib/sys/stdio.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_ebi.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_burtc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_rtc.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_opamp.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/armv7em/efm32wg/emlib/inc/em_dac.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/fir_coeffs.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/arm_math.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/arm_math_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS_5/CMSIS/Core/Include/cmsis_compiler.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include/float.h \
+ /usr/lib/gcc/arm-none-eabi/10.3.1/include-fixed/limits.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/arm_math_memory.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/none.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/arm_math_types.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/utils.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/basic_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/arm_math_memory.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/none.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/utils.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/interpolation_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/bayes_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/statistics_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/basic_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/fast_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/matrix_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/complex_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/statistics_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/controller_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/support_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/distance_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/matrix_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/svm_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/svm_defines.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/fast_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/transform_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/complex_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/filtering_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/support_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/quaternion_math_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../machines/cortex/CMSIS-DSP/Include/dsp/window_functions.h \
+ /home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/../../../../../../os/tpl_memmap.h

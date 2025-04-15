@@ -1,0 +1,213 @@
+OIL_VERSION = "2.5";
+
+IMPLEMENTATION trampoline {
+
+    /* This fix the default STACKSIZE of tasks */
+    TASK {
+        UINT32 STACKSIZE = 512 ;
+    } ;
+
+    /* This fix the default STACKSIZE of ISRs */
+    ISR {
+        UINT32 STACKSIZE = 384 ;
+    } ;
+};
+
+CPU blink {
+  OS config {
+    STATUS = EXTENDED;
+    PAINT_STACK = TRUE;
+    PAINT_REGISTERS = TRUE;
+    BUILD = TRUE {
+      TRAMPOLINE_BASE_PATH = "../../../../../..";
+      APP_SRC = "main.c";
+      APP_CPPSRC = "model/cmsis_bands_max_low_int8_model.cc";
+      APP_CPPSRC = "inference.cpp";
+      APP_NAME = "main_exe";
+      LIBRARY = dmactrl;
+      LIBRARY = microsd;
+      LIBRARY = cmsisdsp;
+      LIBRARY = cmsisnn;
+      LIBRARY = tflite;
+      CFLAGS  = "-Os -DEFM32WG380F256=1";
+      CPPFLAGS = "-Os -DEFM32WG380F256=1";
+      CPPFLAGS = "-std=c++17";
+      // Define for TFLM
+      CPPFLAGS = "-DTF_LITE_STATIC_MEMORY -DTF_LITE_DISABLE_X86_NEON -DNDEBUG";
+      CPPFLAGS = "-DCMSIS_NN -DKERNELS_OPTIMIZED_FOR_SPEED";
+      CPPFLAGS = "-DTF_LITE_MCU_DEBUG_LOG -DTF_LITE_STRIP_ERROR_STRINGS";
+      // Flags same as tflite-micro example with cortex-m4
+      CPPFLAGS = "-mfpu=auto";
+      CPPFLAGS = "-Wnon-virtual-dtor";
+      CPPFLAGS = "-fno-unwind-tables";
+      CPPFLAGS = "-fno-use-cxa-atexit";
+      CPPFLAGS = "-fno-asynchronous-unwind-tables";
+      CPPFLAGS = "-Wsign-compare -Wdouble-promotion -Wunused-variable -Wunused-function -Wswitch -Wvla -Wall -Wextra -Wmissing-field-initializers -Wstrict-aliasing -Wno-unused-parameter"; 
+      CPPFLAGS = "-mlittle-endian -Wno-type-limits -Wno-unused-private-field -fomit-frame-pointer";
+      // Include TFLM --> change path as required
+      CPPFLAGS  = "-I/home/bernabeu-a/Source/tflite-micro";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/gemmlowp";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/c";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core/api";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/core/c";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels/internal";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/kernels/internal/reference";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/kernels/internal";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/core/api";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/core/c";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/compiler/mlir/lite/schema";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/kernels";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/arena_allocator";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/memory_planner";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tflite_bridge";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/make/downloads";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/kissfft";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/tensorflow/lite/micro/tools/make/downloads/ruy/";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/src/kiss_fft_wrappers/";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/micro/kernels";
+      CPPFLAGS = "-I/home/bernabeu-a/Source/tflite-micro/signal/src";
+      // Linker flags
+      LDFLAGS = "-Map=main.map";
+      LDFLAGS = "--print-memory-usage";
+      COMPILER = "arm-none-eabi-gcc";
+      CPPCOMPILER = "arm-none-eabi-g++";
+      ASSEMBLER = "arm-none-eabi-as";
+      LINKER = "arm-none-eabi-ld";
+      COPIER = "arm-none-eabi-objcopy";
+      SYSTEM = CMAKE {VSCODE=TRUE;};
+    };
+    SYSTEM_CALL = TRUE;
+    MEMMAP = TRUE {
+      COMPILER = gcc;
+      LINKER = gnu_ld { SCRIPT = "script.ld"; };
+      ASSEMBLER = gnu_as;
+      // MEMORY_PROTECTION = FALSE;
+    };
+  };
+
+  APPMODE Std {};
+
+  TASK start_sdcard {
+    PRIORITY = 5;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 512;
+  };
+
+  TASK start_audio {
+    PRIORITY = 2;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 384;
+  };
+
+  TASK start_dma {
+    PRIORITY = 2;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 384;
+  };
+  
+  // TASK normalize {
+  //   PRIORITY = 3;
+  //   AUTOSTART = TRUE{APPMODE = Std;};
+  //   // AUTOSTART = FALSE;
+  //   ACTIVATION = 1;
+  //   SCHEDULE = FULL;
+  //   EVENT = ev_NORMALIZE;
+  // };
+
+  EVENT ev_NORMALIZE {
+    MASK = AUTO;
+  };
+
+  TASK inference {
+    PRIORITY = 4;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 2048;
+    EVENT = ev_NORMALIZE;
+  };
+
+  TASK copyDMAtoSRAM {
+    PRIORITY = 5;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    EVENT = ev_DMAtoSRAM;
+    STACKSIZE = 1280;
+  };
+
+  EVENT ev_DMAtoSRAM {
+    MASK = AUTO;
+  };
+
+
+  TASK setup_inference {
+    PRIORITY = 5;
+    AUTOSTART = TRUE {APPMODE = Std;};
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 11264;
+  };
+
+  TASK write_audio {
+    PRIORITY = 3;
+    AUTOSTART = FALSE;
+    ACTIVATION = 1;
+    SCHEDULE = FULL;
+    STACKSIZE = 2048;
+    EVENT = ev_write_audio;
+  };
+
+  EVENT ev_write_audio {
+    MASK = AUTO;
+  };
+
+  // TASK blink {
+  //   PRIORITY = 1;
+  //   AUTOSTART = FALSE;
+  //   ACTIVATION = 1;
+  //   SCHEDULE = FULL;
+  // };
+
+  // ALARM blink_blink {
+  //   COUNTER = SystemCounter;
+  //   ACTION = ACTIVATETASK {
+  //     TASK = blink;
+  //   };
+  //   AUTOSTART = TRUE {
+  //     APPMODE = Std;
+  //     ALARMTIME = 100;
+  //     CYCLETIME = 100;
+  //   };
+  // };
+
+  // ISR isr_adc {
+  //   CATEGORY = 1;
+  //   PRIORITY = 1;
+  //   SOURCE = ADC0_IRQ;
+  // };
+
+  ISR isr_dma {
+    CATEGORY = 2;
+    PRIORITY = 1;
+    SOURCE = DMA_IRQ;
+  };
+
+  ISR isr_rtc {
+    CATEGORY = 1;
+    PRIORITY = 1;
+    SOURCE = RTC_IRQ;
+  };
+};

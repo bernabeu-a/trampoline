@@ -1,0 +1,60 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "main_exe",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "main_exe::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-main_exe-Debug-af0aa3e017c6ed66e0c7.json",
+					"name" : "main_exe",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test/build",
+		"source" : "/home/bernabeu-a/Code/trampoline/examples/cortex/armv7em/efm32wg/audiomoth/yellow_hammer_audiomoth_test"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
