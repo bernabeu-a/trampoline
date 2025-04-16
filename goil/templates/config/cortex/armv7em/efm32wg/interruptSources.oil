@@ -4,5 +4,6 @@
 ENUM [
   SysTick,
   DMA_IRQ,
-  ADC0_IRQ
+  ADC0_IRQ, 
+  RTC_IRQ
 ] SOURCE;
