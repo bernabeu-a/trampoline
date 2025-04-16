@@ -293,6 +293,7 @@ end foreach
 /*----------------------------------------------------------------------------*/
 
 SECTIONS {%
+if exists OS::MEMMAP::MEMORY_PROTECTION default (false) then
 foreach proc in PROCESSES do %
   /* --- Section of stack of % !proc::KIND % % !proc::NAME %  */
   .% !proc::KIND %_% !proc::NAME %_SEC_STACK : {
@@ -312,6 +313,19 @@ foreach proc in PROCESSES do %
   } >RAM
 %
 end foreach
+else
+foreach proc in PROCESSES do
+%
+  .% !proc::KIND %_% !proc::NAME %_SEC_STACK : {
+  __SEG_START_% !proc::KIND %_% !proc::NAME %_STACK_RGN = .;
+  *(.% !proc::KIND %_% !proc::NAME %Stack)
+  . = ALIGN(8);
+  __SEG_END_% !proc::KIND %_% !proc::NAME %_STACK_RGN = .;
+  } >RAM
+%
+end foreach
+end if
+
 %
 }
 
