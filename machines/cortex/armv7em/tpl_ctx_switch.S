@@ -143,6 +143,25 @@ tpl_save_context:
     mrs r2,psp
     str r2,[r1,#CTX_PSP]
 
+#if WITH_FLOAT == YES
+    /*-------------------------------------------------------------------------
+     * Get a the pointer to the floating point context from the pointer to the
+     * static descriptor of the running task
+     */
+ 
+    ldr r1,[r0,#FLOAT_CONTEXT]
+    cmp r1, #0 /* r1 is NULL if there is no float context for this process */
+    beq no_save_fp
+
+    /* save all s0 to s31 */
+    vstm r1!, {s0-s31}
+    /* save fpscr */
+    vmrs r0,fpscr
+    str r0,[r1]
+no_save_fp:
+#endif
+
+
     bx  lr
 
 /*=============================================================================
@@ -194,6 +213,20 @@ tpl_load_context:
     ldr r2,[r1,#CTX_PSP]
     msr psp,r2
 
+#if WITH_FLOAT == YES
+    /*-------------------------------------------------------------------------
+     * Get a the pointer to the floating point context from the pointer to the
+     * static descriptor of the running task
+     */
+
+    ldr r1,[r0,#FLOAT_CONTEXT]
+    cmp r1, #0 /* r1 is NULL if there is no float context for this process */
+    beq no_load_fp
+    vldm r1!, {s0-s31} /* load s[0..31] */
+    ldr r0,[r1]
+    vmsr fpscr, r0 /* load fpscr */ 
+no_load_fp:
+#endif // WITH_FLOAT
     bx   lr
 
 #define OS_STOP_SEC_CODE

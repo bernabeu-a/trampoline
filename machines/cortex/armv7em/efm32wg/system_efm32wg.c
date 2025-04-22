@@ -423,6 +423,7 @@ void SystemLFXOClockSet(uint32_t freq)
  *****************************************************************************/
 void SystemInit_efm32wg(void){
 #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+  FPU-> FPCCR &= ~(1 <<  FPU_FPCCR_ASPEN_Pos |  1 << FPU_FPCCR_LSPEN_Pos);
   /* Set floating point coprosessor access mode. */
   SCB->CPACR |= ((3UL << 10*2) |                    /* set CP10 Full Access */
                  (3UL << 11*2)  );                  /* set CP11 Full Access */

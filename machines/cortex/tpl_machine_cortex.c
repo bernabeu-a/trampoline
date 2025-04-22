@@ -171,10 +171,19 @@ FUNC(void, OS_CODE) tpl_init_context(
   CONSTP2CONST(tpl_proc_static, AUTOMATIC, OS_APPL_DATA) the_proc =
     tpl_stat_proc_table[proc_id];
 
+#if WITH_FLOAT == YES
+ /* The pointer to the int context of the process */
+ CONSTP2VAR(arm_core_context, AUTOMATIC, OS_APPL_DATA) l_tpl_context =
+ the_proc->context.cc;
+ /* The pointer to the float context of the process */
+ CONSTP2VAR(arm_float_context, AUTOMATIC, OS_APPL_DATA) l_tpl_fc_context =
+ the_proc->context.fc;
+ tpl_bool proc_use_fpu = (l_tpl_fc_context != NULL);
+#else
   /* The pointer to the context of the process */
   CONSTP2VAR(arm_core_context, AUTOMATIC, OS_APPL_DATA) l_tpl_context =
     the_proc->context;
-
+#endif
   /* The pointer to the stack of the process */
   CONSTP2VAR(tpl_stack_word, AUTOMATIC, OS_APPL_DATA) stack =
     the_proc->stack.stack_zone;
@@ -204,13 +213,28 @@ FUNC(void, OS_CODE) tpl_init_context(
   l_tpl_context->gpr11 = OS_STACK_PATTERN;
 
   /*
+   * Paint float registers
+   */
+  #if WITH_FLOAT == YES
+  if(l_tpl_fc_context != NULL) /* defined to NULL for an integer only context */
+  {
+    for(i=0;i<NB_SPR;i++) 
+    {
+      // 32 registers in l_tpl_fc_context s0->s31
+      l_tpl_fc_context->spr[i] = OS_STACK_PATTERN+(i);
+    }
+    l_tpl_fc_context->fpscr = 0;
+  }
+  #endif // WITH_FLOAT
+  /*
    * Paint the registers on the exception frame : r0, r1, r2, r3 and r12
    */
   for (i = 0; i < GPR_ON_EXCEPTION_FRAME; i++)
   {
     exception_frame[i] = OS_STACK_PATTERN;
   }
-#endif
+#endif // WITH_PAINT_REGISTERS
+
   /* sp : setup initial stack pointer.
    * The SP points to (stack_zone + stack_size - ARM_CORE_EXCEPTION_FRAME_SIZE)
    * ARM_CORE_EXCEPTION_FRAME_SIZE is the frame pushed by the core at each exception.

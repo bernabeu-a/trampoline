@@ -70,6 +70,7 @@
  * +-------------------------------+
  */
 #define ARM_CORE_EXCEPTION_FRAME_SIZE ((uint32)32)
+
 /* ARM_INITIAL_EXC_RETURN
  * Default value of exception return value
  * 0xFFFFFFF1 - Return to Handler mode, exception return uses non-floating-point state from the MSP and execution uses MSP after return.
@@ -80,6 +81,28 @@
  * 0xFFFFFFED - Return to Thread mode, exception return uses floating-point state from PSP and execution uses PSP after return.
  */
 #define ARM_INITIAL_EXC_RETURN ((uint32)0xFFFFFFF9)
+
+/*
+ * ARM_CORE_EXCEPTION_FRAME_SIZE is 26x4=104 bytes long 
+ * (floating-point version):
+ * +-------------------------------+
+ * | R0                            | <- PSP
+ * +-------------------------------+
+ * | R1                            | <- PSP+4  - 0x04
+ * +-------------------------------+
+ * | R2                            | <- PSP+8  - 0x08
+ * +-------------------------------+
+ * | R3                            | <- PSP+12 - 0x0C
+ * +-------------------------------+
+ * | R12                           | <- PSP+16 - 0x10
+ * +-------------------------------+
+ * | LR (aka R14)                  | <- PSP+20 - 0x14
+ * +-------------------------------+
+ * | Return Address (saved PC/R15) | <- PSP+24 - 0x18
+ * +-------------------------------+
+ * | xPSR (bit 9 = 1)              | <- PSP+28 - 0x1C
+ * +-------------------------------+
+ */
 
 /*----------------------------------------------------------------------------*
  * The second part of the context is stored in the following structure        *
@@ -117,20 +140,26 @@ typedef struct ARM_CORE_CONTEXT
   uint32 gpr9;          /* General purpose register r9 */
   uint32 gpr10;         /* General purpose register r10 */
   uint32 gpr11;         /* General purpose register r11 */
-	uint32 stackPointer;  /* Stack Pointer - r13          */
+  uint32 stackPointer;  /* Stack Pointer - r13          */
 } arm_core_context;
 
 #ifdef WITH_FLOAT
 /*
  * Floating Point Context
  */
-struct ARM_FLOAT_CONTEXT {
-	/* is Single Precision Register s0-s31 */
-    double  spr[32];
-	/* Floating Point Status and Control Register */
-    double  fpscr;
-};
 
+/* number of single precision registers */
+#define NB_SPR 32
+
+struct ARM_FLOAT_CONTEXT {
+/** 
+ *  we save s0 to s31 => 32 registers
+ *  and fpscr (Floating-point Status and Control Register)
+ **/
+    uint32 spr[NB_SPR];
+/* Floating Point Status and Control Register */
+    uint32 fpscr;
+};
 typedef struct ARM_FLOAT_CONTEXT arm_float_context;
 #endif
 
