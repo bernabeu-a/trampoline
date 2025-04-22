@@ -182,7 +182,7 @@ FUNC(void, OS_CODE) tpl_init_context(
 #else
   /* The pointer to the context of the process */
   CONSTP2VAR(arm_core_context, AUTOMATIC, OS_APPL_DATA) l_tpl_context =
-    the_proc->context;
+    the_proc->context.cc;
 #endif
   /* The pointer to the stack of the process */
   CONSTP2VAR(tpl_stack_word, AUTOMATIC, OS_APPL_DATA) stack =
