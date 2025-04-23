@@ -3,6 +3,7 @@
 extern void SystemInit_efm32wg();
 
 void __attribute__((weak)) tpl_continue_reset_handler(void);
+void __attribute__((section(".after_vectors"))) system_init();
 
 // Initialise the data section
 inline void data_init(unsigned int* from, unsigned int* section_begin, unsigned int* section_end);
